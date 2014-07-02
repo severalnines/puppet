@@ -64,12 +64,12 @@ ClusterControl requires proper SSH key configuration and ClusterControl API toke
 $ sh /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-key
 ```
 
-**This is mandatory. The above command will generate a RSA key (if not exists) to be used by the module and the key must exist in the Puppet master module's directory before the deployment begins.**
-
 2. Then, generate an API token:
 ```bash
 $ sh /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-token
 ```
+
+**Step #1 is mandatory. The command will generate a RSA key (if not exists) to be used by the module and the key must exist in the Puppet master module's directory before the deployment begins.**
 
 ###Installation
 
