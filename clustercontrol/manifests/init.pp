@@ -216,7 +216,7 @@ class clustercontrol (
 	  
 	  ssh_authorized_key { "$ssh_user" :
       ensure => present,
-      key    => generate('/bin/sh', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
+      key    => generate('/bin/bash', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
       name   => "$ssh_user@clustercontrol",
       user   => "$ssh_user",
       type   => 'ssh-rsa',
@@ -318,7 +318,7 @@ class clustercontrol (
 	  	  
 	  ssh_authorized_key { '$ssh_user' :
 	    ensure => present,
-	    key    => generate('/bin/sh', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
+	    key    => generate('/bin/bash', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
 	    name   => "$ssh_user@$controller_ip_address",
 	    user   => "$ssh_user",
 	    type   => 'ssh-rsa',
