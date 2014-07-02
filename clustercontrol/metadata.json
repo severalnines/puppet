@@ -7,12 +7,12 @@
     "templates/ssl.conf.erb": "ae7babe4ea64d8aa590a61b5c8426368",
     "templates/my.cnf.erb": "ec51157ca932d47e328fbb52ac1be1be",
     "templates/s9s.conf.erb": "97ebc733483b82f068aefb3406c5b84e",
-    "Modulefile": "42f91dd514390fe487f5226371ed624e",
+    "Modulefile": "4c8de8eea1e17d664b499bb4545a0734",
     "templates/configure_cmon_db.sql.erb": "c71c4363da2092f73b658f2d32ea530a",
     "spec/spec.opts": "a600ded995d948e393fbe2320ba8e51c",
     "tests/init.pp": "707c446d2531da34c2c96dd10dbc345d",
     "spec/spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",
-    "manifests/params.pp": "09105f31ad7c56339e361334ea03d174",
+    "manifests/params.pp": "0dae13da422d0a112ef1ef1a72afc20d",
     "manifests/init.pp": "ce84721cf00da6748125fbd5719b49a7",
     "templates/s9s-repo.list.erb": "1dfde1aeb7e58e1889ecb6267773c66e",
     "files/s9s_helper.sh": "32a7796df74e9bdfc0d5b7ae3a09e55c",
@@ -24,9 +24,9 @@
   "description": "",
   "license": "",
   "name": "severalnines-clustercontrol",
-  "project_page": "",
+  "project_page": "https://github.com/severalnines/puppet",
   "source": "",
   "summary": "",
   "types": [],
-  "version": "0.0.1"
+  "version": "0.1.1"
 }

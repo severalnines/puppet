@@ -1,11 +1,11 @@
 name    'severalnines-clustercontrol'
-version '0.0.1'
+version '0.1.1'
 source ''
 author 'Ashraf Sharif'
 license ''
 summary ''
 description ''
-project_page ''
+project_page 'https://github.com/severalnines/puppet'
 
 ## Add dependencies, if any:
 # dependency 'username/name', '>= 1.2.0'

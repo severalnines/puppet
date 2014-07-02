@@ -47,6 +47,23 @@ class clustercontrol::params {
       
     }
     'Debian': {
+      if ($operatingsystem == 'Ubuntu') and ($lsbmajdistrelease > 12) {
+        $wwwroot          = '/var/www/html'
+        $apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
+        $apache_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
+        $apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
+        $apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
+        $extra_options     = 'Require all granted'
+       
+        file { [
+          '/etc/apache2/sites-enabled/000-default.conf',
+          '/etc/apache2/sites-enabled/default-ssl.conf',
+          '/etc/apache2/sites-enabled/001-default-ssl.conf'
+          ] :
+          ensure  => absent,
+        }
+      }
+      
       $apache_conf_file = '/etc/apache2/sites-available/default'
       $apache_target_file = '/etc/apache2/sites-enabled/000-default'
       $apache_ssl_conf_file = '/etc/apache2/sites-available/default-ssl.conf'
@@ -89,23 +106,6 @@ class clustercontrol::params {
         command => "a2enmod ssl && a2enmod rewrite",
         require => Package[$cc_dependencies]
         }
-      
-      if ($operatingsystem == 'Ubuntu') and ($lsbmajdistrelease > 12) {
-        $wwwroot          = '/var/www/html'
-        $apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
-        $apache_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
-        $apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
-        $apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
-        $extra_options     = 'Require all granted'
-       
-        file { [
-          '/etc/apache2/sites-enabled/000-default.conf',
-          '/etc/apache2/sites-enabled/default-ssl.conf',
-          '/etc/apache2/sites-enabled/001-default-ssl.conf'
-          ] :
-          ensure  => absent,
-        }
-      }
       
       file { $apache_conf_file :
           ensure  => present,
