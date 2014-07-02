@@ -76,12 +76,14 @@ $ sh /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-token
 Specify the generated token in the node definition similar to example below:
 
 Example hosts:
+```
 clustercontrol.local 	192.168.1.10
-galera1.local 		192.168.1.11
-galera2.local 		192.168.1.12
-galera3.local 		192.168.1.13
+galera1.local 		    192.168.1.11
+galera2.local 		    192.168.1.12
+galera3.local 		    192.168.1.13
+```
 
-
+The node definitions would be:
 ```puppet
 node "galera1.local", "galera2.local", "galera3.local" {
         class {'clustercontrol':
