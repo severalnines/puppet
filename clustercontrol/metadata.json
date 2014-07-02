@@ -1,0 +1,32 @@
+{
+  "author": "Ashraf Sharif",
+  "checksums": {
+    "Rakefile": "f37e6131fe7de9a49b09d31596f5fbf1",
+    "templates/s9s-ssl.conf.erb": "ddf4b56d2ad70287fdee08086b679307",
+    "templates/cmon.cnf.erb": "87391b1c30f4b888af3bd5e0f495dae4",
+    "templates/ssl.conf.erb": "ae7babe4ea64d8aa590a61b5c8426368",
+    "templates/my.cnf.erb": "ec51157ca932d47e328fbb52ac1be1be",
+    "templates/s9s.conf.erb": "97ebc733483b82f068aefb3406c5b84e",
+    "Modulefile": "42f91dd514390fe487f5226371ed624e",
+    "templates/configure_cmon_db.sql.erb": "c71c4363da2092f73b658f2d32ea530a",
+    "spec/spec.opts": "a600ded995d948e393fbe2320ba8e51c",
+    "tests/init.pp": "707c446d2531da34c2c96dd10dbc345d",
+    "spec/spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",
+    "manifests/params.pp": "09105f31ad7c56339e361334ea03d174",
+    "manifests/init.pp": "2993c8b9cdc01c2b00f1639ea1af5d93",
+    "templates/s9s-repo.list.erb": "1dfde1aeb7e58e1889ecb6267773c66e",
+    "files/s9s_helper.sh": "32a7796df74e9bdfc0d5b7ae3a09e55c",
+    "templates/database.php.erb": "04ba36b03ccc571704eae136835ef116",
+    "CHANGELOG": "6b976d24bad797d0b9028012ed894ca2",
+    "README.md": "c32e774a761e6c514990c373400b3cae"
+  },
+  "dependencies": [],
+  "description": "",
+  "license": "",
+  "name": "severalnines-clustercontrol",
+  "project_page": "",
+  "source": "",
+  "summary": "",
+  "types": [],
+  "version": "0.0.1"
+}
