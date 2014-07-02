@@ -64,7 +64,7 @@ ClusterControl requires proper SSH key configuration and ClusterControl API toke
 $ sh /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-key
 ```
 
-This is mandatory. The above command will generate a RSA key (if not exists) to be used by the module and the key must exist in the Puppet master module's directory before the deployment begins.
+    This is mandatory. The above command will generate a RSA key (if not exists) to be used by the module and the key must exist in the Puppet master module's directory before the deployment begins.
 
 2. Then, generate an API token:
 ```bash
@@ -86,7 +86,7 @@ galera3.local 		192.168.1.13
 node "galera1.local", "galera2.local", "galera3.local" {
         class {'clustercontrol':
                 is_controller => false,
-	    ssh_user => 'root',
+	            ssh_user => 'root',
                 mysql_root_password => 'dpassword',
                 mysql_cmon_password => 'cmon',
                 controller_ip_address => '192.168.1.10'
