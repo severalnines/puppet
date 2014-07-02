@@ -62,18 +62,19 @@ class clustercontrol::params {
           ] :
           ensure  => absent,
         }
+      } else {
+        $wwwroot          = '/var/www'
+        $apache_conf_file = '/etc/apache2/sites-available/default'
+        $apache_target_file = '/etc/apache2/sites-enabled/000-default'
+        $apache_ssl_conf_file = '/etc/apache2/sites-available/default-ssl.conf'
+        $apache_ssl_target_file = '/etc/apache2/sites-enabled/000-default-ssl'
+        $extra_options     = ''
       }
       
-      $apache_conf_file = '/etc/apache2/sites-available/default'
-      $apache_target_file = '/etc/apache2/sites-enabled/000-default'
-      $apache_ssl_conf_file = '/etc/apache2/sites-available/default-ssl.conf'
-      $apache_ssl_target_file = '/etc/apache2/sites-enabled/000-default-ssl'
-      $extra_options     = ''
       $cert_file        = '/etc/ssl/certs/s9server.crt'
       $key_file         = '/etc/ssl/private/s9server.key'
       $apache_user      = 'www-data'
       $apache_service   = 'apache2'
-      $wwwroot          = '/var/www'
       $cmon_sql_path    = '/usr/local/cmon/share/cmon'
       $mysql_service    = 'mysql'
       $mysql_cnf        = '/etc/mysql/my.cnf'
