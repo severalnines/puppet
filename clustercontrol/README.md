@@ -107,7 +107,7 @@ node "clustercontrol.local" {
 }
 ```
 
-Once deployment is complete, open the ClusterControl web UI at https://[ClusterControl IP address]/clustercontrol and login with specified email address with default password 'admin'.
+Once deployment is complete, open the ClusterControl web UI at https://[ClusterControl IP address]/clustercontrol and login with specified email address and default password 'admin'.
 
 
 ##Usage
@@ -137,7 +137,7 @@ If sudo user has password, specify it here. ClusterControl requires this to auto
 Example: 'mysud0p4ssword'
 
 ####`clustercontrol_token`
-Specify the 40-character ClusterControl token generated from s9s_helper script.
+Specify the 40-characters ClusterControl token generated from s9s_helper script.
 Example: 'b7e515255db703c659677a66c4a17952515dbaf5'
 
 ####`mysql_cmon_root_password`

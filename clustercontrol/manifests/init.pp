@@ -322,22 +322,22 @@ class clustercontrol (
 	    name   => "$ssh_user@$controller_ip_address",
 	    user   => "$ssh_user",
 	    type   => 'ssh-rsa',
-      notify => Exec['grant-cmon-controller','grant-cmon-localhost','grant-cmon-127.0.0.1']
-	  }
+	    notify => Exec['grant-cmon-controller','grant-cmon-localhost','grant-cmon-127.0.0.1']
+	    }
 	  
 		exec { 'grant-cmon-controller' :
 		  onlyif  => 'which mysql',
 		  command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$controller_ip_address\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		  }
-		  
+		
 		exec { "grant-cmon-localhost" :
-      onlyif  => 'which mysql',
-      command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@localhost IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
-    }
+		  onlyif  => 'which mysql',
+		  command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@localhost IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		  }
     
     exec { "grant-cmon-127.0.0.1" :
       onlyif => 'which mysql',
       command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
-    }
+      }
 	}
 }
