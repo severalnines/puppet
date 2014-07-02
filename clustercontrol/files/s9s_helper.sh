@@ -10,8 +10,6 @@ KEYFILE=$KEYPATH/id_rsa_s9s
 KEYFILE_PUB=$KEYPATH/id_rsa_s9s.pub
 KEYGEN=`command -v ssh-keygen`
 [ -z "$KEYGEN" ] && echo "Error: Unable to locate ssh-keygen binary" && exit 1
-OPT='--generate-key'
-[ ! -z "$1" ] && OPT=$1
 
 do_rsa_keygen()
 {
