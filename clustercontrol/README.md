@@ -57,19 +57,19 @@ Make sure you meet following criterias prior to the deployment:
 
 ###Pre-installation
 
-ClusterControl requires proper SSH key configuration and ClusterControl API token. Use the helper script located at $modulepath/clustercontrol/files/s9s_helper.sh to generate them.
+ClusterControl requires proper SSH key configuration and ClusterControl API token. Use the helper script located at `$modulepath/clustercontrol/files/s9s_helper.sh` to generate them.
 
-1. Generate SSH key to be used by ClusterControl to monitor and manage your database hosts. Run following command in Puppet master:
+- Generate SSH key to be used by ClusterControl to monitor and manage your database hosts. Run following command in Puppet master:
+```bash
+$ sh /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-key
+```
 
-	sh /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-key
-
-
-2. Then, generate an API token:
+- Then, generate an API token:
 ```bash
 $ sh /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-token
 ```
 
-**Step #1 is mandatory. The command will generate a RSA key (if not exists) to be used by the module and the key must exist in the Puppet master module's directory before the deployment begins.**
+**Above steps are mandatory and need to run just once. The first command will generate a RSA key (if not exists) to be used by the module and the key must exist in the Puppet master module's directory before the deployment begins.**
 
 ###Installation
 
