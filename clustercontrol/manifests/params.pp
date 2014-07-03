@@ -50,9 +50,9 @@ class clustercontrol::params {
       if ($operatingsystem == 'Ubuntu') and ($lsbmajdistrelease > 12) {
         $wwwroot          = '/var/www/html'
         $apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
+        $apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
         $apache_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
         $apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
-        $apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
         $extra_options     = 'Require all granted'
        
         file { [
