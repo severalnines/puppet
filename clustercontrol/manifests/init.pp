@@ -301,7 +301,8 @@ class clustercontrol (
 	  
 	  exec { "configure-cc-bootstrap" :
 	    command => "sed -i 's|DBPASS|$mysql_cmon_password|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php && \
-	    sed -i 's|DBPORT|$mysql_cmon_port|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php"
+	    sed -i 's|DBPORT|$mysql_cmon_port|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php",
+	    notify => Service[$clustercontrol::params::apache_service]
 	  }
 	
 	  exec { "configure-cmonapi-bootstrap" :
