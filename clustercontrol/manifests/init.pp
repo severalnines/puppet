@@ -19,7 +19,7 @@ class clustercontrol (
   $cluster_type             = 'galera',
   $ip_address               = $ipaddress,
   $email_address            = 'admin@domain.com',
-  $clustercontrol_token     = '',
+  $api_token                = '',
   $ssh_user                 = 'root',
   $ssh_port                 = '22',
   $ssh_key_type             = 'ssh-rsa',
@@ -305,7 +305,7 @@ class clustercontrol (
 	  }
 	
 	  exec { "configure-cmonapi-bootstrap" :
-	    command => "sed -i 's|GENERATED_CMON_TOKEN|$clustercontrol_token|g' $clustercontrol::params::wwwroot/cmonapi/config/bootstrap.php && \
+	    command => "sed -i 's|GENERATED_CMON_TOKEN|$api_token|g' $clustercontrol::params::wwwroot/cmonapi/config/bootstrap.php && \
 	    sed -i 's|clustercontrol.severalnines.com|$ip_address\/clustercontrol|g' $clustercontrol::params::wwwroot/cmonapi/config/bootstrap.php"
 	  }
 	  

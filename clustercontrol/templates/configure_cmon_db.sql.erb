@@ -14,6 +14,6 @@ INSERT IGNORE INTO cmon.cmon_configuration (cid, param, value) VALUES (1, 'OS_US
 <% if @real_sudo_password then -%>
 INSERT IGNORE INTO cmon.cmon_configuration (cid, param, value) VALUES (1, 'SUDO','<%= @real_sudo_password %>');
 <% end -%>
-UPDATE dcps.users SET email='<%= @email_address %>', uuid='<%=  @clustercontrol_token %>' WHERE id=1;
+UPDATE dcps.users SET email='<%= @email_address %>', uuid='<%=  @api_token %>' WHERE id=1;
 REPLACE INTO dcps.apis (id, company_id, user_id, url, token) VALUES (1, 1, 1, 'https://127.0.0.1/cmonapi','<%= @clustercontrol_token %>');
 REPLACE INTO dcps.clusters(id, company_id, cluster_id, api_id, name, type, status, created, created_by) VALUES (<%= @cluster_id %>, 1, <%= @cluster_id %>, 1, '<%= @cluster_name %>', '<%= @cluster_type %>', 100, NOW(), 1);

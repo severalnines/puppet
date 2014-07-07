@@ -13,7 +13,7 @@
     "tests/init.pp": "707c446d2531da34c2c96dd10dbc345d",
     "spec/spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",
     "manifests/params.pp": "d8d480766a87f2ad9e1a987a2bf0f6b6",
-    "manifests/init.pp": "61f286c857b313c6e4e882b4ee6479f9",
+    "manifests/init.pp": "9d9650fb927c482f2149d8d60df04ba6",
     "templates/s9s-repo.list.erb": "1dfde1aeb7e58e1889ecb6267773c66e",
     "files/s9s_helper.sh": "7026b10a900fae869f035766280d0c0c",
     "templates/database.php.erb": "04ba36b03ccc571704eae136835ef116",

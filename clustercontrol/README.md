@@ -139,7 +139,7 @@ Default: 'root'
 If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.
 Example: 'mysud0p4ssword'
 
-####`clustercontrol_token`
+####`api_token`
 Specify the 40-character ClusterControl token generated from s9s_helper script.
 Example: 'b7e515255db703c659677a66c4a17952515dbaf5'
 
