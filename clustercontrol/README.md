@@ -124,7 +124,7 @@ Define whether the node is ClusterControl controller host. All database nodes th
 Default: true
 
 ####`clustercontrol_host`
-Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled). Only specify this option on nodes that you want ClusterControl to manage.
+Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.
 Example: '192.168.0.10'
 
 ####`email_address`

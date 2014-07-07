@@ -13,7 +13,7 @@
 
 class clustercontrol (
   $is_controller            = true,
-  $controller_ip_address    = '', 
+  $clustercontrol_host      = '', 
   $cluster_id               = '1',
   $cluster_name             = 'default_cluster_1',
   $cluster_type             = 'galera',
@@ -319,7 +319,7 @@ class clustercontrol (
 	  ssh_authorized_key { '$ssh_user' :
 	    ensure => present,
 	    key    => generate('/bin/bash', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
-	    name   => "$ssh_user@$controller_ip_address",
+	    name   => "$ssh_user@$clustercontrol_host",
 	    user   => "$ssh_user",
 	    type   => 'ssh-rsa',
 	    notify => Exec['grant-cmon-controller','grant-cmon-localhost','grant-cmon-127.0.0.1']
@@ -327,7 +327,7 @@ class clustercontrol (
 	  
 		exec { 'grant-cmon-controller' :
 		  onlyif  => 'which mysql',
-		  command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$controller_ip_address\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		  command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$clustercontrol_host\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		  }
 		
 		exec { "grant-cmon-localhost" :
