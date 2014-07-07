@@ -93,7 +93,6 @@ node "galera1.local", "galera2.local", "galera3.local" {
                 is_controller => false,
 	            ssh_user => 'root',
                 mysql_root_password => 'dpassword',
-                mysql_cmon_password => 'cmon',
                 clustercontrol_host => '192.168.1.10'
         }
 }
@@ -103,9 +102,7 @@ node "clustercontrol.local" {
                 email_address => 'youremail@domain.tld',
                 ssh_user => 'root',
                 mysql_server_addresses => '192.168.1.11,192.168.1.12,192.168.1.13',
-                mysql_cmon_root_password => 'dpassword',
-                mysql_cmon_password => 'cmon',
-                clustercontrol_token => 'b7e515255db703c659677a66c4a17952515dbaf5'
+                api_token => 'b7e515255db703c659677a66c4a17952515dbaf5'
         }
 }
 ```
