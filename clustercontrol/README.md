@@ -60,7 +60,7 @@ Make sure you meet following criteria prior to the deployment:
 
 ###Pre-installation
 
-ClusterControl requires proper SSH key configuration and a ClusterControl API token. Use the helper script located at $modulepath/clustercontrol/files/s9s_helper.sh to generate them.
+ClusterControl requires proper SSH key configuration and a ClusterControl API token. Use the helper script located at `$modulepath/clustercontrol/files/s9s_helper.sh` to generate them.
 
 * Generate SSH key to be used by ClusterControl to manage your database nodes. Run following command in Puppet master:
 ```bash
@@ -91,10 +91,10 @@ Example node definition:
 node "galera1.local", "galera2.local", "galera3.local" {
         class {'clustercontrol':
                 is_controller => false,
-	    ssh_user => 'root',
+	            ssh_user => 'root',
                 mysql_root_password => 'dpassword',
                 mysql_cmon_password => 'cmon',
-                controller_ip_address => '192.168.1.10'
+                clustercontrol_host => '192.168.1.10'
         }
 }
 node "clustercontrol.local" {
@@ -123,8 +123,8 @@ Following options are used for the general ClusterControl set up:
 Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.
 Default: true
 
-####`controller_ip_address`
-Specify the IP address of the ClusterControl node. Only specify this setting on nodes that you want ClusterControl to manage.
+####`clustercontrol_host`
+Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled). Only specify this option on nodes that you want ClusterControl to manage.
 Example: '192.168.0.10'
 
 ####`email_address`
