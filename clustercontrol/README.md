@@ -157,7 +157,7 @@ Give your monitored database cluster a name.
 Default: 'default_cluster_1'
 
 ####`cluster_type`
-The database cluster type. Supported values: galera, mysqlcluster, replication, mongodb
+The database cluster type. MySQL replication falls under mysql_single. Supported values: galera, mysqlcluster, mongodb, mysql_single
 Default: 'galera'
 
 ####`ssh_port`

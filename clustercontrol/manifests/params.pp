@@ -1,9 +1,10 @@
 class clustercontrol::params {
   $repo_host = 'repo.severalnines.com'
-  $cc_controller = 'cmon-controller'
+  $cc_controller = 'clustercontrol-controller'
   $cc_cmonapi = 'clustercontrol-cmonapi'
   $cc_ui = 'clustercontrol'
   $cmon_conf = '/etc/cmon.cnf'
+  $cmon_sql_path    = '/usr/share/cmon'
   
   case $osfamily {
     'Redhat': {
@@ -14,7 +15,6 @@ class clustercontrol::params {
       $apache_user      = 'apache'
       $apache_service   = 'httpd'
       $wwwroot          = '/var/www/html'
-      $cmon_sql_path    = '/usr/share/cmon'
       $mysql_service    = 'mysqld'
       $mysql_cnf        = '/etc/my.cnf'
       $mysql_packages   = ['mysql','mysql-server']
@@ -43,6 +43,18 @@ class clustercontrol::params {
         ensure  => present,
         content => template('clustercontrol/ssl.conf.erb'),
         notify  => Service[$apache_service]
+      }
+      
+      file { '/etc/selinux/config':
+        ensure  => present,
+        content => template('clustercontrol/selinux-config.erb'),
+      }
+      
+      exec { 'disable-extra-security' :
+        path        => ['/usr/sbin','/bin'],
+        unless      => 'grep SELINUX=disabled /etc/sysconfig/selinux',
+        command     => 'setenforce 0',
+        require     => File['/etc/selinux/config']
       }
       
     }
@@ -75,7 +87,6 @@ class clustercontrol::params {
       $key_file         = '/etc/ssl/private/s9server.key'
       $apache_user      = 'www-data'
       $apache_service   = 'apache2'
-      $cmon_sql_path    = '/usr/local/cmon/share/cmon'
       $mysql_service    = 'mysql'
       $mysql_cnf        = '/etc/mysql/my.cnf'
       $repo_list        = "deb [arch=amd64] http://$repo_host/deb ubuntu main"
@@ -135,6 +146,12 @@ class clustercontrol::params {
           ensure => 'link',
           target => "$apache_conf_file"
         }
+        
+      exec { 'disable-extra-security' :
+        path        => ['/usr/sbin', '/usr/bin'],
+        onlyif      => 'which apparmor_status',
+        command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+      }
     }
     default: {
     }

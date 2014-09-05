@@ -96,7 +96,8 @@ class clustercontrol (
 	    }
 	  
 	  package { $clustercontrol::params::mysql_packages :
-	    ensure  => installed
+	    ensure  => installed,
+	    notify  => Exec['disable-extra-security']
 	  }
 	  
 	  exec { 'create-root-password' :

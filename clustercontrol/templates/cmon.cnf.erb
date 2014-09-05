@@ -14,8 +14,12 @@ name=<%= @cluster_name %>
 mode=controller
 agentless=1
 
-# cluster type = [mysqlcluster|galera|replication|mongodb]
+# cluster type = [mysqlcluster|galera|mysql_single|mongodb]
+<% if @cluster_type == 'replication' then -%>
+type=mysql_single
+<% else -%>
 type=<%= @cluster_type %>
+<% end -%>
 
 # location of mysql basedir, e.g /usr or /usr/local/mysql
 mysql_basedir=<%= @mysql_basedir %>
