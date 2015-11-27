@@ -1,20 +1,22 @@
 name    'severalnines-clustercontrol'
-version '0.1.3'
+version '0.1.4'
 source 'https://github.com/severalnines/puppet'
 author 'Ashraf Sharif'
-license 'Copyright (C) 2014 Severalnines AB. Licensed under the Licensed under (Apache 2.0).'
-summary 'Installs ClusterControl on your existing database cluster.'
-description 'ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manager and scale your database cluster. This module will install ClusterControl and configure it to manage and monitor an existing database cluster. 
+license 'Copyright (C) 2015 Severalnines AB. Licensed under the Licensed under (Apache 2.0).'
+summary 'Installs ClusterControl, for your new database node/cluster deployment or on top of your existing database node/cluster.'
+description 'ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and all of its components and dependencies. 
 
 Supported database clusters:
 * Galera Cluster for MySQL
 * Percona XtraDB Cluster
 * MariaDB Galera Cluster
 * MySQL Replication
+* MySQL single instance
 * MySQL Cluster
 * MongoDB Replica Set
 * MongoDB Sharded Cluster
-* TokuMX Cluster'
+* TokuMX Cluster
+* PostgreSQL single instance'
 project_page '(https://forge.puppetlabs.com/severalnines/clustercontrol)'
 
 ## Add dependencies, if any:

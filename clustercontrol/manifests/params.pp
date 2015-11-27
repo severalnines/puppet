@@ -8,19 +8,28 @@ class clustercontrol::params {
   
   case $osfamily {
     'Redhat': {
+      if ($operatingsystemmajrelease > 6) {
+        $mysql_packages   = ['mariadb','mariadb-server']
+        $mysql_service    = 'mariadb'
+        $cc_dependencies  = [
+          'httpd', 'wget', 'mailx', 'cronie', 'nmap-ncat', 'bind-utils', 'curl', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl'
+        ]
+      } else {
+        $mysql_packages   = ['mysql','mysql-server']
+        $mysql_service    = 'mysqld'
+        $cc_dependencies  = [
+          'httpd', 'wget', 'mailx', 'cronie', 'nc', 'bind-utils', 'curl', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl'
+        ]
+      }
       $apache_conf_file = '/etc/httpd/conf/httpd.conf'
       $apache_ssl_conf_file = '/etc/httpd/conf.d/ssl.conf'
       $cert_file        = '/etc/pki/tls/certs/s9server.crt'
-      $key_file        = '/etc/pki/tls/certs/s9server.key'
+      $key_file         = '/etc/pki/tls/certs/s9server.key'
       $apache_user      = 'apache'
       $apache_service   = 'httpd'
       $wwwroot          = '/var/www/html'
-      $mysql_service    = 'mysqld'
       $mysql_cnf        = '/etc/my.cnf'
-      $mysql_packages   = ['mysql','mysql-server']
-      $cc_dependencies  = [
-        'httpd', 'wget', 'mailx', 'cronie', 'nc', 'curl', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl'
-      ]
+      
       yumrepo {
         "s9s-repo":
           descr     => "Severalnines Release Repository",
@@ -59,7 +68,7 @@ class clustercontrol::params {
       
     }
     'Debian': {
-      if ($operatingsystem == 'Ubuntu') and ($lsbmajdistrelease > 12) {
+      if ($operatingsystem == 'Ubuntu' and $lsbmajdistrelease > 12) or ($operatingsystem == 'Debian' and $lsbmajdistrelease > 7){
         $wwwroot          = '/var/www/html'
         $apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
         $apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
@@ -93,7 +102,7 @@ class clustercontrol::params {
       $repo_source      = '/etc/apt/sources.list.d/s9s-repo.list'
       $mysql_packages   = ['mysql-client','mysql-server']
       $cc_dependencies  = [
-        'apache2', 'wget', 'mailutils', 'curl', 'php5-common', 'php5-mysql', 'php5-gd', 'php5-ldap', 'php5-curl', 'libapache2-mod-php5', 'php5-json'
+        'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php5-common', 'php5-mysql', 'php5-gd', 'php5-ldap', 'php5-curl', 'libapache2-mod-php5', 'php5-json'
       ]
 
       exec { 'apt-update-severalnines' :

@@ -1,33 +1,38 @@
 {
-  "author": "Ashraf Sharif",
-  "checksums": {
-    "Rakefile": "f37e6131fe7de9a49b09d31596f5fbf1",
-    "templates/s9s-ssl.conf.erb": "ddf4b56d2ad70287fdee08086b679307",
-    "templates/cmon.cnf.erb": "2600ee92d4bc52d49902225166747c51",
-    "templates/ssl.conf.erb": "ae7babe4ea64d8aa590a61b5c8426368",
-    "templates/my.cnf.erb": "ec51157ca932d47e328fbb52ac1be1be",
-    "templates/s9s.conf.erb": "97ebc733483b82f068aefb3406c5b84e",
-    "Modulefile": "4a3233c9f683e048a932708e59393fe9",
-    "templates/configure_cmon_db.sql.erb": "628f13456985be0ded603f40d078fb28",
-    "spec/spec.opts": "a600ded995d948e393fbe2320ba8e51c",
-    "tests/init.pp": "707c446d2531da34c2c96dd10dbc345d",
-    "spec/spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",
-    "manifests/params.pp": "c06bf2563f48774a910a2313b1916381",
-    "manifests/init.pp": "e96829e707f29e013bb028cc4ff9d15e",
-    "templates/s9s-repo.list.erb": "1dfde1aeb7e58e1889ecb6267773c66e",
-    "files/s9s_helper.sh": "7026b10a900fae869f035766280d0c0c",
-    "templates/selinux-config.erb": "d9f67bbd5809a1cf0c02aa6e74986597",
-    "templates/database.php.erb": "04ba36b03ccc571704eae136835ef116",
-    "CHANGELOG": "d19853106bfa001f41ae172d79e96107",
-    "README.md": "6d47b0af1a9af10d11e457ec397f0a1e"
-  },
-  "dependencies": [],
-  "description": "ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manager and scale your database cluster. This module will install ClusterControl and configure it to manage and monitor an existing database cluster. \n\nSupported database clusters:\n* Galera Cluster for MySQL\n* Percona XtraDB Cluster\n* MariaDB Galera Cluster\n* MySQL Replication\n* MySQL Cluster\n* MongoDB Replica Set\n* MongoDB Sharded Cluster\n* TokuMX Cluster",
-  "license": "Copyright (C) 2014 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
   "name": "severalnines-clustercontrol",
-  "project_page": "(https://forge.puppetlabs.com/severalnines/clustercontrol)",
+  "version": "0.1.4",
+  "author": "Ashraf Sharif",
+  "summary": "Installs ClusterControl, for your new database node/cluster deployment or on top of your existing database node/cluster.",
+  "license": "Copyright (C) 2015 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
   "source": "https://github.com/severalnines/puppet",
-  "summary": "Installs ClusterControl on your existing database cluster.",
-  "types": [],
-  "version": "0.1.3"
+  "project_page": "(https://forge.puppetlabs.com/severalnines/clustercontrol)",
+  "issues_url": "https://github.com/severalnines/puppet/issues",
+  "checksums": {
+    "CHANGELOG": "d19853106bfa001f41ae172d79e96107",
+    "Modulefile": "4a3233c9f683e048a932708e59393fe9",
+    "README.md": "6d47b0af1a9af10d11e457ec397f0a1e",
+    "Rakefile": "f37e6131fe7de9a49b09d31596f5fbf1",
+    "files/s9s_helper.sh": "7026b10a900fae869f035766280d0c0c",
+    "manifests/init.pp": "e96829e707f29e013bb028cc4ff9d15e",
+    "manifests/params.pp": "c06bf2563f48774a910a2313b1916381",
+    "spec/spec.opts": "a600ded995d948e393fbe2320ba8e51c",
+    "spec/spec_helper.rb": "3ea886dd135e120afa31e0aab12e85b0",
+    "templates/cmon.cnf.erb": "2600ee92d4bc52d49902225166747c51",
+    "templates/configure_cmon_db.sql.erb": "628f13456985be0ded603f40d078fb28",
+    "templates/database.php.erb": "04ba36b03ccc571704eae136835ef116",
+    "templates/my.cnf.erb": "ec51157ca932d47e328fbb52ac1be1be",
+    "templates/s9s-repo.list.erb": "1dfde1aeb7e58e1889ecb6267773c66e",
+    "templates/s9s-ssl.conf.erb": "ddf4b56d2ad70287fdee08086b679307",
+    "templates/s9s.conf.erb": "97ebc733483b82f068aefb3406c5b84e",
+    "templates/selinux-config.erb": "d9f67bbd5809a1cf0c02aa6e74986597",
+    "templates/ssl.conf.erb": "ae7babe4ea64d8aa590a61b5c8426368",
+    "tests/init.pp": "707c446d2531da34c2c96dd10dbc345d"
+  },
+  "description": "ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and all of its components and dependencies. \n\nSupported database clusters:\n* Galera Cluster for MySQL\n* Percona XtraDB Cluster\n* MariaDB Galera Cluster\n* MySQL Replication\n* MySQL single instance\n* MySQL Cluster\n* MongoDB Replica Set\n* MongoDB Sharded Cluster\n* TokuMX Cluster\n* PostgreSQL single instance",
+  "types": [
+  
+  ],
+  "dependencies": [
+  
+  ]
 }

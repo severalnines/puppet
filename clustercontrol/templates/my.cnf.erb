@@ -7,8 +7,6 @@
 user=mysql
 basedir=/usr
 datadir=/var/lib/mysql
-pid-file=<% if @osfamily == 'Debian' %>mysqld.pid<% else %>/var/run/mysqld/mysqld.pid<% end %>
-socket=/var/run/mysqld/mysqld.sock
 port=3306
 log-error=error.log
 
@@ -42,15 +40,8 @@ thread-cache-size = 64
 table-open_cache = 512
 lower-case-table-names = 0
 
-[MYSQL]
-socket=/var/run/mysqld/mysqld.sock
-
-[client]
-port=3306
-socket=/var/run/mysqld/mysqld.sock
-
 [MYSQLD_SAFE]
 basedir=/usr
 datadir=/var/lib/mysql
-pid-file=<% if @osfamily == 'Debian' %>mysqld.pid<% else %>/var/run/mysqld/mysqld.pid<% end %>
 log-error=error.log
+

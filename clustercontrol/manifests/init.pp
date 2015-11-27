@@ -14,11 +14,7 @@
 class clustercontrol (
   $is_controller            = true,
   $clustercontrol_host      = '', 
-  $cluster_id               = '1',
-  $cluster_name             = 'default_cluster_1',
-  $cluster_type             = 'galera',
   $ip_address               = $ipaddress,
-  $email_address            = 'admin@domain.com',
   $api_token                = '',
   $ssh_user                 = 'root',
   $ssh_port                 = '22',
@@ -31,21 +27,8 @@ class clustercontrol (
   $mysql_cmon_root_password = 'password',
   $mysql_cmon_password      = 'cmon',
   $mysql_cmon_port          = '3306',
-  $skip_name_resolve        = '1',
-  $galera_port              = '4567',
-  $vendor                   = 'percona',
-  $datanode_addresses       = undef,
-  $mgmnode_addresses        = undef,
-  $ndb_connectstring        = undef,
-  $ndb_binary               = 'ndbd',
-  $mysql_basedir            = '/usr',
-  $datadir                  = '/var/lib/mysql',
-  $mongodb_server_addresses       = '',
-  $mongoarbiter_server_addresses  = undef,
-  $mongocfg_server_addresses      = undef,
-  $mongos_server_addresses  = undef,
-  $mongodb_basedir          = '/usr',
   $modulepath               = '/etc/puppet/modules/clustercontrol',
+  $datadir                  = '/var/lib/mysql',
   $use_repo                 = true,
   $enabled                  = true,
 ) {
@@ -63,9 +46,14 @@ class clustercontrol (
     $rssh_opts             = '-nqtt'
     if ($sudo_password  != undef) { $real_sudo_password = "echo $sudo_password | sudo -S" } else { $real_sudo_password = 'sudo' }
   }
-    
-  $ssh_identity     = "$user_home/.ssh/id_rsa_s9s"
-  $ssh_identity_pub = "$user_home/.ssh/id_rsa_s9s.pub"
+  if ($ssh_key == '') {
+  	$ssh_identity     = "$user_home/.ssh/id_rsa_s9s"
+  	$ssh_identity_pub = "$user_home/.ssh/id_rsa_s9s.pub"
+  } else {
+  	$ssh_identity     = "$ssh_key"
+  	$ssh_identity_pub = "$ssh_key.pub"
+  }
+  
   $backup_dir       = "$user_home/backups"
   $staging_dir      = "$user_home/s9s_tmp"
   
@@ -239,9 +227,7 @@ class clustercontrol (
 	  file { [
 	    "$clustercontrol::params::wwwroot/cmon/",
 	    "$clustercontrol::params::wwwroot/cmon/upload",
-	    "$clustercontrol::params::wwwroot/cmon/upload/schema",
-	    "$clustercontrol::params::wwwroot/clustercontrol/",
-	    "$clustercontrol::params::wwwroot/cmonapi/"
+	    "$clustercontrol::params::wwwroot/cmon/upload/schema"
 	  ] :
 	    ensure  => directory,
 	    recurse => true,
@@ -285,6 +271,7 @@ class clustercontrol (
 	    ensure  => present,
 	    replace => no,
 	    source  => "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php.default",
+	    require => Package["$clustercontrol::params::cc_ui"],
 	    notify  => Exec['configure-cc-bootstrap']
 	  }
 	  
@@ -343,3 +330,4 @@ class clustercontrol (
       }
 	}
 }
+

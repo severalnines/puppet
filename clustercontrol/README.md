@@ -14,17 +14,19 @@
 
 ##Overview
 
-Installs ClusterControl on your existing database cluster. ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manager and scale your database cluster. This module will install ClusterControl and configure it to manage and monitor an existing database cluster. 
+Installs ClusterControl for your new database node/cluster deployment or on top of your existing database node/cluster. ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and configure it to manage and monitor an existing database cluster. 
 
 Supported database clusters:
 * Galera Cluster for MySQL
 * Percona XtraDB Cluster
 * MariaDB Galera Cluster
 * MySQL Replication
+* MySQL single instance
 * MySQL Cluster
 * MongoDB Replica Set
 * MongoDB Sharded Cluster
 * TokuMX Cluster
+* PostgreSQL single instance
 
 More details at [Severalnines](http://www.severalnines.com/clustercontrol) website.
 
@@ -53,10 +55,7 @@ If you have any questions, you are welcome to get in touch via our [contact us](
 
 Make sure you meet following criteria prior to the deployment:
 * ClusterControl node must run on a clean dedicated host with internet connection.
-* ClusterControl node must run on the same operating system distribution with your database hosts (mixing Debian with Ubuntu or CentOS with Red Hat is possible)
-* Make sure your database cluster is up and running.
-* If you are running as sudo user, make sure the user is able to escalate to root with sudo command.
-* SELinux/AppArmor must be turned off. Services or ports to be enabled are listed [here](http://www.severalnines.com/docs/clustercontrol-administration-guide/administration/securing-clustercontrol).
+* If you are running as non-root user, make sure the user is able to escalate to root with sudo command.
 
 ###Pre-installation
 
@@ -86,35 +85,34 @@ galera2.local 		    192.168.1.12
 galera3.local 		    192.168.1.13
 ```
 
-Example node definition:
+Example node definition for ClusterControl node:
 ```puppet
-node "galera1.local", "galera2.local", "galera3.local" {
-        class {'clustercontrol':
-                is_controller => false,
-	            ssh_user => 'root',
-                mysql_root_password => 'dpassword',
-                clustercontrol_host => '192.168.1.10'
-        }
-}
 node "clustercontrol.local" {
         class { 'clustercontrol':
                 is_controller => true,
-                email_address => 'youremail@domain.tld',
                 ssh_user => 'root',
-                mysql_server_addresses => '192.168.1.11,192.168.1.12,192.168.1.13',
                 api_token => 'b7e515255db703c659677a66c4a17952515dbaf5'
         }
 }
 ```
 
-Once deployment is complete, open the ClusterControl web UI at https://[ClusterControl IP address]/clustercontrol and login with specified email address with default password 'admin'.
+Once deployment is complete, open the ClusterControl web UI at https://[ClusterControl IP address]/clustercontrol and create a default admin login. You can now start to add existing database node/cluster, or deploy a new one. Ensure that passwordless SSH is configured properly from ClusterControl node to all DB nodes beforehand. 
 
+To setup passwordless SSH on target database nodes, you can use following definition:
+```puppet
+node "galera1.local", "galera2.local", "galera3.local" {
+        class {'clustercontrol':
+                is_controller => false,
+                ssh_user => 'root',
+                mysql_root_password => 'dpassword',
+                clustercontrol_host => '192.168.1.10'
+        }
+}
+```
 
 ##Usage
 
-###ClusterControl General Options
-
-Following options are used for the general ClusterControl set up:
+###General Options
 
 ####`is_controller`
 Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.
@@ -131,6 +129,15 @@ Default: 'admin@domain.com'
 ####`ssh_user`
 Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.
 Default: 'root'
+
+####`ssh_key`
+Specify the SSH key used by ``ssh_user`` to perform passwordless SSH to the database nodes.
+Default: '/home/$USER/.ssh/id_rsa' (non-root,sudoer)
+Default: '/root/.ssh/id_rsa' (root)
+
+####`ssh_port`
+Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.
+Default: 22
 
 ####`sudo_password`
 If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.
@@ -152,106 +159,30 @@ Default: 'cmon'
 MySQL server port that holds CMON database.
 Default: 3306
 
-####`cluster_name`
-Give your monitored database cluster a name.
-Default: 'default_cluster_1'
-
-####`cluster_type`
-The database cluster type. MySQL replication falls under mysql_single. Supported values: galera, mysqlcluster, mongodb, mysql_single
-Default: 'galera'
-
-####`ssh_port`
-Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.
-Default: 22
-
 ####`datadir`
-Comma-separated list of database's data directory that should be monitored by ClusterControl. MySQL is equal to datadir while MongoDB is equal to dbpath.
-Example: '/var/lib/mysql,/var/lib/mysqlcluster'
+MySQL datadir on ClusterControl node.
+Default: '/var/lib/mysql'
 
 ####`modulepath`
 Change this to the location of Puppet's module path.
 Default: '/etc/puppet/modules/clustercontrol'
 
-###MySQL Specific Options
-
-Following options are used for supported MySQL-based cluster type particularly Galera Cluster, MySQL Replication or MySQL Cluster.
-
-####`mysql_basedir`
-The location of MySQL base directory of monitored MySQL servers, equal to @@basedir.
-Default: '/usr'
-
-####`mysql_server_addresses`
-Comma-separated list of MySQL servers' IP address that ClusterControl should monitor. For MySQL cluster, specify the MySQL API nodes list instead.
-Example: '12.12.12.12,13.13.13.13,14.14.14.14'
-
-####`vendor`
-Database cluster provider (Galera Clusters only). Supported values: percona, mariadb or codership.
-Default: 'percona'
-
-####`mysql_root_password`
-MySQL root password of your database cluster to be monitored by ClusterControl.
-Default: 'password'
-
-####`galera_port`
-Galera cluster port of monitored cluster.
-Default: 4567
-
-####`datanode_addresses`
-Comma-separated list of MySQL data nodes' IP address that ClusterControl should monitor (MySQL Cluster only).
-Example: '12.12.12.12,13.13.13.13,14.14.14.14'
-
-####`mgmnode_addresses`
-Comma-separated list of MySQL data nodes' IP address that ClusterControl should monitor (MySQL Cluster only).
-Example: '12.12.12.12,13.13.13.13,14.14.14.14'
-
-####`ndb_connectstring`
-NDB connection string used by MySQL Cluster (MySQL Cluster only).
-Example: '12.12.12.12:1186,13.13.13.13:1186'
-
-####`ndb_binary`
-Type of NDB binary that used by the monitored MySQL Cluster, either ndbd or ndbmtd.
-Default: 'ndbd'
-
-###MongoDB Specific Options
-
-Following options are used for supported MongoDB and TokuMX cluster type particularly Sharded Cluster or Replica Set.
-
-####`mongodb_server_addresses`
-Comma-separated list of IP address/hostname with port of MongoDB/TokuMX shard/replica set nodes that ClusterControl should monitor.
-Example: '12.12.12.12:27017,13.13.13.13:27017'
-
-####`mongoarbiter_server_addresses`
-Comma-separated list of IP address/hostname with port of MongoDB/TokuMX arbiter node (if any) that ClusterControl should monitor.
-Example: '12.12.12.12:30000,13.13.13.13:30000'
-
-####`mongocfg_server_addresses`
-Comma-separated list of IP address/hostname with port of MongoDB/TokuMX config node (sharded cluster only) that ClusterControl should monitor.
-Example: '12.12.12.12:27019,13.13.13.13:27019'
-
-####`mongos_server_addresses`
-Comma-separated list of IP address/hostname with port of MongoDB/TokuMX mongos node (sharded cluster only) that ClusterControl should monitor.
-Example: '12.12.12.12:27017,13.13.13.13:27017'
-
-####`mongodb_basedir`
-MongoDB/TokuMX base directory of monitored MongoDB servers.
-Defaut: '/usr'
-
-
 ##Limitations
 
 This module has been tested on following platforms:
-* Debian 7.* (wheezy)
-* Debian 6.* (squeeze)
+* Debian 8.x (jessie)
+* Debian 7.x (wheezy)
+* Debian 6.x (squeeze)
 * Ubuntu 14.04 LTS (trusty)
 * Ubuntu 12.04 LTS (precise)
 * Ubuntu 10.04 LTS (lucid)
-* RHEL 5/6
-* CentOS 5/6
+* RHEL/CentOS 6/7
 
 This module only supports bootstrapping MySQL servers with IP address only (it expects skip-name-resolve is enabled on all MySQL nodes). However, for MongoDB you can specify hostname as described under MongoDB Specific Options.
 
-[ClusterControl known issues and limitations](http://www.severalnines.com/docs/clustercontrol-troubleshooting-guide/known-issues-limitations).
+[ClusterControl known issues and limitations](http://www.severalnines.com/docs/troubleshooting.html#known-issues-and-limitations).
 
 ##Development
 
 Please report bugs or suggestions via our support channel: [https://support.severalnines.com](https://support.severalnines.com)
+
