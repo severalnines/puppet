@@ -5,7 +5,7 @@
   "summary": "Installs ClusterControl, for your new database node/cluster deployment or on top of your existing database node/cluster.",
   "license": "Copyright (C) 2015 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
   "source": "https://github.com/severalnines/puppet",
-  "project_page": "(https://forge.puppetlabs.com/severalnines/clustercontrol)",
+  "project_page": "https://forge.puppetlabs.com/severalnines/clustercontrol",
   "issues_url": "https://github.com/severalnines/puppet/issues",
   "checksums": {
     "CHANGELOG": "d19853106bfa001f41ae172d79e96107",
