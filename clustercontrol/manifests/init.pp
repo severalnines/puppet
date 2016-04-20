@@ -64,11 +64,11 @@ class clustercontrol (
     include clustercontrol::params
     
     service { $clustercontrol::params::mysql_service :
-      ensure    => running,
-      enable    => true,
-      hasrestart=> true,
-      hasstatus => true,
-      require   => [
+      ensure     => running,
+      enable     => true,
+      hasrestart => true,
+      hasstatus  => true,
+      require    => [
         Package[$clustercontrol::params::mysql_packages],
         File[$datadir],
         ],
@@ -77,16 +77,16 @@ class clustercontrol (
     }
     
     file { $clustercontrol::params::mysql_cnf :
-      ensure => present,
-      content=> template('clustercontrol/my.cnf.erb'),
-      owner  => root,
-      group  => root,
-      mode   => '0644'
+      ensure  => present,
+      content => template('clustercontrol/my.cnf.erb'),
+      owner   => root,
+      group   => root,
+      mode    => '0644'
       }
     
     package { $clustercontrol::params::mysql_packages :
-      ensure=> installed,
-      notify=> Exec['disable-extra-security']
+      ensure => installed,
+      notify => Exec['disable-extra-security']
     }
     
     exec { 'create-root-password' :
@@ -137,7 +137,7 @@ class clustercontrol (
       ],
       command => "mysql -f -u root -p\"${mysql_cmon_root_password}\" cmon < ${clustercontrol::params::cmon_sql_path}/cmon_db.sql && \
 	    mysql -f -u root -p\"${mysql_cmon_root_password}\" cmon < ${clustercontrol::params::cmon_sql_path}/cmon_data.sql",
-      notify => Exec['configure-cmon-db']
+      notify  => Exec['configure-cmon-db']
     }
     
     exec { 'configure-cmon-db' :
@@ -162,7 +162,7 @@ class clustercontrol (
     file { $datadir :
       ensure  => directory,
       owner   => mysql,
-      group  => mysql,
+      group   => mysql,
       require => Package[$clustercontrol::params::mysql_packages],
       notify  => Service[$clustercontrol::params::mysql_service]
     }
@@ -177,13 +177,13 @@ class clustercontrol (
     }
     
     package { $clustercontrol::params::cc_controller :
-      ensure => installed,
+      ensure  => installed,
       require => [$clustercontrol::params::severalnines_repo,Package[$clustercontrol::params::cc_dependencies]]
     }
   
     package { $clustercontrol::params::cc_dependencies :
-      ensure=> installed,
-      notify=> [
+      ensure => installed,
+      notify => [
         Exec ['allow-override-all'],
         File [$clustercontrol::params::cert_file, $clustercontrol::params::key_file, $clustercontrol::params::apache_ssl_conf_file]
       ]
@@ -198,11 +198,11 @@ class clustercontrol (
     package { $clustercontrol::params::cc_cmonapi : ensure => present, require => Package[$clustercontrol::params::cc_controller] }
     
     service { $clustercontrol::params::apache_service :
-      ensure    => $service_status,
-      enable    => $enabled,
-      require   => Package[$clustercontrol::params::cc_dependencies],
-      hasrestart=> true,
-      hasstatus => true,
+      ensure     => $service_status,
+      enable     => $enabled,
+      require    => Package[$clustercontrol::params::cc_dependencies],
+      hasrestart => true,
+      hasstatus  => true,
       subscribe  => File[$clustercontrol::params::apache_conf_file,$clustercontrol::params::apache_ssl_conf_file]
     }
     
@@ -215,16 +215,16 @@ class clustercontrol (
     }
     
     service { 'cmon' :
-      ensure    => $service_status,
-      enable    => $enabled,
-      require   => Package[
+      ensure     => $service_status,
+      enable     => $enabled,
+      require    => Package[
             $clustercontrol::params::cc_controller,
             $clustercontrol::params::cc_ui,
             $clustercontrol::params::cc_cmonapi
           ],
-      subscribe => File[$clustercontrol::params::cmon_conf],
-      hasrestart=> true,
-      hasstatus => false
+      subscribe  => File[$clustercontrol::params::cmon_conf],
+      hasrestart => true,
+      hasstatus  => false
     }
     
     file { [
@@ -249,11 +249,11 @@ class clustercontrol (
     }
     
     file { $ssh_identity_pub :
-      ensure=> present,
-      owner => $ssh_user,
-      group => $ssh_user,
-      mode  => '0644',
-      source=> 'puppet:///modules/clustercontrol/id_rsa_s9s.pub'
+      ensure => present,
+      owner  => $ssh_user,
+      group  => $ssh_user,
+      mode   => '0644',
+      source => 'puppet:///modules/clustercontrol/id_rsa_s9s.pub'
     }
     
     file { "${clustercontrol::params::wwwroot}/cmonapi/config/bootstrap.php" :
@@ -266,7 +266,7 @@ class clustercontrol (
   
     file { "${clustercontrol::params::wwwroot}/cmonapi/config/database.php" :
       ensure  => present,
-      content=> template('clustercontrol/database.php.erb'),
+      content => template('clustercontrol/database.php.erb'),
       require => Package[$clustercontrol::params::cc_cmonapi]
     }
     
@@ -293,7 +293,7 @@ class clustercontrol (
     exec { 'configure-cc-bootstrap' :
       command => "sed -i 's|DBPASS|${mysql_cmon_password}|g' ${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php && \
 	    sed -i 's|DBPORT|${mysql_cmon_port}|g' ${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php",
-      notify => Service[$clustercontrol::params::apache_service]
+      notify  => Service[$clustercontrol::params::apache_service]
     }
   
     exec { 'configure-cmonapi-bootstrap' :
