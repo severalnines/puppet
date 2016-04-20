@@ -1,3 +1,4 @@
+# Default parameters
 class clustercontrol::params {
   $repo_host = 'repo.severalnines.com'
   $cc_controller = 'clustercontrol-controller'
