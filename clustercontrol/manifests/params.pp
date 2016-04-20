@@ -6,9 +6,9 @@ class clustercontrol::params {
   $cmon_conf = '/etc/cmon.cnf'
   $cmon_sql_path    = '/usr/share/cmon'
   
-  case $osfamily {
+  case $::osfamily {
     'Redhat': {
-      if ($operatingsystemmajrelease > 6) {
+      if ($::operatingsystemmajrelease > 6) {
         $mysql_packages   = ['mariadb','mariadb-server']
         $mysql_service    = 'mariadb'
         $cc_dependencies  = [
@@ -69,7 +69,7 @@ class clustercontrol::params {
       
     }
     'Debian': {
-      if ($operatingsystem == 'Ubuntu' and $lsbmajdistrelease > 12) or ($operatingsystem == 'Debian' and $lsbmajdistrelease > 7){
+      if ($::operatingsystem == 'Ubuntu' and $::lsbmajdistrelease > 12) or ($::operatingsystem == 'Debian' and $::lsbmajdistrelease > 7){
         $wwwroot          = '/var/www/html'
         $apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
         $apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'

@@ -14,7 +14,7 @@
 class clustercontrol (
   $is_controller            = true,
   $clustercontrol_host      = '',
-  $ip_address               = $ipaddress,
+  $ip_address               = $::ipaddress,
   $api_token                = '',
   $ssh_user                 = 'root',
   $ssh_port                 = '22',
@@ -116,8 +116,8 @@ class clustercontrol (
     }
     
     exec { 'grant-cmon-fqdn' :
-      unless  => "mysqladmin -u cmon -p \"${mysql_cmon_password}\" -h\"${fqdn}\" status",
-      command => "mysql -u root -p\"${mysql_cmon_root_password}\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"${fqdn}\" IDENTIFIED BY \"${mysql_cmon_password}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+      unless  => "mysqladmin -u cmon -p \"${mysql_cmon_password}\" -h\"${::fqdn}\" status",
+      command => "mysql -u root -p\"${mysql_cmon_root_password}\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"${::fqdn}\" IDENTIFIED BY \"${mysql_cmon_password}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
     }
     
     exec { 'create-cmon-db' :
