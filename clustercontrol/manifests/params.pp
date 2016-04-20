@@ -29,7 +29,7 @@ class clustercontrol::params {
       $apache_service   = 'httpd'
       $wwwroot          = '/var/www/html'
       $mysql_cnf        = '/etc/my.cnf'
-      
+
       yumrepo {
         's9s-repo':
           descr    => 'Severalnines Release Repository',
@@ -39,7 +39,7 @@ class clustercontrol::params {
           gpgcheck => 1
       }
       $severalnines_repo = Yumrepo['s9s-repo']
-      
+
       file { $apache_conf_file :
           ensure  => present,
           mode    => '0644',
@@ -48,25 +48,25 @@ class clustercontrol::params {
           require => Package[$cc_dependencies],
           notify  => Service[$apache_service]
           }
-      
+
       file { $apache_ssl_conf_file :
         ensure  => present,
         content => template('clustercontrol/ssl.conf.erb'),
         notify  => Service[$apache_service]
       }
-      
+
       file { '/etc/selinux/config':
         ensure  => present,
         content => template('clustercontrol/selinux-config.erb'),
       }
-      
+
       exec { 'disable-extra-security' :
         path    => ['/usr/sbin','/bin'],
         unless  => 'grep SELINUX=disabled /etc/sysconfig/selinux',
         command => 'setenforce 0',
         require => File['/etc/selinux/config']
       }
-      
+
     }
     'Debian': {
       if ($::operatingsystem == 'Ubuntu' and $::lsbmajdistrelease > 12) or ($::operatingsystem == 'Debian' and $::lsbmajdistrelease > 7){
@@ -76,7 +76,7 @@ class clustercontrol::params {
         $apache_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
         $apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
         $extra_options     = 'Require all granted'
-       
+
         file { [
           '/etc/apache2/sites-enabled/000-default.conf',
           '/etc/apache2/sites-enabled/default-ssl.conf',
@@ -92,7 +92,7 @@ class clustercontrol::params {
         $apache_ssl_target_file = '/etc/apache2/sites-enabled/000-default-ssl'
         $extra_options     = ''
       }
-      
+
       $cert_file        = '/etc/ssl/certs/s9server.crt'
       $key_file         = '/etc/ssl/private/s9server.key'
       $apache_user      = 'www-data'
@@ -122,13 +122,13 @@ class clustercontrol::params {
         notify  => Exec['apt-update-severalnines']
       }
       $severalnines_repo = Exec['apt-update-severalnines']
-      
+
       exec { 'enable-apache-modules':
         path    => ['/usr/sbin','/sbin', '/usr/bin'],
         command => 'a2enmod ssl && a2enmod rewrite',
         require => Package[$cc_dependencies]
         }
-      
+
       file { $apache_conf_file :
           ensure  => present,
           content => template('clustercontrol/s9s.conf.erb'),
@@ -138,7 +138,7 @@ class clustercontrol::params {
           require => Package[$cc_ui],
           notify  => File[$apache_target_file]
         }
-      
+
       file { $apache_ssl_conf_file :
           ensure  => present,
           content => template('clustercontrol/s9s-ssl.conf.erb'),
@@ -148,17 +148,17 @@ class clustercontrol::params {
           require => Package[$cc_ui],
           notify  => File[$apache_ssl_target_file]
         }
-        
+
       file { $apache_ssl_target_file :
           ensure => 'link',
           target => $apache_ssl_conf_file
         }
-        
+
       file { $apache_target_file :
           ensure => 'link',
           target => $apache_conf_file
         }
-        
+
       exec { 'disable-extra-security' :
         path    => ['/usr/sbin', '/usr/bin'],
         onlyif  => 'which apparmor_status',
