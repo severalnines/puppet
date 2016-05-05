@@ -61,6 +61,8 @@ class clustercontrol::params {
         content => template('clustercontrol/selinux-config.erb'),
       }
 
+      $apache_default_files = ''
+
       exec { 'disable-extra-security' :
         path    => ['/usr/sbin','/bin'],
         unless  => 'grep SELINUX=disabled /etc/sysconfig/selinux',
@@ -78,13 +80,6 @@ class clustercontrol::params {
         $apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
         $extra_options     = 'Require all granted'
 
-        file { [
-          '/etc/apache2/sites-enabled/000-default.conf',
-          '/etc/apache2/sites-enabled/default-ssl.conf',
-          '/etc/apache2/sites-enabled/001-default-ssl.conf'
-          ] :
-          ensure  => absent,
-        }
       } else {
         $wwwroot          = '/var/www'
         $apache_conf_file = '/etc/apache2/sites-available/default'
@@ -105,6 +100,12 @@ class clustercontrol::params {
       $mysql_packages   = ['mysql-client','mysql-server']
       $cc_dependencies  = [
         'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php5-common', 'php5-mysql', 'php5-gd', 'php5-ldap', 'php5-curl', 'libapache2-mod-php5', 'php5-json'
+      ]
+
+      $apache_default_files = [
+        '/etc/apache2/sites-enabled/000-default.conf',
+        '/etc/apache2/sites-enabled/default-ssl.conf',
+        '/etc/apache2/sites-enabled/001-default-ssl.conf'
       ]
 
       exec { 'apt-update-severalnines' :

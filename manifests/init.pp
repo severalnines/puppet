@@ -44,11 +44,11 @@ class clustercontrol (
   } else {
     $user_home            = "/home/${ssh_user}"
     $rssh_opts             = '-nqtt'
-    if ($sudo_password  != undef) { $real_sudo_password = "echo ${sudo_password} | sudo -S" } else { $real_sudo_password = 'sudo' }
+    if ($sudo_password  != undef) { $real_sudo_password = "echo ${sudo_password} | sudo -S 2>/dev/null" } else { $real_sudo_password = 'sudo' }
   }
   if ($ssh_key == '') {
-    $ssh_identity     = "${user_home}/.ssh/id_rsa_s9s"
-    $ssh_identity_pub = "${user_home}/.ssh/id_rsa_s9s.pub"
+    $ssh_identity     = "${user_home}/.ssh/id_rsa"
+    $ssh_identity_pub = "${user_home}/.ssh/id_rsa.pub"
   } else {
     $ssh_identity     = $ssh_key
     $ssh_identity_pub = "${ssh_key}.pub"
@@ -173,7 +173,14 @@ class clustercontrol (
       group   => root,
       mode    => '0600',
       require => Package[$clustercontrol::params::cc_controller],
-      notify  => [Exec['create-cmon-db'],Service['cmon']]
+      notify  => [Exec['create-cmon-db'],Service['cmon'],Exec['generate-ssh-key'],File['/etc/cmon.d']]
+    }
+
+    file { '/etc/cmon.d' :
+      ensure  => directory,
+      owner   => root,
+      group   => root,
+      mode    => 700,
     }
 
     package { $clustercontrol::params::cc_controller :
@@ -185,17 +192,45 @@ class clustercontrol (
       ensure => installed,
       notify => [
         Exec ['allow-override-all'],
-        File [$clustercontrol::params::cert_file, $clustercontrol::params::key_file, $clustercontrol::params::apache_ssl_conf_file]
+        File [
+          $clustercontrol::params::cert_file, 
+          $clustercontrol::params::key_file, 
+          $clustercontrol::params::apache_ssl_conf_file,
+          $clustercontrol::params::apache_default_files
+        ]
       ]
     }
 
     package { $clustercontrol::params::cc_ui :
       ensure  => present,
       require => Package[$clustercontrol::params::cc_controller],
-      notify  => Exec['create-dcps-db']
+      notify  => [
+        Exec['create-dcps-db'], 
+        File["${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php", "${clustercontrol::params::wwwroot}/clustercontrol"]
+      ]
     }
 
-    package { $clustercontrol::params::cc_cmonapi : ensure => present, require => Package[$clustercontrol::params::cc_controller] }
+    package { $clustercontrol::params::cc_cmonapi : 
+      ensure  => present, 
+      require => Package[$clustercontrol::params::cc_controller],
+      notify  => File[
+        "${clustercontrol::params::wwwroot}/cmonapi/config/bootstrap.php", 
+        "${clustercontrol::params::wwwroot}/cmonapi/config/database.php",
+        "${clustercontrol::params::wwwroot}/cmonapi"
+      ]
+    }
+
+    file { "${clustercontrol::params::wwwroot}/cmonapi" :
+      recurse => true,
+      owner   => $clustercontrol::params::apache_user,
+      group   => $clustercontrol::params::apache_user
+    }
+
+    file { "${clustercontrol::params::wwwroot}/clustercontrol" :
+      recurse => true,
+      owner   => $clustercontrol::params::apache_user,
+      group   => $clustercontrol::params::apache_user
+    }
 
     service { $clustercontrol::params::apache_service :
       ensure     => $service_status,
@@ -206,12 +241,8 @@ class clustercontrol (
       subscribe  => File[$clustercontrol::params::apache_conf_file,$clustercontrol::params::apache_ssl_conf_file]
     }
 
-    ssh_authorized_key { $ssh_user :
-      ensure => present,
-      key    => generate('/bin/bash', "${modulepath}/files/s9s_helper.sh", '--read-key', $modulepath),
-      name   => "${ssh_user}@clustercontrol",
-      user   => $ssh_user,
-      type   => 'ssh-rsa',
+    file { $clustercontrol::params::apache_default_files :
+      ensure  => absent,
     }
 
     service { 'cmon' :
@@ -236,24 +267,8 @@ class clustercontrol (
       recurse => true,
       owner   => $clustercontrol::params::apache_user,
       group   => $clustercontrol::params::apache_user,
-      require => [Package[$clustercontrol::params::cc_ui],File[$ssh_identity, $ssh_identity_pub]],
+      require => Package[$clustercontrol::params::cc_ui],
       notify  => Service['cmon']
-    }
-
-    file { $ssh_identity :
-      ensure => present,
-      owner  => $ssh_user,
-      group  => $ssh_user,
-      mode   => '0600',
-      source => 'puppet:///modules/clustercontrol/id_rsa_s9s'
-    }
-
-    file { $ssh_identity_pub :
-      ensure => present,
-      owner  => $ssh_user,
-      group  => $ssh_user,
-      mode   => '0644',
-      source => 'puppet:///modules/clustercontrol/id_rsa_s9s.pub'
     }
 
     file { "${clustercontrol::params::wwwroot}/cmonapi/config/bootstrap.php" :
@@ -275,7 +290,7 @@ class clustercontrol (
       replace => no,
       source  => "${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php.default",
       require => Package[$clustercontrol::params::cc_ui],
-      notify  => Exec['configure-cc-bootstrap']
+      notify  => Exec['configure-cc-bootstrap', 'generate-ssh-key']
     }
 
     file { $clustercontrol::params::cert_file :
@@ -292,7 +307,8 @@ class clustercontrol (
 
     exec { 'configure-cc-bootstrap' :
       command => "sed -i 's|DBPASS|${mysql_cmon_password}|g' ${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php && \
-	    sed -i 's|DBPORT|${mysql_cmon_port}|g' ${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php",
+	    sed -i 's|DBPORT|${mysql_cmon_port}|g' ${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php && \
+        sed -i 's|RPCTOKEN|${api_token}|g' ${clustercontrol::params::wwwroot}/clustercontrol/bootstrap.php",
       notify  => Service[$clustercontrol::params::apache_service]
     }
   
@@ -306,16 +322,45 @@ class clustercontrol (
       command => "sed -i 's|AllowOverride None|AllowOverride All|g' ${clustercontrol::params::apache_conf_file}"
     }
 
+    exec { 'generate-ssh-key' :
+      unless  => "test -f ${ssh_identity}",
+      command => "ssh-keygen -t rsa -P '' -f ${ssh_identity}",
+      notify  => Exec['copy-ssh-key']
+    }
+
+    exec { 'copy-ssh-key' :
+      unless  => "grep ${ssh_user}@${hostname} ${user_home}/.ssh/authorized_keys > /dev/null",
+      command => "cat ${ssh_identity_pub} >> ${user_home}/.ssh/authorized_keys",
+      require => File["${user_home}/.ssh/authorized_keys"]
+    }
+
+    file { "${user_home}/.ssh/authorized_keys" :
+      ensure  => present,
+      owner   => $ssh_user,
+      group   => $ssh_user,
+      mode    => '0600'
+    }
+
   } else {
 
-    ssh_authorized_key { '$ssh_user' :
-      ensure => present,
-      key    => generate('/bin/bash', "${modulepath}/files/s9s_helper.sh", '--read-key', $modulepath),
-      name   => "${ssh_user}@${clustercontrol_host}",
-      user   => $ssh_user,
-      type   => 'ssh-rsa',
-      notify => Exec['grant-cmon-controller','grant-cmon-localhost','grant-cmon-127.0.0.1']
-      }
+    exec { 'generate-ssh-key' :
+      unless  => "test -f ${ssh_identity}",
+      command => "ssh-keygen -t rsa -P '' -f ${ssh_identity}",
+      notify  => Exec['copy-ssh-key']
+    }
+
+    exec { 'copy-ssh-key' :
+      unless  => "grep ${ssh_user}@${hostname} ${user_home}/.ssh/authorized_keys > /dev/null",
+      command => "cat ${ssh_identity_pub} >> ${user_home}/.ssh/authorized_keys",
+      require => File["${user_home}/.ssh/authorized_keys"]
+    }
+
+    file { "${user_home}/.ssh/authorized_keys" :
+      ensure  => present,
+      owner   => $ssh_user,
+      group   => $ssh_user,
+      mode    => '0600'
+    }
 
     exec { 'grant-cmon-controller' :
       onlyif  => 'which mysql',

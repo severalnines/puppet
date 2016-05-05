@@ -1,8 +1,8 @@
 {
   "name": "severalnines-clustercontrol",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "author": "Ashraf Sharif",
-  "summary": "Installs ClusterControl, for your new database node/cluster deployment or on top of your existing database node/cluster.",
+  "summary": "Installs ClusterControl v1.3.0, for your new database node/cluster deployment or on top of your existing database node/cluster.",
   "license": "Copyright (C) 2015 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
   "source": "https://github.com/severalnines/puppet",
   "project_page": "https://forge.puppetlabs.com/severalnines/clustercontrol",
