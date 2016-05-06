@@ -59,19 +59,10 @@ Make sure you meet following criteria prior to the deployment:
 
 ###Pre-installation
 
-ClusterControl requires proper SSH key configuration and a ClusterControl API token. Use the helper script located at `$modulepath/clustercontrol/files/s9s_helper.sh` to generate them.
-
-* Generate SSH key to be used by ClusterControl to manage your database nodes. Run following command in Puppet master:
-```bash
-$ bash /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-key
-```
-
-* Then, generate an API token:
+ClusterControl requires an API token. Use the helper script located at `$modulepath/clustercontrol/files/s9s_helper.sh` to generate them:
 ```bash
 $ bash /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-token
 ```
-
-*These steps are mandatory and just need to run once (unless if you want to intentionally regenerate them). The first command will generate a RSA key (if not exists) to be used by the module and the key must exist in the Puppet master module's directory before the deployment begins.*
 
 ###Installation
 
@@ -98,16 +89,12 @@ node "clustercontrol.local" {
 
 Once deployment is complete, open the ClusterControl web UI at https://[ClusterControl IP address]/clustercontrol and create a default admin login. You can now start to add existing database node/cluster, or deploy a new one. Ensure that passwordless SSH is configured properly from ClusterControl node to all DB nodes beforehand. 
 
-To setup passwordless SSH on target database nodes, you can use following definition:
-```puppet
-node "galera1.local", "galera2.local", "galera3.local" {
-        class {'clustercontrol':
-                is_controller => false,
-                ssh_user => 'root',
-                mysql_root_password => 'dpassword',
-                clustercontrol_host => '192.168.1.10'
-        }
-}
+To setup passwordless SSH on target database nodes, use following commands on ClusterControl node (as ssh_user), e.g:
+
+```bash
+ssh-copy-id 192.168.1.11  # galera1
+ssh-copy-id 192.168.1.12  # galera2
+ssh-copy-id 192.168.1.13  # galera3
 ```
 
 ##Usage
