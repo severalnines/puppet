@@ -331,7 +331,7 @@ class clustercontrol (
     exec { 'copy-ssh-key' :
       unless  => "grep ${ssh_user}@${hostname} ${user_home}/.ssh/authorized_keys > /dev/null",
       command => "cat ${ssh_identity_pub} >> ${user_home}/.ssh/authorized_keys",
-      require => File["${user_home}/.ssh/authorized_keys"]
+      notify  => File["${user_home}/.ssh/authorized_keys"]
     }
 
     file { "${user_home}/.ssh/authorized_keys" :
@@ -342,25 +342,6 @@ class clustercontrol (
     }
 
   } else {
-
-    exec { 'generate-ssh-key' :
-      unless  => "test -f ${ssh_identity}",
-      command => "ssh-keygen -t rsa -P '' -f ${ssh_identity}",
-      notify  => Exec['copy-ssh-key']
-    }
-
-    exec { 'copy-ssh-key' :
-      unless  => "grep ${ssh_user}@${hostname} ${user_home}/.ssh/authorized_keys > /dev/null",
-      command => "cat ${ssh_identity_pub} >> ${user_home}/.ssh/authorized_keys",
-      require => File["${user_home}/.ssh/authorized_keys"]
-    }
-
-    file { "${user_home}/.ssh/authorized_keys" :
-      ensure  => present,
-      owner   => $ssh_user,
-      group   => $ssh_user,
-      mode    => '0600'
-    }
 
     exec { 'grant-cmon-controller' :
       onlyif  => 'which mysql',

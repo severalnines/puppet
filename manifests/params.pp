@@ -61,7 +61,7 @@ class clustercontrol::params {
         content => template('clustercontrol/selinux-config.erb'),
       }
 
-      $apache_default_files = ''
+      $apache_default_files = '/etc/httpd/dummy'
 
       exec { 'disable-extra-security' :
         path    => ['/usr/sbin','/bin'],
