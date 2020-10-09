@@ -181,10 +181,10 @@ class clustercontrol (
 			notify => Exec['create-dcps-api']
 		}
 
-                exec { "create-dcps-api" :
+   	    exec { "create-dcps-api" :
 			onlyif => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'SHOW SCHEMAS LIKE \"dcps\";' 2>/dev/null",
-                        command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'REPLACE INTO dcps.apis(id, company_id, user_id, url, token) VALUES (1, 1, 1, \"http://127.0.0.1/cmonapi\", \"$api_token\");'",
-                }   
+            command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'REPLACE INTO dcps.apis(id, company_id, user_id, url, token) VALUES (1, 1, 1, \"http://127.0.0.1/cmonapi\", \"$api_token\");'",
+        }   
 
 		file { $datadir :
 			ensure  => directory,

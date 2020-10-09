@@ -144,11 +144,12 @@ class clustercontrol::params {
 
       $severalnines_repo = Exec['apt-update-severalnines']
       
-      exec { 'enable-apache-modules': 
-        path  => ['/usr/sbin','/sbin', '/usr/bin'],
-        command => "a2enmod ssl && a2enmod rewrite",
-        require => Package[$cc_dependencies]
-        }
+	exec { 'enable-apache-modules': 
+		path  => ['/usr/sbin','/sbin', '/usr/bin'],
+		command => "a2enmod ssl && a2enmod rewrite",
+		loglevel => info,
+		require => Package[$cc_dependencies]
+	}
       
       file { $apache_conf_file :
           ensure  => present,
@@ -157,7 +158,7 @@ class clustercontrol::params {
           owner   => root, group => root,
           require => Package[$cc_ui],
           notify   => File[$apache_target_file]
-        }
+      }
       
       file { $apache_ssl_conf_file :
           ensure  => present,
