@@ -73,8 +73,9 @@ class clustercontrol::params {
     'Debian': {
       $lsbmajdistrelease = 0 + $operatingsystemmajrelease
       if ($operatingsystem == 'Ubuntu' and $lsbmajdistrelease > 12) or ($operatingsystem == 'Debian' and $lsbmajdistrelease > 7){
-	$typevar = type($lsbmajdistrelease)
-        notify{"<<<<<<<<<<<<<dababies>>>>>>>>>>>>>The value is: ${operatingsystem} and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }
+		$typevar = type($lsbmajdistrelease)
+		$lower_operatingsystem = downcase($operatingsystem)
+        notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }
         $wwwroot          = '/var/www/html'
         $apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
         $apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
@@ -104,13 +105,12 @@ class clustercontrol::params {
       $apache_service   = 'apache2'
       $mysql_service    = 'mysql'
       $mysql_cnf        = '/etc/mysql/my.cnf'
-      $repo_list        = "deb [arch=amd64] http://$repo_host/deb ubuntu main"
+      /* $repo_list        = "deb [arch=amd64] http://$repo_host/deb ubuntu main"*/
       $repo_source      = '/etc/apt/sources.list.d/s9s-repo.list'
       $repo_tools_src   = '/etc/apt/sources.list.d/s9s-tools.list'
       $mysql_packages   = ['mysql-client','mysql-server']
       $cc_dependencies  = [
-        'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl', 'libapache2-mod-php', 'php-json', 
-	'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+        'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl', 'libapache2-mod-php', 'php-json', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
       ]
 
       exec { 'apt-update-severalnines' :
@@ -119,10 +119,17 @@ class clustercontrol::params {
         require     => File[["$repo_source"],["$repo_tools_src"]],
         refreshonly => true
       }
+	  
       exec { 'import-severalnines-key' :
         path        => ['/bin','/usr/bin'],
         command     => "wget http://$repo_host/severalnines-repos.asc -O- | apt-key add -"
       }
+	  
+      exec { 'import-severalnines-tools-key' :
+        path        => ['/bin','/usr/bin'],
+        command     => "wget http://$repo_host/s9s-tools/$lsbdistcodename/Release.key -O- | apt-key add -"
+      }
+	  
       file { "$repo_source":
         content     => template('clustercontrol/s9s-repo.list.erb'),
         require     => Exec['import-severalnines-key'],
@@ -131,6 +138,7 @@ class clustercontrol::params {
 
       file { "$repo_tools_src":
         content     => template('clustercontrol/s9s-tools.list.erb'),
+        require     => Exec['import-severalnines-tools-key'],
         notify      => Exec['apt-update-severalnines']
       }
 
