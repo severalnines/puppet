@@ -245,19 +245,19 @@ class clustercontrol (
 			$cert_file        = '/etc/ssl/certs/s9server.crt'
 			$key_file         = '/etc/ssl/private/s9server.key'
 
-		file { $clustercontrol::params::apache_ssl_conf_file :
-			ensure  => present,
-			content => template('clustercontrol/s9s-ssl.conf.erb'),
-			mode    => '0644',
-			owner   => root, group => root,
-			require => Package[$clustercontrol::params::cc_ui],
-			notify   => File[$clustercontrol::params::apache_ssl_target_file]
-		}
-		
-		file { $clustercontrol::params::apache_ssl_target_file :
-			ensure => 'link',
-			target => $clustercontrol::params::apache_ssl_target_file
-		}
+		# file { $clustercontrol::params::apache_ssl_conf_file :
+		# 	ensure  => present,
+		# 	content => template('clustercontrol/s9s-ssl.conf.erb'),
+		# 	mode    => '0644',
+		# 	owner   => root, group => root,
+		# 	require => Package[$clustercontrol::params::cc_ui],
+		# 	notify   => File[$clustercontrol::params::apache_ssl_target_file]
+		# }
+		#
+		# file { $clustercontrol::params::apache_ssl_target_file :
+		# 	ensure => 'link',
+		# 	target => $clustercontrol::params::apache_ssl_target_file
+		# }
 
 		# file { $clustercontrol::params::apache_conf_file :
 		# 	ensure  => present,
