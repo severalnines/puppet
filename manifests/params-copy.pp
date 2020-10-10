@@ -151,13 +151,46 @@ class clustercontrol::params {
 
 			$severalnines_repo = Exec['apt-update-severalnines']
 
+			exec { 'enable-apache-modules': 
+				path  => ['/usr/sbin','/sbin', '/usr/bin'],
+				command => "a2enmod ssl && a2enmod rewrite",
+				loglevel => info,
+				require => Package[$cc_dependencies]
+			}
 
+			file { $apache_conf_file :
+				ensure  => present,
+				content => template('clustercontrol/s9s.conf.erb'),
+				mode    => '0644',
+				owner   => root, group => root,
+				require => Package[$cc_ui],
+				notify   => File[$apache_target_file]
+			}
 
+			file { $apache_ssl_conf_file :
+				ensure  => present,
+				content => template('clustercontrol/s9s-ssl.conf.erb'),
+				mode    => '0644',
+				owner   => root, group => root,
+				require => Package[$cc_ui],
+				notify   => File[$apache_ssl_target_file]
+			}
 
+			file { $apache_ssl_target_file :
+				ensure => 'link',
+				target => "$apache_ssl_conf_file"
+			}
 
+			file { $apache_target_file :
+				ensure => 'link',
+				target => "$apache_conf_file"
+			}
 
-
-
+			exec { 'disable-extra-security' :
+				path        => ['/usr/sbin', '/usr/bin'],
+				onlyif      => 'which apparmor_status',
+				command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+			}
 		}
 		default: {
 		}
