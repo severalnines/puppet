@@ -232,10 +232,10 @@ class clustercontrol (
 
 		file { $clustercontrol::params::apache_ssl_conf_file :
 			ensure  => present,
-			wwwroot => $clustercontrol::params::wwwroot,
-			extra_options => $clustercontrol::params::extra_options,
-			cert_file => $clustercontrol::params::cert_file,
-			key_file => $clustercontrol::params::key_file,
+			$wwwroot => $clustercontrol::params::wwwroot,
+			$extra_options => $clustercontrol::params::extra_options,
+			$cert_file => $clustercontrol::params::cert_file,
+			$key_file => $clustercontrol::params::key_file,
 			content => template('clustercontrol/s9s-ssl.conf.erb'),
 			mode    => '0644',
 			owner   => root, group => root,
@@ -251,8 +251,8 @@ class clustercontrol (
 
 		file { $clustercontrol::params::apache_conf_file :
 			ensure  => present,
-			wwwroot => $clustercontrol::params::wwwroot,
-			extra_options => $clustercontrol::params::extra_options,
+			$wwwroot => $clustercontrol::params::wwwroot,
+			$extra_options => $clustercontrol::params::extra_options,
 			content => template('clustercontrol/s9s.conf.erb'),
 			mode    => '0644',
 			owner   => root, group => root,
