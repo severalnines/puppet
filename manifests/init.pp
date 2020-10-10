@@ -135,6 +135,13 @@ class clustercontrol (
 			group => root,
 			mode     => '0644'
 		}
+		
+
+		exec { 'disable-extra-security' :
+			path        => ['/usr/sbin', '/usr/bin'],
+			onlyif      => 'which apparmor_status',
+			command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+		}
 
     } else {
           
