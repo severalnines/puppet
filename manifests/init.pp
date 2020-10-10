@@ -164,13 +164,13 @@ class clustercontrol (
 			command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$clustercontrol::params::lsbdistcodename/Release.key -O- | apt-key add -"
 		}
 
-		file { "$repo_source":
+		file { "$clustercontrol::params::repo_source":
 			content     => template('clustercontrol/s9s-repo.list.erb'),
 			require     => Exec['import-severalnines-key'],
 			notify      => Exec['apt-update-severalnines']
 		}
 
-		file { "$repo_tools_src":
+		file { "clustercontrol::params::repo_tools_src":
 			content     => template('clustercontrol/s9s-tools.list.erb'),
 			require     => Exec['import-severalnines-tools-key'],
 			notify      => Exec['apt-update-severalnines']
