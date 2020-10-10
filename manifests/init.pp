@@ -256,7 +256,7 @@ class clustercontrol (
 			mode    => '0644',
 			owner   => root, group => root,
 			require => Package[$clustercontrol::params::cc_ui],
-			notify   => File[$clustercontrol::params::apache_ssl_target_file]
+			notify   => File[$clustercontrol::params::apache_target_file]
 		}
 
 		file { $clustercontrol::params::apache_target_file :
