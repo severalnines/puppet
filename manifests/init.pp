@@ -77,14 +77,20 @@ class clustercontrol (
 			  Package[$clustercontrol::params::mysql_packages],
 			  File[$datadir],
 			  ],
-			notify     => Exec['create-root-password'],
-			subscribe  => File[$clustercontrol::params::mysql_cnf]
+			subscribe  => File[$clustercontrol::params::mysql_cnf],
+			notify     => Exec['create-root-password']
 		}
 		
 
 		package { $clustercontrol::params::mysql_packages :
 			ensure  => installed,
-			notify  => Exec['disable-extra-security']
+			subscribe  => Exec['disable-extra-security']
+		}
+		
+		exec { 'disable-extra-security' :
+			path        => ['/usr/sbin', '/usr/bin'],
+			onlyif      => 'which apparmor_status',
+			command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
 		}
 		
 
@@ -93,6 +99,15 @@ class clustercontrol (
 			owner   => mysql, group => mysql,
 			require => Package[$clustercontrol::params::mysql_packages],
 			notify  => Service[$clustercontrol::params::mysql_service]
+		}
+
+		file { $clustercontrol::params::mysql_cnf :
+			ensure   => file,
+			force => true,
+			content  => template('clustercontrol/my.cnf.erb'),
+			owner    => root, 
+			group => root,
+			mode     => '0644'
 		}
 		
 
@@ -127,22 +142,6 @@ class clustercontrol (
 			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 
-		file { $clustercontrol::params::mysql_cnf :
-			ensure   => file,
-			force => true,
-			content  => template('clustercontrol/my.cnf.erb'),
-			owner    => root, 
-			group => root,
-			mode     => '0644'
-		}
-		
-
-		exec { 'disable-extra-security' :
-			path        => ['/usr/sbin', '/usr/bin'],
-			onlyif      => 'which apparmor_status',
-			command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
-		}
-
     } else {
           
 		ssh_authorized_key { '$ssh_user' :
@@ -168,6 +167,52 @@ class clustercontrol (
 			onlyif => 'which mysql',
 			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
+		
+		
+		
+		
+
+
+		exec { 'apt-update-severalnines' :
+			path        => ['/bin','/usr/bin'],
+			command     => 'apt-get update',
+			require     => File[["$clustercontrol::params::repo_source"],["$clustercontrol::params::repo_tools_src"]],
+			refreshonly => true
+		}
+
+		exec { 'import-severalnines-key' :
+			path        => ['/bin','/usr/bin'],
+			command     => "wget http://$clustercontrol::params::repo_host/severalnines-repos.asc -O- | apt-key add -"
+		}
+
+		exec { 'import-severalnines-tools-key' :
+			path        => ['/bin','/usr/bin'],
+			command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$clustercontrol::params::lsbdistcodename/Release.key -O- | apt-key add -"
+		}
+
+		file { "$repo_source":
+			content     => template('clustercontrol/s9s-repo.list.erb'),
+			require     => Exec['import-severalnines-key'],
+			notify      => Exec['apt-update-severalnines']
+		}
+
+		file { "$repo_tools_src":
+			content     => template('clustercontrol/s9s-tools.list.erb'),
+			require     => Exec['import-severalnines-tools-key'],
+			notify      => Exec['apt-update-severalnines']
+		}
+
+		$severalnines_repo = Exec['apt-update-severalnines']
+
+
+
+		
+		
+		
+		
+		
+		
+		
 		
    }
 }

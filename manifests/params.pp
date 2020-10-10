@@ -122,41 +122,6 @@ class clustercontrol::params {
 				'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl', 'libapache2-mod-php', 'php-json', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 			]
 
-			exec { 'apt-update-severalnines' :
-				path        => ['/bin','/usr/bin'],
-				command     => 'apt-get update',
-				require     => File[["$repo_source"],["$repo_tools_src"]],
-				refreshonly => true
-			}
-
-			exec { 'import-severalnines-key' :
-				path        => ['/bin','/usr/bin'],
-				command     => "wget http://$repo_host/severalnines-repos.asc -O- | apt-key add -"
-			}
-
-			exec { 'import-severalnines-tools-key' :
-				path        => ['/bin','/usr/bin'],
-				command     => "wget http://$repo_host/s9s-tools/$lsbdistcodename/Release.key -O- | apt-key add -"
-			}
-
-			file { "$repo_source":
-				content     => template('clustercontrol/s9s-repo.list.erb'),
-				require     => Exec['import-severalnines-key'],
-				notify      => Exec['apt-update-severalnines']
-			}
-
-			file { "$repo_tools_src":
-				content     => template('clustercontrol/s9s-tools.list.erb'),
-				require     => Exec['import-severalnines-tools-key'],
-				notify      => Exec['apt-update-severalnines']
-			}
-
-			$severalnines_repo = Exec['apt-update-severalnines']
-
-
-
-
-
 
 
 
