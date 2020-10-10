@@ -231,10 +231,10 @@ class clustercontrol (
 		}
 
 
-		$wwwroot = $clustercontrol::params::wwwroot,
-		$extra_options = $clustercontrol::params::extra_options,
-		$cert_file = $clustercontrol::params::cert_file,
-		$key_file = $clustercontrol::params::key_file,
+		$wwwroot = $clustercontrol::params::wwwroot
+		$extra_options = $clustercontrol::params::extra_options
+		$cert_file = $clustercontrol::params::cert_file
+		$key_file = $clustercontrol::params::key_file
 
 		file { $clustercontrol::params::apache_ssl_conf_file :
 			ensure  => present,
