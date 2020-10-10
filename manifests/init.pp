@@ -230,17 +230,20 @@ class clustercontrol (
 			require => Package["$clustercontrol::params::cc_ui"]
 		}
 
-		file { $clustercontrol::params::apache_ssl_conf_file :
-			ensure  => present,
-			$wwwroot => $clustercontrol::params::wwwroot,
-			$extra_options => $clustercontrol::params::extra_options,
-			$cert_file => $clustercontrol::params::cert_file,
-			$key_file => $clustercontrol::params::key_file,
-			content => template('clustercontrol/s9s-ssl.conf.erb'),
-			mode    => '0644',
-			owner   => root, group => root,
-			require => Package[$cc_ui],
-			notify   => File[$clustercontrol::params::apache_ssl_target_file]
+
+		define ssl_conf($wwwroot, $extra_options, $cert_file, $key_file) {
+			file { $clustercontrol::params::apache_ssl_conf_file :
+				ensure  => present,
+				$wwwroot => $clustercontrol::params::wwwroot,
+				$extra_options => $clustercontrol::params::extra_options,
+				$cert_file => $clustercontrol::params::cert_file,
+				$key_file => $clustercontrol::params::key_file,
+				content => template('clustercontrol/s9s-ssl.conf.erb'),
+				mode    => '0644',
+				owner   => root, group => root,
+				require => Package[$cc_ui],
+				notify   => File[$clustercontrol::params::apache_ssl_target_file]
+			}
 		}
 		
 		file { $clustercontrol::params::apache_ssl_target_file :
@@ -249,15 +252,17 @@ class clustercontrol (
 			require => Package["$clustercontrol::params::cc_dependencies"]
 		}
 
-		file { $clustercontrol::params::apache_conf_file :
-			ensure  => present,
-			$wwwroot => $clustercontrol::params::wwwroot,
-			$extra_options => $clustercontrol::params::extra_options,
-			content => template('clustercontrol/s9s.conf.erb'),
-			mode    => '0644',
-			owner   => root, group => root,
-			require => Package[$cc_ui],
-			notify   => File[$apache_target_file]
+		define nonssl_conf($wwwroot, $extra_options) {
+			file { $clustercontrol::params::apache_conf_file :
+				ensure  => present,
+				$wwwroot => $clustercontrol::params::wwwroot,
+				$extra_options => $clustercontrol::params::extra_options,
+				content => template('clustercontrol/s9s.conf.erb'),
+				mode    => '0644',
+				owner   => root, group => root,
+				require => Package[$cc_ui],
+				notify   => File[$apache_target_file]
+			}
 		}
 
 		file { $clustercontrol::params::apache_target_file :
