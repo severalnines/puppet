@@ -247,8 +247,7 @@ class clustercontrol (
 		
 		file { $clustercontrol::params::apache_ssl_target_file :
 			ensure => 'link',
-			target => "$clustercontrol::params::apache_ssl_target_file",
-			require => Package[$clustercontrol::params::cc_dependencies]
+			target => "$clustercontrol::params::apache_ssl_target_file"
 		}
 
 		file { $clustercontrol::params::apache_conf_file :
@@ -262,8 +261,7 @@ class clustercontrol (
 
 		file { $clustercontrol::params::apache_target_file :
 			ensure => 'link',
-			target => "$clustercontrol::params::apache_target_file",
-			require => Package[$clustercontrol::params::cc_dependencies]
+			target => "$clustercontrol::params::apache_target_file"
 		}
 		
 		exec { 'enable-apache-modules': 
