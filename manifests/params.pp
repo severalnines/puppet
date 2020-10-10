@@ -115,6 +115,8 @@ class clustercontrol::params {
 			/* $repo_list        = "deb [arch=amd64] http://$repo_host/deb ubuntu main"*/
 			$repo_source      = '/etc/apt/sources.list.d/s9s-repo.list'
 			$repo_tools_src   = '/etc/apt/sources.list.d/s9s-tools.list'
+			
+			
 			$mysql_packages   = ['mysql-client','mysql-server']
 			$cc_dependencies  = [
 				'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl', 'libapache2-mod-php', 'php-json', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'

@@ -81,7 +81,17 @@ class clustercontrol (
 			subscribe  => File[$clustercontrol::params::mysql_cnf]
 		}
 		
-		
+
+		package { $clustercontrol::params::mysql_packages :
+			ensure  => installed,
+			notify  => Exec['disable-extra-security']
+		}
+
+		exec { 'disable-extra-security' :
+			path        => ['/usr/sbin', '/usr/bin'],
+			onlyif      => 'which apparmor_status',
+			command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+		}
 
 
     } else {
