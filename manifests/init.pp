@@ -126,7 +126,15 @@ class clustercontrol (
 			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h\"$fqdn\" status",
 			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
-		
+
+		file { $clustercontrol::params::mysql_cnf :
+			ensure   => file,
+			force => true,
+			content  => template('clustercontrol/my.cnf.erb'),
+			owner    => root, 
+			group => root,
+			mode     => '0644'
+		}
 
     } else {
           
