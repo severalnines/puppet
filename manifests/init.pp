@@ -86,11 +86,13 @@ class clustercontrol (
 			ensure  => installed,
 			notify  => Exec['disable-extra-security']
 		}
+		
 
-		exec { 'disable-extra-security' :
-			path        => ['/usr/sbin', '/usr/bin'],
-			onlyif      => 'which apparmor_status',
-			command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+		file { $datadir :
+			ensure  => directory,
+			owner   => mysql, group => mysql,
+			require => Package[$clustercontrol::params::mysql_packages],
+			notify  => Service[$clustercontrol::params::mysql_service]
 		}
 
 
