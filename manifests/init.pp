@@ -245,7 +245,7 @@ class clustercontrol (
 			$cert_file        = '/etc/ssl/certs/s9server.crt'
 			$key_file         = '/etc/ssl/private/s9server.key'
 
-		file { '/etc/apache2/sites-available/s9s-ssl.conf' :
+		file { $clustercontrol::params::apache_ssl_conf_file :
 			ensure  => present,
 			content => template('clustercontrol/s9s-ssl.conf.erb'),
 			mode    => '0644',
@@ -254,12 +254,12 @@ class clustercontrol (
 			notify   => File[$clustercontrol::params::apache_ssl_target_file]
 		}
 		
-		file { '/etc/apache2/sites-enabled/001-s9s-ssl.conf' :
+		file { $clustercontrol::params::apache_ssl_target_file :
 			ensure => 'link',
-			target => '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
+			target => $clustercontrol::params::apache_ssl_target_file
 		}
 
-		file { '/etc/apache2/sites-available/s9s.conf' :
+		file { $clustercontrol::params::apache_conf_file :
 			ensure  => present,
 			content => template('clustercontrol/s9s.conf.erb'),
 			mode    => '0644',
@@ -268,9 +268,9 @@ class clustercontrol (
 			notify   => File[$clustercontrol::params::apache_target_file]
 		}
 
-		file { '/etc/apache2/sites-enabled/001-s9s.conf' :
+		file { $clustercontrol::params::apache_target_file :
 			ensure => 'link',
-			target => "/etc/apache2/sites-enabled/001-s9s.conf"
+			target => $clustercontrol::params::apache_target_file
 		}
 		
 		exec { 'enable-apache-modules': 
