@@ -161,7 +161,7 @@ class clustercontrol (
 
 		exec { 'import-severalnines-tools-key' :
 			path        => ['/bin','/usr/bin'],
-			command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$clustercontrol::params::lsbdistcodename/Release.key -O- | apt-key add -"
+			command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$lsbdistcodename/Release.key -O- | apt-key add -"
 		}
 
 		file { "$clustercontrol::params::repo_source":
