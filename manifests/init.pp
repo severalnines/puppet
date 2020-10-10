@@ -231,10 +231,19 @@ class clustercontrol (
 		}
 
 
-		$wwwroot = $clustercontrol::params::wwwroot
-		$extra_options = $clustercontrol::params::extra_options
-		$cert_file = $clustercontrol::params::cert_file
-		$key_file = $clustercontrol::params::key_file
+		# $wwwroot = $clustercontrol::params::wwwroot
+		# $extra_options = $clustercontrol::params::extra_options
+		# $cert_file = $clustercontrol::params::cert_file
+		# $key_file = $clustercontrol::params::key_file
+		#
+		$wwwroot          = '/var/www/html'
+		$apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
+		$apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
+		$apache_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
+		$apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
+		$extra_options     = 'Require all granted'
+			$cert_file        = '/etc/ssl/certs/s9server.crt'
+			$key_file         = '/etc/ssl/private/s9server.key'
 
 		file { $clustercontrol::params::apache_ssl_conf_file :
 			ensure  => present,
