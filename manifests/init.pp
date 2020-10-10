@@ -286,8 +286,7 @@ class clustercontrol (
 			enable  => $enabled,
 			require => Package[$clustercontrol::params::cc_dependencies],
 			hasrestart  => true,
-			hasstatus   => true,
-			subscribe  => File[$clustercontrol::params::apache_ssl_conf_file]
+			hasstatus   => true
 		}
 
 		/* Setup ssh user */
