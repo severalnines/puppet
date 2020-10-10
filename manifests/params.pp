@@ -80,7 +80,7 @@ class clustercontrol::params {
 				$typevar = type($lsbmajdistrelease)
 				$lower_operatingsystem = downcase($operatingsystem)
 				
-				notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }
+				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }*/
 				
 				$wwwroot          = '/var/www/html'
 				$apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
@@ -112,15 +112,46 @@ class clustercontrol::params {
 			$apache_service   = 'apache2'
 			$mysql_service    = 'mysql'
 			$mysql_cnf        = '/etc/mysql/my.cnf'
-			/* $repo_list        = "deb [arch=amd64] http://$repo_host/deb ubuntu main"*/
 			$repo_source      = '/etc/apt/sources.list.d/s9s-repo.list'
 			$repo_tools_src   = '/etc/apt/sources.list.d/s9s-tools.list'
 			
 			
 			$mysql_packages   = ['mysql-client','mysql-server']
 			$cc_dependencies  = [
-				'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl', 'libapache2-mod-php', 'php-json', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+				'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl', 'libapache2-mod-php', 'php-json', 's9s-tools'
 			]
+			
+
+			exec { 'apt-update-severalnines' :
+				path        => ['/bin','/usr/bin'],
+				command     => 'apt-get update',
+				require     => File[["$clustercontrol::params::repo_source"],["$clustercontrol::params::repo_tools_src"]],
+				refreshonly => true
+			}
+
+			exec { 'import-severalnines-key' :
+				path        => ['/bin','/usr/bin'],
+				command     => "wget http://$clustercontrol::params::repo_host/severalnines-repos.asc -O- | apt-key add -"
+			}
+
+			exec { 'import-severalnines-tools-key' :
+				path        => ['/bin','/usr/bin'],
+				command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$lsbdistcodename/Release.key -O- | apt-key add -"
+			}
+
+			file { "$clustercontrol::params::repo_source":
+				content     => template('clustercontrol/s9s-repo.list.erb'),
+				require     => Exec['import-severalnines-key'],
+				notify      => Exec['apt-update-severalnines']
+			}
+
+			file { "$clustercontrol::params::repo_tools_src":
+				content     => template('clustercontrol/s9s-tools.list.erb'),
+				require     => Exec['import-severalnines-tools-key'],
+				notify      => Exec['apt-update-severalnines']
+			}
+
+			$severalnines_repo = Exec['apt-update-severalnines']
 
 
 

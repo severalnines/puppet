@@ -4,7 +4,7 @@
 # ClusterControl requires proper SSH key setup between controller host and monitored DB hosts
 # This script generates/reads private and public RSA key file under $KEYPATH
 
-KEYPATH=/etc/puppet/modules/clustercontrol/files
+KEYPATH=/etc/puppetlabs/code/environments/production/modules/clustercontrol/
 [ ! -z "$2" ] && KEYPATH=$2/files
 KEYFILE=$KEYPATH/id_rsa_s9s
 KEYFILE_PUB=$KEYPATH/id_rsa_s9s.pub
