@@ -258,20 +258,6 @@ class clustercontrol (
 			ensure => 'link',
 			target => $clustercontrol::params::apache_ssl_target_file
 		}
-
-		file { $clustercontrol::params::apache_conf_file :
-			ensure  => present,
-			content => template('clustercontrol/s9s.conf.erb'),
-			mode    => '0644',
-			owner   => root, group => root,
-			require => Package[$clustercontrol::params::cc_ui],
-			notify   => File[$clustercontrol::params::apache_target_file]
-		}
-
-		file { $clustercontrol::params::apache_target_file :
-			ensure => 'link',
-			target => $clustercontrol::params::apache_target_file
-		}
 		
 		exec { 'enable-apache-modules': 
 			path  => ['/usr/sbin','/sbin', '/usr/bin'],
