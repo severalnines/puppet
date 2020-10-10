@@ -94,7 +94,39 @@ class clustercontrol (
 			require => Package[$clustercontrol::params::mysql_packages],
 			notify  => Service[$clustercontrol::params::mysql_service]
 		}
+		
 
+		exec { 'create-root-password' :
+			onlyif  => "mysqladmin -u root status",
+			command => "mysqladmin -u root password \"$mysql_cmon_root_password\"",
+			notify  => Exec[
+			  'grant-cmon-localhost', 
+			  'grant-cmon-127.0.0.1', 
+			  'grant-cmon-ip-address',
+			  'grant-cmon-fqdn'
+			  ]
+		}
+
+		exec { "grant-cmon-localhost" :
+			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -hlocalhost status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@localhost IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		}
+
+		exec { "grant-cmon-127.0.0.1" :
+			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h127.0.0.1 status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		}
+
+		exec { "grant-cmon-ip-address" :
+			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h\"$ip_address\" status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$ip_address\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		}
+
+		exec { "grant-cmon-fqdn" :
+			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h\"$fqdn\" status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		}
+		
 
     } else {
           
