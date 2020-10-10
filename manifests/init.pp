@@ -141,32 +141,6 @@ class clustercontrol (
 			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h\"$fqdn\" status",
 			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
-
-    } else {
-          
-		ssh_authorized_key { '$ssh_user' :
-			ensure => present,
-			key    => generate('/bin/bash', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
-			name   => "$ssh_user@$clustercontrol_host",
-			user   => "$ssh_user",
-			type   => 'ssh-rsa',
-			notify => Exec['grant-cmon-controller','grant-cmon-localhost','grant-cmon-127.0.0.1']
-		}
-
-		exec { 'grant-cmon-controller' :
-			onlyif  => 'which mysql',
-			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$clustercontrol_host\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
-		}
-
-		exec { "grant-cmon-localhost" :
-			onlyif  => 'which mysql',
-			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@localhost IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
-		}
-
-		exec { "grant-cmon-127.0.0.1" :
-			onlyif => 'which mysql',
-			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
-		}
 		
 		
 		
@@ -206,6 +180,39 @@ class clustercontrol (
 
 
 
+		
+		
+		
+		
+		
+		
+
+    } else {
+          
+		ssh_authorized_key { '$ssh_user' :
+			ensure => present,
+			key    => generate('/bin/bash', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
+			name   => "$ssh_user@$clustercontrol_host",
+			user   => "$ssh_user",
+			type   => 'ssh-rsa',
+			notify => Exec['grant-cmon-controller','grant-cmon-localhost','grant-cmon-127.0.0.1']
+		}
+
+		exec { 'grant-cmon-controller' :
+			onlyif  => 'which mysql',
+			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$clustercontrol_host\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		}
+
+		exec { "grant-cmon-localhost" :
+			onlyif  => 'which mysql',
+			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@localhost IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		}
+
+		exec { "grant-cmon-127.0.0.1" :
+			onlyif => 'which mysql',
+			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+		}
+		
 		
 		
 		
