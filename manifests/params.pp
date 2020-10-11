@@ -89,6 +89,7 @@ class clustercontrol::params {
 				$apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
 				$extra_options     = 'Require all granted'
 
+				/* Remove unwanted config files, retain only s9s config files */
 				file {
 					[
 						'/etc/apache2/sites-enabled/000-default.conf',

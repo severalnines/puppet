@@ -299,6 +299,7 @@ class clustercontrol (
 			notify  => [Exec['create-cmon-db'], Service['cmon']]
 		}
 
+		/* Manage all CMON related packages, events, etc. */
 		service { 'cmon' :
 			ensure  => $service_status,
 			enable  => $enabled,
