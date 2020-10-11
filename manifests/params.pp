@@ -145,7 +145,7 @@ class clustercontrol::params {
 				notify      => Exec['apt-update-severalnines']
 			}
 
-			file { "$epo_tools_src":
+			file { "$repo_tools_src":
 				content     => template('clustercontrol/s9s-tools.list.erb'),
 				require     => Exec['import-severalnines-tools-key'],
 				notify      => Exec['apt-update-severalnines']
