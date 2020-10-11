@@ -282,13 +282,31 @@ class clustercontrol (
 			subscribe  => File[$clustercontrol::params::apache_conf_file, $clustercontrol::params::apache_ssl_conf_file]
 		}
 
-		/* Setup ssh user */
-		ssh_authorized_key { "$ssh_user" :
+		/* Section to setup ssh user */
+		# Allow or authorized a key based on the given public key from files/id_rsa_s9s.pub. See files/s9s_helper.sh
+		# ssh_authorized_key { "$ssh_user" :
+		# 	ensure => present,
+		# 	key    => generate('/bin/bash', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
+		# 	name   => "$ssh_user@clustercontrol",
+		# 	user   => "$ssh_user",
+		# 	type   => 'ssh-rsa',
+		# }
+
+		# create the ssh user's key and pub file based on the given files/id_rsa_s9s* files
+		file { "$ssh_identity" :
 			ensure => present,
-			key    => generate('/bin/bash', "$modulepath/files/s9s_helper.sh", '--read-key', "$modulepath"),
-			name   => "$ssh_user@clustercontrol",
-			user   => "$ssh_user",
-			type   => 'ssh-rsa',
+			owner  => $ssh_user,
+			group  => $ssh_user,
+			mode   => '0600',
+			source => 'puppet:///modules/clustercontrol/id_rsa_s9s'
+		}
+
+		file { "$ssh_identity_pub" :
+			ensure  => present,
+			owner   => $ssh_user,
+			group   => $ssh_user,
+			mode    => '0644',
+			source  => 'puppet:///modules/clustercontrol/id_rsa_s9s.pub'
 		}
 		
 		file { $clustercontrol::params::cmon_conf :
@@ -327,22 +345,6 @@ class clustercontrol (
 			group   => $clustercontrol::params::apache_user,
 			require => [Package[$clustercontrol::params::cc_ui],File["$ssh_identity", "$ssh_identity_pub"]],
 			notify  => Service['cmon']
-		}
-
-		file { "$ssh_identity" :
-			ensure => present,
-			owner  => $ssh_user,
-			group  => $ssh_user,
-			mode   => '0600',
-			source => 'puppet:///modules/clustercontrol/id_rsa_s9s'
-		}
-
-		file { "$ssh_identity_pub" :
-			ensure  => present,
-			owner   => $ssh_user,
-			group   => $ssh_user,
-			mode    => '0644',
-			source  => 'puppet:///modules/clustercontrol/id_rsa_s9s.pub'
 		}
 
 		exec { "configure-cc-bootstrap" :
