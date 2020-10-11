@@ -195,9 +195,9 @@ class clustercontrol (
 			ensure  => installed,
 			notify  => [Exec['allow-override-all'], File[
 				$clustercontrol::params::cert_file, 
-				$clustercontrol::params::key_file 
-				 /* $lustercontrol::params::apache_ssl_conf_file,
-				$lustercontrol::params::apache_conf_file*/
+				$clustercontrol::params::key_file, 
+				$lustercontrol::params::apache_ssl_conf_file,
+				$lustercontrol::params::apache_conf_file
 			]]
 		}
 		
@@ -231,53 +231,46 @@ class clustercontrol (
 		}
 
 
-		# $wwwroot = $clustercontrol::params::wwwroot
-		# $extra_options = $clustercontrol::params::extra_options
-		# $cert_file = $clustercontrol::params::cert_file
-		# $key_file = $clustercontrol::params::key_file
-		#
-		$wwwroot          = '/var/www/html'
-		$apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
-		$apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
-		$apache_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
-		$apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
-		$extra_options     = 'Require all granted'
-			$cert_file        = '/etc/ssl/certs/s9server.crt'
-			$key_file         = '/etc/ssl/private/s9server.key'
+		$wwwroot = $clustercontrol::params::wwwroot
+		$extra_options = $clustercontrol::params::extra_options
+		$cert_file = $clustercontrol::params::cert_file
+		$key_file = $clustercontrol::params::key_file
 
-		# file { $clustercontrol::params::apache_ssl_conf_file :
-		# 	ensure  => present,
-		# 	content => template('clustercontrol/s9s-ssl.conf.erb'),
-		# 	mode    => '0644',
-		# 	owner   => root, group => root,
-		# 	require => Package[$clustercontrol::params::cc_ui],
-		# 	notify   => File[$clustercontrol::params::apache_ssl_target_file]
-		# }
-		#
-		# file { $clustercontrol::params::apache_ssl_target_file :
-		# 	ensure => 'link',
-		# 	target => $clustercontrol::params::apache_ssl_target_file
-		# }
+		file { $clustercontrol::params::apache_ssl_conf_file :
+			ensure  => present,
+			content => template('clustercontrol/s9s-ssl.conf.erb'),
+			mode    => '0644',
+			owner   => root, group => root,
+			require => Package[$cc_ui],
+			notify   => File[$clustercontrol::params::apache_ssl_target_file]
+		}
+		
+		file { $clustercontrol::params::apache_ssl_target_file :
+			ensure => 'link',
+			target => "$clustercontrol::params::apache_ssl_target_file",
+			require => Package[$clustercontrol::params::cc_dependencies]
+		}
 
-		# file { $clustercontrol::params::apache_conf_file :
-		# 	ensure  => present,
-		# 	content => template('clustercontrol/s9s.conf.erb'),
-		# 	mode    => '0644',
-		# 	owner   => root, group => root,
-		# 	require => Package[$clustercontrol::params::cc_ui],
-		# 	notify   => File[$clustercontrol::params::apache_target_file]
-		# }
-		#
-		# file { $clustercontrol::params::apache_target_file :
-		# 	ensure => 'link',
-		# 	target => $clustercontrol::params::apache_target_file
-		# }
+		file { $clustercontrol::params::apache_conf_file :
+			ensure  => present,
+			content => template('clustercontrol/s9s.conf.erb'),
+			mode    => '0644',
+			owner   => root, group => root,
+			require => Package[$cc_ui],
+			notify   => File[$apache_target_file]
+		}
+
+		file { $clustercontrol::params::apache_target_file :
+			ensure => 'link',
+			target => "$clustercontrol::params::apache_target_file",
+			require => Package[$clustercontrol::params::cc_dependencies]
+		}
 		
 		exec { 'enable-apache-modules': 
 			path  => ['/usr/sbin','/sbin', '/usr/bin'],
 			command => "a2enmod ssl && a2enmod rewrite",
 			loglevel => info,
-			require => Package[$clustercontrol::params::cc_dependencies]
+			require => Package[$cc_dependencies]
 		}
 		
 		/* Now configure/setup the ClusterControl - installing packages, setting up required configurations, etc. */
@@ -286,7 +279,8 @@ class clustercontrol (
 			enable  => $enabled,
 			require => Package[$clustercontrol::params::cc_dependencies],
 			hasrestart  => true,
-			hasstatus   => true
+			hasstatus   => true,
+			subscribe  => File[$clustercontrol::params::apache_conf_file, $clustercontrol::params::apache_ssl_conf_file]
 		}
 
 		/* Setup ssh user */
