@@ -99,10 +99,10 @@ class clustercontrol::params {
 				}
 			} else {
 				$wwwroot          = '/var/www'
-				$apache_conf_file = '/etc/apache2/sites-available/default'
-				$apache_target_file = '/etc/apache2/sites-enabled/000-default'
+				$apache_conf_file = '/etc/apache2/sites-available/000-default.conf'
+				$apache_target_file = '/etc/apache2/sites-enabled/000-default.conf'
 				$apache_ssl_conf_file = '/etc/apache2/sites-available/default-ssl.conf'
-				$apache_ssl_target_file = '/etc/apache2/sites-enabled/000-default-ssl'
+				$apache_ssl_target_file = '/etc/apache2/sites-enabled/default-ssl.conf'
 				$extra_options     = ''
 			}
 
