@@ -154,15 +154,15 @@ class clustercontrol::params {
 			$severalnines_repo = Exec['apt-update-severalnines']
 
 		
-			file { "$apache_ssl_target_file" :
-				ensure => 'link',
-				target => "$apache_ssl_target_file"
-			}
-
-			file { "$apache_target_file" :
-				ensure => 'link',
-				target => "$apache_target_file"
-			}
+			# file { "$apache_ssl_target_file" :
+			# 	ensure => 'link',
+			# 	target => "$apache_ssl_target_file"
+			# }
+			#
+			# file { "$apache_target_file" :
+			# 	ensure => 'link',
+			# 	target => "$apache_target_file"
+			# }
 		
 		}
 		default: {

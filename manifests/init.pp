@@ -242,8 +242,7 @@ class clustercontrol (
 			content => template('clustercontrol/s9s-ssl.conf.erb'),
 			mode    => '0644',
 			owner   => root, group => root,
-			require => Package[$clustercontrol::params::cc_ui],
-			notify   => File[$clustercontrol::params::apache_ssl_target_file]
+			require => Package[$clustercontrol::params::cc_ui]
 		}
 
 		file { "$clustercontrol::params::apache_conf_file" :
@@ -251,8 +250,7 @@ class clustercontrol (
 			content => template('clustercontrol/s9s.conf.erb'),
 			mode    => '0644',
 			owner   => root, group => root,
-			require => Package[$clustercontrol::params::cc_ui],
-			notify   => File[$clustercontrol::params::apache_target_file]
+			require => Package[$clustercontrol::params::cc_ui]
 		}
 		
 		#
