@@ -217,7 +217,7 @@ class clustercontrol (
 				$clustercontrol::params::cert_file, 
 				$clustercontrol::params::key_file, 
 				$clustercontrol::params::apache_ssl_conf_file,
-				$lustercontrol::params::apache_conf_file
+				$clustercontrol::params::apache_conf_file
 			]]
 		}
 		
