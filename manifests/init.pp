@@ -87,11 +87,31 @@ class clustercontrol (
 			subscribe  => Exec['disable-extra-security']
 		}
 		
-		exec { 'disable-extra-security' :
-			path        => ['/usr/sbin', '/usr/bin'],
-			onlyif      => 'which apparmor_status',
-			command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+		$l_osfamily = downcase($osfamily);
+		
+		if ($l_osfamily == 'Redhat') {
+			file { '/etc/selinux/config':
+				ensure  => present,
+				content => template('clustercontrol/selinux-config.erb'),
+			}
+			
+			exec { 'disable-extra-security' :
+				path        => ['/usr/sbin','/bin'],
+				unless      => 'grep SELINUX=disabled /etc/sysconfig/selinux',
+				command     => 'setenforce 0',
+				require     => File['/etc/selinux/config']
+			}
+		} else if ($l_osfamily == 'Ubuntu') {
+		
+			exec { 'disable-extra-security' :
+				path        => ['/usr/sbin', '/usr/bin'],
+				onlyif      => 'which apparmor_status',
+				command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+			}
+			
 		}
+			
+			
 		
 
 		file { $datadir :
@@ -232,7 +252,7 @@ class clustercontrol (
 
 
 		$wwwroot = $clustercontrol::params::wwwroot
-		$extra_options = $clustercontrol::params::extra_options
+		$apache_httpd_extra_options = $clustercontrol::params::apache_httpd_extra_options
 		$cert_file = $clustercontrol::params::cert_file
 		$key_file = $clustercontrol::params::key_file
 
