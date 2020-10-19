@@ -10,9 +10,16 @@ class clustercontrol::params {
 	$cmon_sql_path  = '/usr/share/cmon'
 	$apache_httpd_extra_options = 'Require all granted'
 
+	$lsbmajdistrelease = 0 + $operatingsystemmajrelease
+	$typevar = type($lsbmajdistrelease)
+	$lower_operatingsystem = downcase($operatingsystem)
+	
 	case $osfamily {
 		'Redhat': {
-			if ($operatingsystemmajrelease > 6) {
+			$os_majrelease = Integer($operatingsystemmajrelease);
+			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${$os_majrelease}  and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }
+				
+			if ($lsbmajdistrelease > 6) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
 				$cc_dependencies  = [
@@ -74,12 +81,9 @@ class clustercontrol::params {
 			
 		}
 		'Debian': {
-			$lsbmajdistrelease = 0 + $operatingsystemmajrelease
 			
 			if ($operatingsystem == 'Ubuntu' and $lsbmajdistrelease > 12) or ($operatingsystem == 'Debian' and $lsbmajdistrelease > 7) {
 				
-				$typevar = type($lsbmajdistrelease)
-				$lower_operatingsystem = downcase($operatingsystem)
 				
 				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }*/
 				
