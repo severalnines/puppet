@@ -53,8 +53,8 @@ class clustercontrol::params {
 			}
 			
 			yumrepo {
-				"s9s-tools-repo $s9s_tools_repo_osnames":
-				descr     => "s9s-tools",
+				"s9s-tools-repo":
+				descr     => "s9s-tools $s9s_tools_repo_osnames",
 				baseurl   => "http://$repo_host/s9s-tools/$s9s_tools_repo_osnames",
 				enabled   => 1,
 				gpgkey    => "http://$repo_host/s9s-tools/$s9s_tools_repo_osnames/repodata/repomd.xml.key",
