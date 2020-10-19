@@ -18,7 +18,7 @@ class clustercontrol::params {
 		'Redhat': {
 			$os_majrelease = Integer($operatingsystemmajrelease);
 			$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}";
-			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$$s9s_tools_repo_osname}," \
+			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}," \
 			" os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , lsbmajdistrelease: ${lsbmajdistrelease}" \
 			" and data-type is: ${typevar})": }
 				
