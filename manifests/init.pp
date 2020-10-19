@@ -250,47 +250,69 @@ class clustercontrol (
 			require => Package["$clustercontrol::params::cc_ui"]
 		}
 
-
+		
 		$wwwroot = $clustercontrol::params::wwwroot
 		$apache_httpd_extra_options = $clustercontrol::params::apache_httpd_extra_options
 		$cert_file = $clustercontrol::params::cert_file
 		$key_file = $clustercontrol::params::key_file
+		
+		if $l_osfamily == 'redhat' {
+			file { $clustercontrol::params::apache_conf_file :
+				ensure  => present,
+				mode    => '0644',
+				owner   => root, group => root,
+				content => template('clustercontrol/s9s.conf.erb'),
+				require => Package[$clustercontrol::params::cc_dependencies],
+				notify  => Service[$clustercontrol::params::apache_service]
+			}
 
-		file { "$clustercontrol::params::apache_ssl_conf_file" :
-			ensure  => present,
-			content => template('clustercontrol/s9s-ssl.conf.erb'),
-			mode    => '0644',
-			owner   => root, group => root,
-			require => Package[$clustercontrol::params::cc_ui],
-			notify   => File[$clustercontrol::params::apache_ssl_target_file]
-		}
+			file { $clustercontrol::params::apache_ssl_conf_file :
+				ensure  => present,
+				owner   => root, group => root,
+				content => template('clustercontrol/ssl.conf.erb'),
+				require => Package[$clustercontrol::params::cc_dependencies],
+				notify  => Service[$clustercontrol::params::apache_service]
+			}
+		} elsif $l_osfamily == 'ubuntu' {
+		
 
-		file { "$clustercontrol::params::apache_ssl_target_file" :
-			ensure => 'link',
-			target => "$clustercontrol::params::apache_ssl_conf_file"
-		}
+			file { "$clustercontrol::params::apache_ssl_conf_file" :
+				ensure  => present,
+				content => template('clustercontrol/s9s-ssl.conf.erb'),
+				mode    => '0644',
+				owner   => root, group => root,
+				require => Package[$clustercontrol::params::cc_ui],
+				notify   => File[$clustercontrol::params::apache_ssl_target_file]
+			}
 
-		file { "$clustercontrol::params::apache_conf_file" :
-			ensure  => present,
-			content => template('clustercontrol/s9s.conf.erb'),
-			mode    => '0644',
-			owner   => root, group => root,
-			require => Package[$clustercontrol::params::cc_ui],
-			notify   => File[$clustercontrol::params::apache_target_file]
-		}
+			file { "$clustercontrol::params::apache_ssl_target_file" :
+				ensure => 'link',
+				target => "$clustercontrol::params::apache_ssl_conf_file"
+			}
 
-		file { "$clustercontrol::params::apache_target_file" :
-			ensure => 'link',
-			target => "$clustercontrol::params::apache_conf_file"
-		}
+			file { "$clustercontrol::params::apache_conf_file" :
+				ensure  => present,
+				content => template('clustercontrol/s9s.conf.erb'),
+				mode    => '0644',
+				owner   => root, group => root,
+				require => Package[$clustercontrol::params::cc_ui],
+				notify   => File[$clustercontrol::params::apache_target_file]
+			}
+
+			file { "$clustercontrol::params::apache_target_file" :
+				ensure => 'link',
+				target => "$clustercontrol::params::apache_conf_file"
+			}
 
 		
-		exec { 'enable-apache-modules': 
-			path  => ['/usr/sbin','/sbin', '/usr/bin'],
-			command => "a2enmod ssl && a2enmod rewrite",
-			loglevel => info,
-			require => Package[$clustercontrol::params::cc_dependencies]
+			exec { 'enable-apache-modules': 
+				path  => ['/usr/sbin','/sbin', '/usr/bin'],
+				command => "a2enmod ssl && a2enmod rewrite",
+				loglevel => info,
+				require => Package[$clustercontrol::params::cc_dependencies]
+			}
 		}
+		
 		
 		/* Now configure/setup the ClusterControl - installing packages, setting up required configurations, etc. */
 		service { $clustercontrol::params::apache_service :
