@@ -23,23 +23,24 @@ class clustercontrol::params {
 				lsbmajdistrelease: ${lsbmajdistrelease} and data-type is: ${typevar})": 
 			}
 			$cc_dependencies  = [
-			'httpd', 'wget', 'mailx', 'curl', 'cronie', 'nmap-ncat', 'bind-utils', 'php', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+			'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 			]
 				
 			if ($lsbmajdistrelease > 6) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
-				$cc_dependencies[] = ['php-mysql']
+				$cc_dependencies += ['nmap-ncat', 'php-mysql']
 			} elsif ($lsbmajdistrelease > 7) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
-				$cc_dependencies[] = ['php-mysqlnd']
+				$cc_dependencies += [ 'nmap-ncat', 'php-mysqlnd']
 			} else {
 				$mysql_packages   = ['mysql','mysql-server']
 				$mysql_service    = 'mysqld'
-				$cc_dependencies  = [
-				'httpd', 'wget', 'mailx', 'curl', 'cronie', 'nc', 'bind-utils', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
-				]
+				$cc_dependencies  += ['nc', 'php-mysql'];
+				
+				/*$cc_dependencies  = ['httpd', 'wget', 'mailx', 'curl', 'cronie', 'nc', 'bind-utils', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+				]*/
 			}
 			
 			$apache_conf_file = '/etc/httpd/conf/httpd.conf'
