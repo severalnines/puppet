@@ -63,11 +63,12 @@ class clustercontrol (
 	$backup_dir       = "$user_home/backups"
 	$staging_dir      = "$user_home/s9s_tmp"
 
-	if $mysql_basedir == '' 
+	if empty($mysql_basedir) {
 		Exec { path => ['/usr/bin','/bin']}
-	else
+	} else {
 		Exec { path => ['/usr/bin','/bin',"$mysql_basedir/bin"]}
-		
+	}
+	
 
 	if $is_controller {
 		include clustercontrol::params
