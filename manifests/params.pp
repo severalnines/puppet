@@ -17,7 +17,10 @@ class clustercontrol::params {
 	case $osfamily {
 		'Redhat': {
 			$os_majrelease = Integer($operatingsystemmajrelease);
-			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${$os_majrelease}  and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }
+			$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}";
+			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$$s9s_tools_repo_osname}," \
+			" os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , lsbmajdistrelease: ${lsbmajdistrelease}" \
+			" and data-type is: ${typevar})": }
 				
 			if ($lsbmajdistrelease > 6) {
 				$mysql_packages   = ['mariadb','mariadb-server']
@@ -41,7 +44,6 @@ class clustercontrol::params {
 			$apache_service   = 'httpd'
 			$wwwroot          = '/var/www/html'
 			$mysql_cnf        = '/etc/my.cnf'
-			$s9s_tools_repo_osname = "$operatingsystem_$operatingsystemmajrelease";
 
 			yumrepo {
 				"s9s-repo":
