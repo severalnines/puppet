@@ -18,10 +18,6 @@ class clustercontrol::params {
 		'Redhat': {
 			$os_majrelease = Integer($operatingsystemmajrelease);
 			$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}";
-			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
-				os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , \
-				lsbmajdistrelease: ${lsbmajdistrelease} and data-type is: ${typevar})": 
-			}
 			$loc_dependencies  = [
 			'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 			]
@@ -54,6 +50,12 @@ class clustercontrol::params {
 			$wwwroot          = '/var/www/html'
 			$mysql_cnf        = '/etc/my.cnf'
 
+			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
+				os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , \
+				lsbmajdistrelease: ${lsbmajdistrelease} and data-type is: ${typevar}), \
+				cc_dependencies: ${cc_dependencies}": 
+			}
+			
 			yumrepo {
 				"s9s-repo":
 				descr     => "Severalnines Repository",
