@@ -29,19 +29,19 @@ class clustercontrol::params {
 			if ($lsbmajdistrelease > 6) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
-				$cc_dependencies << ['nmap-ncat']
-				$cc_dependencies << ['php-mysql']
+				$cc_dependencies = $cc_dependencies + ['nmap-ncat']
+				$cc_dependencies = $cc_dependencies + ['php-mysqlnd']
 				
 			} elsif ($lsbmajdistrelease > 7) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
-				$cc_dependencies << ['nmap-ncat']
-				$cc_dependencies << ['php-mysqlnd']
+				$cc_dependencies = $cc_dependencies + ['nmap-ncat']
+				$cc_dependencies = $cc_dependencies + ['php-mysqlnd']
 			} else {
 				$mysql_packages   = ['mysql','mysql-server']
 				$mysql_service    = 'mysqld'
-				$cc_dependencies  << ['nc']
-				$cc_dependencies  << ['php-mysql']
+				$cc_dependencies = $cc_dependencies + ['nc']
+				$cc_dependencies = $cc_dependencies + ['php-mysql']
 				
 				/*$cc_dependencies  = ['httpd', 'wget', 'mailx', 'curl', 'cronie', 'nc', 'bind-utils', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 				]*/
