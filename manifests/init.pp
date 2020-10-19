@@ -103,7 +103,7 @@ class clustercontrol (
 			
 			exec { 'disable-extra-security' :
 				path        => ['/usr/sbin','/bin'],
-				unless      => 'grep SELINUX=disabled /etc/sysconfig/selinux',
+				unless      => '/usr/sbin/getenforce |grep Permissive',
 				command     => 'setenforce 0',
 				require     => File['/etc/selinux/config']
 			}
