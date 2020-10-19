@@ -18,9 +18,10 @@ class clustercontrol::params {
 		'Redhat': {
 			$os_majrelease = Integer($operatingsystemmajrelease);
 			$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}";
-			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}," \
-			" os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , lsbmajdistrelease: ${lsbmajdistrelease}" \
-			" and data-type is: ${typevar})": }
+			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
+				os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , \
+				lsbmajdistrelease: ${lsbmajdistrelease} and data-type is: ${typevar})": 
+			}
 				
 			if ($lsbmajdistrelease > 6) {
 				$mysql_packages   = ['mariadb','mariadb-server']
