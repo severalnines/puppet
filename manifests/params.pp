@@ -10,8 +10,8 @@ class clustercontrol::params {
 	$cmon_sql_path  = '/usr/share/cmon'
 	$apache_httpd_extra_options = 'Require all granted'
 
-	$lsbmajdistrelease = 0 + $operatingsystemmajrelease
-	$typevar = type($lsbmajdistrelease)
+	$os_majrelease = Integer($operatingsystemmajrelease);
+	$typevar = type($os_majrelease)
 	$lower_operatingsystem = downcase($operatingsystem)
 	
 	case $osfamily {
@@ -34,12 +34,12 @@ class clustercontrol::params {
 			
 			
 				
-			if ($lsbmajdistrelease == 7) {
+			if ($os_majrelease == 7) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
 				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysql']
 				
-			} elsif ($lsbmajdistrelease > 7) {
+			} elsif ($os_majrelease > 7) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
 				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysqlnd']
@@ -55,7 +55,7 @@ class clustercontrol::params {
 			
 			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
 				os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , \
-				lsbmajdistrelease: ${lsbmajdistrelease} and data-type is: ${typevar}), \
+				os_majrelease: ${os_majrelease} and data-type is: ${typevar}), \
 				cc_dependencies: ${cc_dependencies}": 
 			}
 			
@@ -98,10 +98,10 @@ class clustercontrol::params {
 		}
 		'Debian': {
 			
-			if ($operatingsystem == 'Ubuntu' and $lsbmajdistrelease > 12) or ($operatingsystem == 'Debian' and $lsbmajdistrelease > 7) {
+			if ($operatingsystem == 'Ubuntu' and $os_majrelease > 12) or ($operatingsystem == 'Debian' and $os_majrelease > 7) {
 				
 				
-				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${lsbmajdistrelease} and data-type is: ${typevar})": }*/
+				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
 			
 				$apache_log_dir = "/var/log/apache2/"
 				$wwwroot          = '/var/www/html'

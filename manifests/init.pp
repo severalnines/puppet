@@ -27,10 +27,11 @@ class clustercontrol (
   $mysql_cmon_root_password = 'password',
   $mysql_cmon_password      = 'cmon',
   $mysql_cmon_port          = '3306',
+  $mysql_basedir		    = ''
   $modulepath               = '/etc/puppetlabs/code/environments/production/modules/clustercontrol/',
   $datadir                  = '/var/lib/mysql',
   $use_repo                 = true,
-  $enabled                  = true,
+  $enabled                  = true
 ) {
 	if $enabled {
 		$service_status = 'running'
@@ -62,7 +63,11 @@ class clustercontrol (
 	$backup_dir       = "$user_home/backups"
 	$staging_dir      = "$user_home/s9s_tmp"
 
-	Exec { path => ['/usr/bin','/bin',"$mysql_basedir/bin"]}
+	if $mysql_basedir == '' 
+		Exec { path => ['/usr/bin','/bin']}
+	else
+		Exec { path => ['/usr/bin','/bin',"$mysql_basedir/bin"]}
+		
 
 	if $is_controller {
 		include clustercontrol::params
