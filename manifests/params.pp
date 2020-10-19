@@ -22,7 +22,7 @@ class clustercontrol::params {
 			'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 			]
 				
-			if ($lsbmajdistrelease > 6) {
+			if ($lsbmajdistrelease == 7) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
 				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysql']
