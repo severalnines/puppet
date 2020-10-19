@@ -18,11 +18,11 @@ class clustercontrol::params {
 		'Redhat': {
 			$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}";
 			$loc_dependencies  = [
-			'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+			'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-xml', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 			]
 			
 			$apache_log_dir = "/var/log/httpd/"
-			$apache_conf_file = '/etc/httpd/conf/httpd.conf'
+			$apache_conf_file = '/etc/httpd/conf.d/s9s.conf'
 			$apache_ssl_conf_file = '/etc/httpd/conf.d/ssl.conf'
 			$cert_file        = '/etc/pki/tls/certs/s9server.crt'
 			$key_file         = '/etc/pki/tls/private/s9server.key'
@@ -41,7 +41,7 @@ class clustercontrol::params {
 			} elsif ($os_majrelease > 7) {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
-				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysqlnd']
+				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-fpm', 'php-mysqlnd']
 			} else {
 				$mysql_packages   = ['mysql','mysql-server']
 				$mysql_service    = 'mysqld'
