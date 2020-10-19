@@ -89,7 +89,7 @@ class clustercontrol (
 		
 		$l_osfamily = downcase($osfamily);
 		
-		if ($l_osfamily == 'Redhat') {
+		if $l_osfamily == 'redhat' {
 			file { '/etc/selinux/config':
 				ensure  => present,
 				content => template('clustercontrol/selinux-config.erb'),
@@ -101,7 +101,7 @@ class clustercontrol (
 				command     => 'setenforce 0',
 				require     => File['/etc/selinux/config']
 			}
-		} else if ($l_osfamily == 'Ubuntu') {
+		} elsif $l_osfamily == 'ubuntu' {
 		
 			exec { 'disable-extra-security' :
 				path        => ['/usr/sbin', '/usr/bin'],
