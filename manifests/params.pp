@@ -124,7 +124,7 @@ class clustercontrol::params {
 				$mysql_packages   = ['mysql-client','mysql-server']
 				$cc_dependencies  = [
 					'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl',
-					'php-json', 'php-fpm' 'php-xml', 'libapache2-mod-php', 'clustercontrol-notifications', 'clustercontrol-ssh',
+					'php-json', 'php-fpm', 'php-xml', 'libapache2-mod-php', 'clustercontrol-notifications', 'clustercontrol-ssh',
 					'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 				]
 
