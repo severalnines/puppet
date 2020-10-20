@@ -472,7 +472,8 @@ class clustercontrol (
 
 		
 		exec { "configure-cmonapi-bootstrap" :
-			command => "sed -i 's|RPCTOKEN|$api_token|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php"
+			command => "sed -i 's|RPCTOKEN|$api_token|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php",
+			notify => Service[$clustercontrol::params::apache_service]
 		}
 
 		file { "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php" :
@@ -481,7 +482,6 @@ class clustercontrol (
 			source  => "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php.default",
 			require => Package["$clustercontrol::params::cc_ui"],
 			notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']],
-			notify => Service[$clustercontrol::params::apache_service]
 		}
 
 
