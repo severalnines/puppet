@@ -339,7 +339,7 @@ class clustercontrol (
 			exec { "enable-securityconf-sameorigin" :
 				unless => "grep -q '^Header set X-Frame-Options: \"sameorigin\"' $clustercontrol::params::apache_security_conf_file",
 				command => "sed -i 's|\#Header set X-Frame-Options: \"sameorigin\"|Header set X-Frame-Options: \"sameorigin\"|' $clustercontrol::params::apache_security_conf_file",
-				subscribe => File["$clustercontrol::params::apache_mods_header_file"]
+				subscribe => File["$clustercontrol::params::apache_mods_header_target_file"]
 			}
 			
 			/*
