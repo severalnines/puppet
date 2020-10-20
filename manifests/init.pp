@@ -96,6 +96,7 @@ class clustercontrol (
 		}
 		
 		if ($l_osfamily == 'redhat') {
+			## RHEL/CentOS
 			file { '/etc/selinux/config':
 				ensure  => present,
 				content => template('clustercontrol/selinux-config.erb'),
@@ -107,8 +108,8 @@ class clustercontrol (
 				command     => 'setenforce 0',
 				require     => File['/etc/selinux/config']
 			}
-		} elsif ($l_osfamily == 'ubuntu') {
-		
+		} elsif ($l_osfamily == 'debian') {
+			## Debian/Ubuntu
 			exec { 'disable-extra-security' :
 				path        => ['/usr/sbin', '/usr/bin'],
 				onlyif      => 'which apparmor_status',
