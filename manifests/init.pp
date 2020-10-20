@@ -64,6 +64,9 @@ class clustercontrol (
 	$staging_dir      = "$user_home/s9s_tmp"
 		
 	$l_osfamily = downcase($osfamily);
+	
+	notice("value of l_osfamily is: ${l_osfamily}")
+	fail("just fail")
 
 	if empty($mysql_basedir) {
 		Exec { path => ['/usr/bin','/bin']}
@@ -95,7 +98,7 @@ class clustercontrol (
 			subscribe  => Exec['disable-extra-security']
 		}
 		
-		if $l_osfamily == 'redhat' {
+		if ($l_osfamily == 'redhat') {
 			file { '/etc/selinux/config':
 				ensure  => present,
 				content => template('clustercontrol/selinux-config.erb'),
@@ -107,7 +110,7 @@ class clustercontrol (
 				command     => 'setenforce 0',
 				require     => File['/etc/selinux/config']
 			}
-		} elsif $l_osfamily == 'ubuntu' {
+		} elsif ($l_osfamily == 'ubuntu') {
 		
 			exec { 'disable-extra-security' :
 				path        => ['/usr/sbin', '/usr/bin'],
