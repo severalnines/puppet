@@ -329,6 +329,13 @@ class clustercontrol (
 			}
 
 	        # enable sameorigin header
+
+			exec { "enable-ssl-port" :
+				unless => "grep -q '^Header set X-Frame-Options: \"sameorigin\"' $clustercontrol::params::apache_security_conf_file",
+				command => "sed -i 's|Header set X-Frame-Options: \"sameorigin\"|\#Header set X-Frame-Options: \"sameorigin\"|' $clustercontrol::params::apache_security_conf_file",
+				require => Package[$clustercontrol::params::cc_dependencies],
+			}
+			
 			/*
 			file { "$clustercontrol::params::apache_security_conf_file" :
 				ensure  => present,
