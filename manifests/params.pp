@@ -10,7 +10,7 @@ class clustercontrol::params {
 	$cmon_sql_path  = '/usr/share/cmon'
 	$apache_httpd_extra_options = 'Require all granted'
 
-	$os_majrelease = Integer($operatingsystemmajrelease);
+	$os_majrelease = Integer($operatingsystemmajrelease)
 	$typevar = type($os_majrelease)
 	$lower_operatingsystem = downcase($operatingsystem)
 	
@@ -18,7 +18,9 @@ class clustercontrol::params {
 		'Redhat': {
 			$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}";
 			$loc_dependencies  = [
-			'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-xml', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+				'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 'php-xml', 'php-json', 'php-ldap',
+				'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 
+				'clustercontrol-clud', 's9s-tools'
 			]
 			
 			$apache_log_dir = "/var/log/httpd/"
@@ -31,20 +33,19 @@ class clustercontrol::params {
 			$wwwroot          = '/var/www/html'
 			$mysql_cnf        = '/etc/my.cnf'
 			
-			
 				
 			if ($os_majrelease == 7) {
-				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
+				$mysql_packages   = ['mariadb','mariadb-server']
 				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysql']
 				
 			} elsif ($os_majrelease > 7) {
-				$mysql_packages   = ['mariadb','mariadb-server']
 				$mysql_service    = 'mariadb'
-				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-fpm', 'php-mysqlnd']
+				$mysql_packages   = ['mariadb','mariadb-server']
+				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysqlnd']
 			} else {
-				$mysql_packages   = ['mysql','mysql-server']
 				$mysql_service    = 'mysqld'
+				$mysql_packages   = ['mysql','mysql-server']
 				$cc_dependencies = $loc_dependencies + ['nc', 'php-mysql']
 				
 				/*$cc_dependencies  = ['httpd', 'wget', 'mailx', 'curl', 'cronie', 'nc', 'bind-utils', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
@@ -122,7 +123,9 @@ class clustercontrol::params {
 			
 				$mysql_packages   = ['mysql-client','mysql-server']
 				$cc_dependencies  = [
-					'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl', 'libapache2-mod-php', 'php-json', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+					'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl',
+					'php-json', 'php-fpm' 'php-xml', 'libapache2-mod-php', 'clustercontrol-notifications', 'clustercontrol-ssh',
+					'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 				]
 
 				/* Remove unwanted config files, retain only s9s config files */
