@@ -283,6 +283,19 @@ class clustercontrol (
 				require => Exec["enable-ssl-servername-localhost"]
 			}
 		
+			## Add lines Listen and ServerName directive to httpd.conf to enable SSL/TLS
+			exec { "enable-ssl-port" :
+				unless => "grep -q 'Listen 443' $clustercontrol::params::apache_conf_file",
+				command => "sed -i '1s|^|Listen 443\\n|' $clustercontrol::params::apache_conf_file",
+				require => File[$clustercontrol::params::apache_s9s_conf_file]
+			}
+		
+			exec { "enable-ssl-servername-localhost" :
+				unless => "grep -q 'ServerName 127.0.0.1' $clustercontrol::params::apache_conf_file",
+				command => "sed -i '1s|^|ServerName 127.0.0.1\\n|' $clustercontrol::params::apache_conf_file",
+				require => File[$clustercontrol::params::apache_s9s_conf_file]
+			}
+		
 		} elsif $l_osfamily == 'debian' {
 			## Debian/Ubuntu
 			file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
@@ -316,12 +329,13 @@ class clustercontrol (
 			}
 
 	        # enable sameorigin header
+			/*
 			file { "$clustercontrol::params::apache_security_conf_file" :
 				ensure  => present,
 				owner   => root, group => root,
 				content => template('clustercontrol/s9s-security.conf.erb'),
 				require => Exec["enable-ssl-servername-localhost"]
-			}
+			}*/
 
 			file { "$clustercontrol::params::apache_security_target_conf_file" :
 				ensure => 'link',
@@ -341,19 +355,6 @@ class clustercontrol (
 		exec { "allow-override-all" :
 			unless  => "grep 'AllowOverride All' $clustercontrol::params::apache_s9s_conf_file",
 			command => "sed -i 's|AllowOverride None|AllowOverride All|g' $clustercontrol::params::apache_s9s_conf_file",
-			require => File[$clustercontrol::params::apache_s9s_conf_file]
-		}
-		
-		## Add lines Listen and ServerName directive to httpd.conf to enable SSL/TLS
-		exec { "enable-ssl-port" :
-			unless => "grep -q 'Listen 443' $clustercontrol::params::apache_conf_file",
-			command => "sed -i '1s|^|Listen 443\\n|' $clustercontrol::params::apache_conf_file",
-			require => File[$clustercontrol::params::apache_s9s_conf_file]
-		}
-		
-		exec { "enable-ssl-servername-localhost" :
-			unless => "grep -q 'ServerName 127.0.0.1' $clustercontrol::params::apache_conf_file",
-			command => "sed -i '1s|^|ServerName 127.0.0.1\\n|' $clustercontrol::params::apache_conf_file",
 			require => File[$clustercontrol::params::apache_s9s_conf_file]
 		}
 		
