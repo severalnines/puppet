@@ -1,4 +1,4 @@
-# Class: clustercontrol
+apache_s9s_conf_file# Class: clustercontrol
 #
 # This module manages clustercontrol
 #
@@ -222,8 +222,8 @@ class clustercontrol (
 			notify  => [Exec['allow-override-all'], File[
 				$clustercontrol::params::cert_file, 
 				$clustercontrol::params::key_file, 
-				$clustercontrol::params::apache_ssl_conf_file,
-				$clustercontrol::params::apache_conf_file
+				$clustercontrol::params::apache_s9s_ssl_conf_file,
+				$clustercontrol::params::apache_s9s_conf_file
 			]]
 		}
 		
@@ -258,7 +258,7 @@ class clustercontrol (
 		$key_file = $clustercontrol::params::key_file
 		
 		if $l_osfamily == 'redhat' {
-			file { $clustercontrol::params::apache_conf_file :
+			file { $clustercontrol::params::apache_s9s_conf_file :
 				ensure  => present,
 				mode    => '0644',
 				owner   => root, group => root,
@@ -267,59 +267,95 @@ class clustercontrol (
 				notify  => Service[$clustercontrol::params::apache_service]
 			}
 
-			file { $clustercontrol::params::apache_ssl_conf_file :
+			file { $clustercontrol::params::apache_s9s_ssl_conf_file :
 				ensure  => present,
 				owner   => root, group => root,
 				content => template('clustercontrol/s9s-ssl.conf.erb'),
 				require => Package[$clustercontrol::params::cc_dependencies],
 				notify  => Service[$clustercontrol::params::apache_service]
 			}
+
+	        # enable sameorigin header
+			file { $clustercontrol::params::apache_security_conf_file :
+				ensure  => present,
+				owner   => root, group => root,
+				content => template('clustercontrol/s9s-security.conf.erb'),
+				require => Exec["enable-ssl-servername-localhost"]
+			}
+		
 		} elsif $l_osfamily == 'ubuntu' {
-		
 
-			file { "$clustercontrol::params::apache_ssl_conf_file" :
+			file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
 				ensure  => present,
 				content => template('clustercontrol/s9s-ssl.conf.erb'),
 				mode    => '0644',
 				owner   => root, group => root,
 				require => Package[$clustercontrol::params::cc_ui],
-				notify   => File[$clustercontrol::params::apache_ssl_target_file]
+				notify   => File[$clustercontrol::params::apache_s9s_ssl_target_file]
 			}
 
-			file { "$clustercontrol::params::apache_ssl_target_file" :
+			file { "$clustercontrol::params::apache_s9s_target_fileapache_s9s_ssl_target_file" :
 				ensure => 'link',
-				target => "$clustercontrol::params::apache_ssl_conf_file"
+				target => "$clustercontrol::params::apache_s9s_ssl_conf_file",
+				subscribe => File["$clustercontrol::params::apache_s9s_ssl_conf_file"]
 			}
 
-			file { "$clustercontrol::params::apache_conf_file" :
+			file { "$clustercontrol::params::apache_s9s_conf_file" :
 				ensure  => present,
 				content => template('clustercontrol/s9s.conf.erb'),
 				mode    => '0644',
 				owner   => root, group => root,
 				require => Package[$clustercontrol::params::cc_ui],
-				notify   => File[$clustercontrol::params::apache_target_file]
+				notify   => File[$clustercontrol::params::apache_s9s_target_file]
 			}
 
-			file { "$clustercontrol::params::apache_target_file" :
+			file { "$clustercontrol::params::apache_s9s_target_file" :
 				ensure => 'link',
-				target => "$clustercontrol::params::apache_conf_file"
+				target => "$clustercontrol::params::apache_s9s_conf_file",
+				subscribe => File["$clustercontrol::params::apache_s9s_conf_file"]
 			}
 
-		
+	        # enable sameorigin header
+			file { "$clustercontrol::params::apache_security_conf_file" :
+				ensure  => present,
+				owner   => root, group => root,
+				content => template('clustercontrol/s9s-security.conf.erb'),
+				require => Exec["enable-ssl-servername-localhost"]
+			}
+
+			file { "$clustercontrol::params::apache_security_target_conf_file" :
+				ensure => 'link',
+				target => "$clustercontrol::params::apache_security_conf_file",
+				subscribe => File["$clustercontrol::params::apache_security_conf_file"]
+			}
+			
 			exec { 'enable-apache-modules': 
 				path  => ['/usr/sbin','/sbin', '/usr/bin'],
 				command => "a2enmod ssl && a2enmod rewrite",
 				loglevel => info,
-				require => Package[$clustercontrol::params::cc_dependencies]
+				require => Package[$clustercontrol::params::cc_dependencies],
+				subscribe => Exec[["enable-ssl-port", "enable-ssl-servername-localhost"]]
 			}
 		}
 
 		exec { "allow-override-all" :
-			unless  => "grep 'AllowOverride All' $clustercontrol::params::apache_conf_file",
-			command => "sed -i 's|AllowOverride None|AllowOverride All|g' $clustercontrol::params::apache_conf_file",
-			require => File[$clustercontrol::params::apache_conf_file]
+			unless  => "grep 'AllowOverride All' $clustercontrol::params::apache_s9s_conf_file",
+			command => "sed -i 's|AllowOverride None|AllowOverride All|g' $clustercontrol::params::apache_s9s_conf_file",
+			require => File[$clustercontrol::params::apache_s9s_conf_file]
 		}
 		
+		## Add lines Listen and ServerName directive to httpd.conf to enable SSL/TLS
+		exec { "enable-ssl-port" :
+			unless => "grep -q 'Listen 443' $clustercontrol::params::apache_conf_file"
+			command => "sed -i '1s/^/Listen 443\n/' $clustercontrol::params::apache_conf_file",
+			require => File[$clustercontrol::params::apache_s9s_conf_file]
+		}
+		
+		exec { "enable-ssl-servername-localhost" :
+			unless => "grep -q 'ServerName 127.0.0.1' $clustercontrol::params::apache_conf_file"
+			command => "sed -i '1s/^/ServerName 127.0.0.1\n/' $clustercontrol::params::apache_conf_file",
+			require => File[$clustercontrol::params::apache_s9s_conf_file]
+		}
 		
 		/* Now configure/setup the ClusterControl - installing packages, setting up required configurations, etc. */
 		service { $clustercontrol::params::apache_service :
@@ -328,7 +364,7 @@ class clustercontrol (
 			require => Package[$clustercontrol::params::cc_dependencies],
 			hasrestart  => true,
 			hasstatus   => true,
-			subscribe  => File[$clustercontrol::params::apache_conf_file, $clustercontrol::params::apache_ssl_conf_file]
+			subscribe  => File[$clustercontrol::params::apache_s9s_conf_file, $clustercontrol::params::apache_s9s_ssl_conf_file]
 		}
 
 		/* Section to setup ssh user */

@@ -23,9 +23,11 @@ class clustercontrol::params {
 				'clustercontrol-clud', 's9s-tools'
 			]
 			
+			$apache_conf_file = "/etc/httpd/conf/httpd.conf"
+			$apache_security_conf_file = "/etc/httpd/conf.d/security.conf"
 			$apache_log_dir = "/var/log/httpd/"
-			$apache_conf_file = '/etc/httpd/conf.d/s9s.conf'
-			$apache_ssl_conf_file = '/etc/httpd/conf.d/ssl.conf'
+			$apache_s9s_conf_file = '/etc/httpd/conf.d/s9s.conf'
+			$apache_s9s_ssl_conf_file = '/etc/httpd/conf.d/ssl.conf'
 			$cert_file        = '/etc/pki/tls/certs/s9server.crt'
 			$key_file         = '/etc/pki/tls/private/s9server.key'
 			$apache_user      = 'apache'
@@ -40,6 +42,7 @@ class clustercontrol::params {
 				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysql']
 				
 			} elsif ($os_majrelease > 7) {
+				# RHEL/CentOS v 8.0 and up
 				$mysql_service    = 'mariadb'
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysqlnd']
@@ -80,7 +83,7 @@ class clustercontrol::params {
 			$severalnines_repo = Yumrepo[["s9s-repo","s9s-tools-repo"]]
 
 			/*
-			file { $apache_conf_file :
+			file { $apache_s9s_conf_file :
 				ensure  => present,
 				mode    => '0644',
 				owner   => root, group => root,
@@ -88,7 +91,7 @@ class clustercontrol::params {
 				notify  => Service[$apache_service]
 			}
 
-			file { $apache_ssl_conf_file :
+			file { $apache_s9s_ssl_conf_file :
 				ensure  => present,
 				content => template('clustercontrol/ssl.conf.erb'),
 				notify  => Service[$apache_service]
@@ -105,10 +108,12 @@ class clustercontrol::params {
 			
 				$apache_log_dir = "/var/log/apache2/"
 				$wwwroot          = '/var/www/html'
-				$apache_conf_file = '/etc/apache2/sites-available/s9s.conf'
-				$apache_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
-				$apache_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
-				$apache_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
+				$apache_s9s_conf_file = '/etc/apache2/sites-available/s9s.conf'
+				$apache_apache_s9s_target_filetarget_file = '/etc/apache2/sites-enabled/001-s9s.conf'
+				$apache_s9s_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
+				$apache_s9s_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
+				$apache_security_conf_file = "//etc/apache2/conf-available/security.conf"
+				$apache_security_target_conf_file = "/etc/apache2/conf-enabled/security.conf"
 				
 
 				$cert_file        = '/etc/ssl/certs/s9server.crt'
@@ -139,10 +144,10 @@ class clustercontrol::params {
 				}
 			} else {
 				$wwwroot          = '/var/www'
-				$apache_conf_file = '/etc/apache2/sites-available/000-default.conf'
-				$apache_target_file = '/etc/apache2/sites-enabled/000-default.conf'
-				$apache_ssl_conf_file = '/etc/apache2/sites-available/default-ssl.conf'
-				$apache_ssl_target_file = '/etc/apache2/sites-enabled/default-ssl.conf'
+				$apache_s9s_conf_file = '/etc/apache2/sites-available/000-default.conf'
+				$apache_s9s_target_file = '/etc/apache2/sites-enabled/000-default.conf'
+				$apache_s9s_ssl_conf_file = '/etc/apache2/sites-available/default-ssl.conf'
+				$apache_s9s_ssl_target_file = '/etc/apache2/sites-enabled/default-ssl.conf'
 				$apache_httpd_extra_options  = ''
 			}
 
