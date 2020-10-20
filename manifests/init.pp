@@ -66,7 +66,7 @@ class clustercontrol (
 	$l_osfamily = downcase($osfamily);
 	
 	notice("value of l_osfamily is: ${l_osfamily}")
-	fail("just fail")
+	fail("just fail value of l_osfamily is: ${l_osfamily}")
 
 	if empty($mysql_basedir) {
 		Exec { path => ['/usr/bin','/bin']}
