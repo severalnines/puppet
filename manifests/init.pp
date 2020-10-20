@@ -335,13 +335,13 @@ class clustercontrol (
 				owner   => root, group => root,
 				content => template('clustercontrol/s9s-security.conf.erb'),
 				require => Exec["enable-ssl-servername-localhost"]
-			}*/
+			}
 
 			file { "$clustercontrol::params::apache_security_target_conf_file" :
 				ensure => 'link',
 				target => "$clustercontrol::params::apache_security_conf_file",
 				subscribe => File["$clustercontrol::params::apache_security_conf_file"]
-			}
+			}*/
 			
 			exec { 'enable-apache-modules': 
 				path  => ['/usr/sbin','/sbin', '/usr/bin'],
