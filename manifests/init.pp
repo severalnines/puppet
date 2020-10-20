@@ -463,25 +463,24 @@ class clustercontrol (
 			notify  => Service['cmon']
 		}
 
-		/*
+
 		exec { "configure-cc-bootstrap" :
 			command => "sed -i 's|DBPASS|$mysql_cmon_password|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php && \
 			sed -i 's|DBPORT|$mysql_cmon_port|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php",
 			notify => Service[$clustercontrol::params::apache_service]
-		}*/
+		}
 
-		/*
+		
 		exec { "configure-cmonapi-bootstrap" :
-			command => "sed -i 's|RPCTOKEN|$api_token|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php && \
-			sed -i 's|clustercontrol.severalnines.com|$ip_address\/clustercontrol|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php"
-		}*/
+			command => "sed -i 's|RPCTOKEN|$api_token|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php"
+		}
 
 		file { "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php" :
 			ensure  => present,
 			replace => no,
 			source  => "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php.default",
 			require => Package["$clustercontrol::params::cc_ui"],
-			/*notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']]*/
+			*notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']],
 			notify => Service[$clustercontrol::params::apache_service]
 		}
 
