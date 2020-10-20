@@ -293,7 +293,7 @@ class clustercontrol (
 				notify   => File[$clustercontrol::params::apache_s9s_ssl_target_file]
 			}
 
-			file { "$clustercontrol::params::apache_s9s_target_fileapache_s9s_ssl_target_file" :
+			file { "$clustercontrol::params::apache_s9s_ssl_target_file" :
 				ensure => 'link',
 				target => "$clustercontrol::params::apache_s9s_ssl_conf_file",
 				subscribe => File["$clustercontrol::params::apache_s9s_ssl_conf_file"]
