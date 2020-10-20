@@ -228,11 +228,6 @@ class clustercontrol (
 		}
 		
 		/* setup the Apache server required for frontend HTTP/HTTPS */
-		exec { "allow-override-all" :
-			unless  => "grep 'AllowOverride All' $clustercontrol::params::apache_conf_file",
-			command => "sed -i 's|AllowOverride None|AllowOverride All|g' $clustercontrol::params::apache_conf_file"
-		}
-
 		package { $clustercontrol::params::cc_controller :
 			ensure => installed,
 			require => [$clustercontrol::params::severalnines_repo, Package[$clustercontrol::params::cc_dependencies]]
@@ -317,6 +312,12 @@ class clustercontrol (
 				loglevel => info,
 				require => Package[$clustercontrol::params::cc_dependencies]
 			}
+		}
+
+		exec { "allow-override-all" :
+			unless  => "grep 'AllowOverride All' $clustercontrol::params::apache_conf_file",
+			command => "sed -i 's|AllowOverride None|AllowOverride All|g' $clustercontrol::params::apache_conf_file",
+			require => File[$clustercontrol::params::apache_conf_file]
 		}
 		
 		
