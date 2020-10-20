@@ -14,7 +14,7 @@ class clustercontrol::params {
 	
 	$format = "%i"
 	$a_version_no = scanf($operatingsystemmajrelease, $format)
-	$$os_majrelease = $a_version_no[0]
+	$os_majrelease = $a_version_no[0]
 	notice(">>>>>> CC Debugger >>>>>> value is: $os_majrelease + ${operatingsystemmajrelease}")
 
 	$typevar = type($os_majrelease)
