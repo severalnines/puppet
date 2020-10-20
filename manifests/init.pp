@@ -62,6 +62,8 @@ class clustercontrol (
 
 	$backup_dir       = "$user_home/backups"
 	$staging_dir      = "$user_home/s9s_tmp"
+		
+	$l_osfamily = downcase($osfamily);
 
 	if empty($mysql_basedir) {
 		Exec { path => ['/usr/bin','/bin']}
@@ -92,8 +94,6 @@ class clustercontrol (
 			ensure  => installed,
 			subscribe  => Exec['disable-extra-security']
 		}
-		
-		$l_osfamily = downcase($osfamily);
 		
 		if $l_osfamily == 'redhat' {
 			file { '/etc/selinux/config':
