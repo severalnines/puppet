@@ -34,6 +34,8 @@ class clustercontrol::params {
 			$apache_log_dir = "/var/log/httpd/"
 			$apache_s9s_conf_file = '/etc/httpd/conf.d/s9s.conf'
 			$apache_s9s_ssl_conf_file = '/etc/httpd/conf.d/ssl.conf'
+			$apache_mods_header_file = '/etc/apache2/mods-available/headers.load'
+			$apache_mods_header_target_file = '/etc/apache2/mods-enabled/headers.load'
 			$cert_file        = '/etc/pki/tls/certs/s9server.crt'
 			$key_file         = '/etc/pki/tls/private/s9server.key'
 			$apache_user      = 'apache'

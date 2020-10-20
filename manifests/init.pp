@@ -328,12 +328,18 @@ class clustercontrol (
 				subscribe => File["$clustercontrol::params::apache_s9s_conf_file"]
 			}
 
-	        # enable sameorigin header
-
+	        ## Enable sameorigin header
+			# enable module header file first
+			file { "$clustercontrol::params::apache_mods_header_file" :
+				ensure => 'link',
+				target => "$clustercontrol::params::apache_mods_header_target_file",
+				require => Package[$clustercontrol::params::cc_dependencies],
+			}
+			
 			exec { "enable-securityconf-sameorigin" :
 				unless => "grep -q '^Header set X-Frame-Options: \"sameorigin\"' $clustercontrol::params::apache_security_conf_file",
 				command => "sed -i 's|\#Header set X-Frame-Options: \"sameorigin\"|Header set X-Frame-Options: \"sameorigin\"|' $clustercontrol::params::apache_security_conf_file",
-				require => Package[$clustercontrol::params::cc_dependencies],
+				subscribe => File["$clustercontrol::params::apache_mods_header_file"]
 			}
 			
 			/*
