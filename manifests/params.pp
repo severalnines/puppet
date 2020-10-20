@@ -149,7 +149,8 @@ class clustercontrol::params {
 						'/etc/apache2/sites-enabled/default-ssl.conf',
 						'/etc/apache2/sites-enabled/001-default-ssl.conf'
 					] :
-					ensure  => absent
+					ensure  => absent,
+					require => Package[$cc_dependencies]
 				}
 			} else {
 				$wwwroot          = '/var/www'
