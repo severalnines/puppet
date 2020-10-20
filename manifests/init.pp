@@ -1,4 +1,4 @@
-apache_s9s_conf_file# Class: clustercontrol
+# Class: clustercontrol
 #
 # This module manages clustercontrol
 #
