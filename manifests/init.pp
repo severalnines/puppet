@@ -64,9 +64,6 @@ class clustercontrol (
 	$staging_dir      = "$user_home/s9s_tmp"
 		
 	$l_osfamily = downcase($osfamily);
-	
-	notice("value of l_osfamily is: ${l_osfamily}")
-	fail("just fail value of l_osfamily is: ${l_osfamily}")
 
 	if empty($mysql_basedir) {
 		Exec { path => ['/usr/bin','/bin']}
@@ -119,8 +116,6 @@ class clustercontrol (
 			}
 			
 		}
-			
-			
 		
 
 		file { $datadir :
@@ -261,6 +256,7 @@ class clustercontrol (
 		$key_file = $clustercontrol::params::key_file
 		
 		if $l_osfamily == 'redhat' {
+			## RedHat/CentOS
 			file { $clustercontrol::params::apache_s9s_conf_file :
 				ensure  => present,
 				mode    => '0644',
@@ -286,8 +282,8 @@ class clustercontrol (
 				require => Exec["enable-ssl-servername-localhost"]
 			}
 		
-		} elsif $l_osfamily == 'ubuntu' {
-
+		} elsif $l_osfamily == 'debian' {
+			## Debian/Ubuntu
 			file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
 				ensure  => present,
 				content => template('clustercontrol/s9s-ssl.conf.erb'),
