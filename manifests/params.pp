@@ -10,7 +10,13 @@ class clustercontrol::params {
 	$cmon_sql_path  = '/usr/share/cmon'
 	$apache_httpd_extra_options = 'Require all granted'
 
-	$os_majrelease = Integer($operatingsystemmajrelease)
+	#$os_majrelease = Integer($operatingsystemmajrelease)
+	
+	$format = "%i"
+	$a_version_no = scanf($operatingsystemmajrelease, $format)
+	$$os_majrelease = $a_version_no[0]
+	notice(">>>>>> CC Debugger >>>>>> value is: $os_majrelease + ${operatingsystemmajrelease}")
+
 	$typevar = type($os_majrelease)
 	$lower_operatingsystem = downcase($operatingsystem)
 	
