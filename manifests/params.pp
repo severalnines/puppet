@@ -114,6 +114,7 @@ class clustercontrol::params {
 			
 				$apache_log_dir = "/var/log/apache2/"
 				$wwwroot          = '/var/www/html'
+				$apache_conf_file = "/etc/apache2/apache2.conf"
 				$apache_s9s_conf_file = '/etc/apache2/sites-available/s9s.conf'
 				$apache_s9s_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
 				$apache_s9s_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
