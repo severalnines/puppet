@@ -480,7 +480,7 @@ class clustercontrol (
 			replace => no,
 			source  => "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php.default",
 			require => Package["$clustercontrol::params::cc_ui"],
-			*notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']],
+			notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']],
 			notify => Service[$clustercontrol::params::apache_service]
 		}
 
