@@ -275,7 +275,7 @@ class clustercontrol (
 			file { $clustercontrol::params::apache_ssl_conf_file :
 				ensure  => present,
 				owner   => root, group => root,
-				content => template('clustercontrol/ssl.conf.erb'),
+				content => template('clustercontrol/s9s-ssl.conf.erb'),
 				require => Package[$clustercontrol::params::cc_dependencies],
 				notify  => Service[$clustercontrol::params::apache_service]
 			}
