@@ -330,9 +330,9 @@ class clustercontrol (
 
 	        ## Enable sameorigin header
 			# enable module header file first (applicable to Debian/Ubuntu only)
-			file { "$clustercontrol::params::apache_mods_header_file" :
+			file { "$clustercontrol::params::apache_mods_header_target_file" :
 				ensure => 'link',
-				target => "$clustercontrol::params::apache_mods_header_target_file",
+				target => "$clustercontrol::params::apache_mods_header_file",
 				require => Package[$clustercontrol::params::cc_dependencies],
 			}
 			
