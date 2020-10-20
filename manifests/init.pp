@@ -347,13 +347,13 @@ class clustercontrol (
 		## Add lines Listen and ServerName directive to httpd.conf to enable SSL/TLS
 		exec { "enable-ssl-port" :
 			unless => "grep -q 'Listen 443' $clustercontrol::params::apache_conf_file",
-			command => "sed -i '1s\/^/Listen 443\n/' $clustercontrol::params::apache_conf_file",
+			command => "sed -i '1s|^|Listen 443\\n|' $clustercontrol::params::apache_conf_file",
 			require => File[$clustercontrol::params::apache_s9s_conf_file]
 		}
 		
 		exec { "enable-ssl-servername-localhost" :
 			unless => "grep -q 'ServerName 127.0.0.1' $clustercontrol::params::apache_conf_file",
-			command => "sed -i '1s\/^/ServerName 127.0.0.1\n/' $clustercontrol::params::apache_conf_file",
+			command => "sed -i '1s|^|ServerName 127.0.0.1\\n|' $clustercontrol::params::apache_conf_file",
 			require => File[$clustercontrol::params::apache_s9s_conf_file]
 		}
 		
