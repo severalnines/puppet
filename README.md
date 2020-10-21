@@ -17,17 +17,13 @@
 Installs ClusterControl for your new database node/cluster deployment or on top of your existing database node/cluster. ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and configure it to manage and monitor an existing database cluster. 
 
 Supported database clusters:
-* Galera Cluster for MySQL
-* Percona XtraDB Cluster
-* MariaDB Galera Cluster
-* MySQL Replication
-* MySQL single instance
-* MySQL Cluster
-* MongoDB Replica Set
-* MongoDB Sharded Cluster
-* TokuMX Cluster
-* PostgreSQL single instance
-
+* MySQL Replication (Percona/MariaDB/Oracle MySQL)
+* MySQL Galera (Percona XtraDB/MariaDB)
+* MySQL Cluster (NDB)
+* TimesaleDB
+* PostgreSQL (supports Single or Streaming Replication)
+* MongoDB ReplicaSet (Percona/Mongodb)
+* MongoDB Shards (Percona/Mongodb)
 More details at [Severalnines](http://www.severalnines.com/clustercontrol) website.
 
 

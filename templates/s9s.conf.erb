@@ -1,5 +1,6 @@
 <VirtualHost *:80>
     #ServerName www.example.com
+    ServerName cc.severalnines.local
 
     ServerAdmin webmaster@localhost
     DocumentRoot <%= @wwwroot %>
@@ -10,8 +11,17 @@
     # modules, e.g.
     #LogLevel info ssl:warn
 
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
+    #ErrorLog ${APACHE_LOG_DIR}/error.log
+    #CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+
+    # ClusterControl SSH
+    RewriteEngine On
+    RewriteRule ^/clustercontrol/ssh/term$ /clustercontrol/ssh/term/ [R=301]
+    RewriteRule ^/clustercontrol/ssh/term/ws/(.*)$ ws://127.0.0.1:9511/ws/$1 [P,L]
+    RewriteRule ^/clustercontrol/ssh/term/(.*)$ http://127.0.0.1:9511/$1 [P]
+    RewriteRule ^/clustercontrol/sse/events/(.*)$ http://127.0.0.1:9510/events/$1 [P,L]
+	
 
     <Directory />
             Options +FollowSymLinks
@@ -20,7 +30,7 @@
     <Directory <%= @wwwroot %>>
             Options +Indexes +FollowSymLinks +MultiViews
             AllowOverride All
-            <%= @extra_options %>
+            <%= @apache_httpd_extra_options %>
     </Directory>
 
 </VirtualHost>

@@ -1,8 +1,19 @@
+
 <IfModule mod_ssl.c>
 	<VirtualHost _default_:443>
-		ServerAdmin webmaster@localhost
+        ServerName cc.severalnines.local
+        ServerAdmin webmaster@localhost
 
 		DocumentRoot <%= @wwwroot %>
+		RedirectMatch ^/$ /clustercontrol/
+
+		# ClusterControl SSH
+		RewriteEngine On
+		RewriteRule ^/clustercontrol/ssh/term$ /clustercontrol/ssh/term/ [R=301]
+		RewriteRule ^/clustercontrol/ssh/term/ws/(.*)$ ws://127.0.0.1:9511/ws/$1 [P,L]
+		RewriteRule ^/clustercontrol/ssh/term/(.*)$ http://127.0.0.1:9511/$1 [P]
+		RewriteRule ^/clustercontrol/sse/events/(.*)$ http://127.0.0.1:9510/events/$1 [P,L]
+
 		<Directory />
 			Options +FollowSymLinks
 			AllowOverride All
@@ -10,7 +21,7 @@
 		<Directory <%= @wwwroot %>>
 			Options +Indexes +FollowSymLinks +MultiViews
 			AllowOverride All
-			<%= @extra_options %>
+			<%= @apache_httpd_extra_options %>
 		</Directory>
 
 		# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
@@ -19,8 +30,8 @@
 		# modules, e.g.
 		#LogLevel info ssl:warn
 
-		ErrorLog ${APACHE_LOG_DIR}/error.log
-		CustomLog ${APACHE_LOG_DIR}/access.log combined
+		#ErrorLog ${APACHE_LOG_DIR}/error.log
+		#CustomLog ${APACHE_LOG_DIR}/access.log combined
 
 		# For most configuration files from conf-available/, which are
 		# enabled or disabled at a global level, it is possible to
