@@ -28,7 +28,7 @@
     "templates/ssl.conf.erb": "ae7babe4ea64d8aa590a61b5c8426368",
     "tests/init.pp": "707c446d2531da34c2c96dd10dbc345d"
   },
-  "description": "ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and all of its components and dependencies. \n\nSupported database clusters:\n* Galera Cluster for MySQL\n* Percona XtraDB Cluster\n* MariaDB Galera Cluster\n* MySQL Replication\n* MySQL single instance\n* MySQL Cluster\n* MongoDB Replica Set\n* MongoDB Sharded Cluster\n* TokuMX Cluster\n* PostgreSQL single instance",
+  "description": "ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and all of its components and dependencies. \n\nSupported database clusters:\n* Galera Cluster for MySQL\n* Percona XtraDB Cluster\n* MariaDB Galera Cluster\n* MySQL Replication\n* MySQL single instance\n* MySQL Cluster\n* MongoDB Replica Set\n* MongoDB Sharded Cluster\n* PostgreSQL Streaming Replication",
   "types": [
   
   ],
@@ -38,22 +38,22 @@
   "operatingsystem_support": [
     {
       "operatingsystem":"RedHat",
-      "operatingsystemrelease":[ "6", "7" ]
+      "operatingsystemrelease":[ "6", "7", "8" ]
     },
     {
       "operatingsystem":"CentOS",
-      "operatingsystemrelease":[ "6", "7" ]
+      "operatingsystemrelease":[ "6", "7", "8" ]
     },
     {
       "operatingsystem":"Debian",
-      "operatingsystemrelease":[ "6", "7", "8" ]
+      "operatingsystemrelease":[ "7", "8", "9", "10" ]
     },
     {
       "operatingsystem": "Ubuntu",
       "operatingsystemrelease": [
-        "14.04 LTS",
-        "12.04 LTS",
-        "10.04 LTS"
+	"20.04 LTS",
+        "18.04 LTS",
+        "16.04 LTS"
       ]
     }
   ]

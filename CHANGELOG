@@ -16,7 +16,12 @@
 * Changed : cmon.cnf follows install-cc style, cid=1 inside cmon.d
 * Fixed   : SSL Mutex configuration on Apache 2.4, APT package auto-symlink
 
-2016-05-04 0 0.1.5
+2016-05-04 - 0.1.5
 * Tested with ClusterControl v1.3.0
 * Added   : configures rpc_key and RPC_TOKEN
 * Changed : refactoring on string replacement
+
+2020-10-23 - 0.1.6
+* Tested with ClusterControl v1.8.0
+* Added   : support for RHEL/CentOS8, Debian 9 and 10, Ubuntu 20.04 and 18.04
+* Changed : manifests file
