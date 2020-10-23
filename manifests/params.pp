@@ -9,13 +9,11 @@ class clustercontrol::params {
 	$cmon_conf = '/etc/cmon.cnf'
 	$cmon_sql_path  = '/usr/share/cmon'
 	$apache_httpd_extra_options = 'Require all granted'
-
-	#$os_majrelease = Integer($operatingsystemmajrelease)
 	
 	$format = "%i"
 	$a_version_no = scanf($operatingsystemmajrelease, $format)
 	$os_majrelease = $a_version_no[0]
-	notice(">>>>>> CC Debugger >>>>>> value is: $os_majrelease + ${operatingsystemmajrelease}")
+	/*notice(">>>>>> CC Debugger >>>>>> value is: $os_majrelease + ${operatingsystemmajrelease}")*/
 
 	$typevar = type($os_majrelease)
 	$lower_operatingsystem = downcase($operatingsystem)
@@ -62,11 +60,11 @@ class clustercontrol::params {
 				
 			}
 			
-			notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
+			/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
 				os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , \
 				os_majrelease: ${os_majrelease} and data-type is: ${typevar}), \
 				cc_dependencies: ${cc_dependencies}": 
-			}
+			}*/
 			
 			yumrepo {
 				"s9s-repo":
@@ -87,28 +85,11 @@ class clustercontrol::params {
 			}
 			
 			$severalnines_repo = Yumrepo[["s9s-repo","s9s-tools-repo"]]
-
-			/*
-			file { $apache_s9s_conf_file :
-				ensure  => present,
-				mode    => '0644',
-				owner   => root, group => root,
-				require => Package[$cc_dependencies],
-				notify  => Service[$apache_service]
-			}
-
-			file { $apache_s9s_ssl_conf_file :
-				ensure  => present,
-				content => template('clustercontrol/ssl.conf.erb'),
-				notify  => Service[$apache_service]
-			}
-			*/
 			
 		}
 		'Debian': {
 			
-			if ($operatingsystem == 'Ubuntu' and $os_majrelease > 12) or ($operatingsystem == 'Debian' and $os_majrelease > 7) {
-				
+			if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 16) or ($operatingsystem == 'Debian' and $os_majrelease > 7) {
 				
 				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
 			
@@ -153,12 +134,15 @@ class clustercontrol::params {
 					require => Package[$cc_dependencies]
 				}
 			} else {
+				fail("This Puppet Module ClusterControl only supports Ubuntu >= 16 versions and Debian >=9 versions. Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) if you see unusual behavior.")
+				/*
 				$wwwroot          = '/var/www'
 				$apache_s9s_conf_file = '/etc/apache2/sites-available/000-default.conf'
 				$apache_s9s_target_file = '/etc/apache2/sites-enabled/000-default.conf'
 				$apache_s9s_ssl_conf_file = '/etc/apache2/sites-available/default-ssl.conf'
 				$apache_s9s_ssl_target_file = '/etc/apache2/sites-enabled/default-ssl.conf'
 				$apache_httpd_extra_options  = ''
+				*/
 			}
 
 			exec { 'apt-update-severalnines' :
@@ -194,6 +178,7 @@ class clustercontrol::params {
 		
 		}
 		default: {
+				fail("This Puppet Module ClusterControl only supports RHEL/CentOS >= 7, Ubuntu >= 16, Debian >= 9 versions. Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) if you see unusual behavior.")
 		}
 	}
 }

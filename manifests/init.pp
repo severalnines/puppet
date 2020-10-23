@@ -74,7 +74,7 @@ class clustercontrol (
 
 	if $is_controller {
 		include clustercontrol::params
-
+		
 		/* setup MySQL first needed as the CMONDB */
 		service { $clustercontrol::params::mysql_service :
 			ensure       => running,
@@ -88,12 +88,7 @@ class clustercontrol (
 			subscribe  => File[$clustercontrol::params::mysql_cnf],
 			notify     => Exec['create-root-password']
 		}
-		
 
-		package { $clustercontrol::params::mysql_packages :
-			ensure  => installed,
-			subscribe  => Exec['disable-extra-security']
-		}
 		
 		if ($l_osfamily == 'redhat') {
 			## RHEL/CentOS
@@ -104,7 +99,7 @@ class clustercontrol (
 			
 			exec { 'disable-extra-security' :
 				path        => ['/usr/sbin','/bin'],
-				unless      => '/usr/sbin/getenforce |grep Permissive',
+				unless      => '/usr/sbin/getenforce | grep Permissive',
 				command     => 'setenforce 0',
 				require     => File['/etc/selinux/config']
 			}
@@ -116,6 +111,10 @@ class clustercontrol (
 				command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
 			}
 			
+		}
+
+		package { $clustercontrol::params::mysql_packages :
+			ensure  => installed
 		}
 		
 
@@ -148,23 +147,23 @@ class clustercontrol (
 		}
 
 		exec { "grant-cmon-localhost" :
-			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -hlocalhost status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@localhost IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -hlocalhost status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@localhost IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@localhost WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 
 		exec { "grant-cmon-127.0.0.1" :
-			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h127.0.0.1 status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h127.0.0.1 status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@127.0.0.1 IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 
 		exec { "grant-cmon-ip-address" :
-			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h\"$ip_address\" status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$ip_address\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h\"$ip_address\" status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@\"$ip_address\" IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"$ip_address\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 
 		exec { "grant-cmon-fqdn" :
-			unless  => "mysqladmin -u cmon -p \"$mysql_cmon_password\" -h\"$fqdn\" status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h\"$fqdn\" status",
+			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@\"$fqdn\" IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 		
 		/* Populate the CMONDB with data */
@@ -341,36 +340,6 @@ class clustercontrol (
 				command => "sed -i 's|\#Header set X-Frame-Options: \"sameorigin\"|Header set X-Frame-Options: \"sameorigin\"|' $clustercontrol::params::apache_security_conf_file",
 				subscribe => File["$clustercontrol::params::apache_mods_header_target_file"]
 			}
-			
-			/*
-			file { "$clustercontrol::params::apache_security_conf_file" :
-				ensure  => present,
-				owner   => root, group => root,
-				content => template('clustercontrol/s9s-security.conf.erb'),
-				require => Exec["enable-ssl-servername-localhost"]
-			}
-
-			file { "$clustercontrol::params::apache_security_target_conf_file" :
-				ensure => 'link',
-				target => "$clustercontrol::params::apache_security_conf_file",
-				subscribe => File["$clustercontrol::params::apache_security_conf_file"]
-			}
-		
-			## Add lines Listen and ServerName directive to httpd.conf to enable SSL/TLS
-			exec { "enable-ssl-port" :
-				unless => "grep -q 'Listen 443' $clustercontrol::params::apache_conf_file",
-				command => "sed -i '1s|^|Listen 443\\n|' $clustercontrol::params::apache_conf_file",
-				require => File[$clustercontrol::params::apache_s9s_conf_file]
-			}
-		
-			exec { "enable-ssl-servername-localhost" :
-				unless => "grep -q 'ServerName 127.0.0.1' $clustercontrol::params::apache_conf_file",
-				command => "sed -i '1s|^|ServerName 127.0.0.1\\n|' $clustercontrol::params::apache_conf_file",
-				require => File[$clustercontrol::params::apache_s9s_conf_file]
-			}
-			
-			
-			*/
 			
 			exec { 'enable-apache-modules': 
 				path  => ['/usr/sbin','/sbin', '/usr/bin'],
