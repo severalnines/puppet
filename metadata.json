@@ -1,12 +1,56 @@
 {
   "name": "severalnines-clustercontrol",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "Ashraf Sharif",
-  "summary": "Installs ClusterControl v1.3.0, for your new database node/cluster deployment or on top of your existing database node/cluster.",
-  "license": "Copyright (C) 2015 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
+  "summary": "Installs ClusterControl v1.8.0, for your new database node/cluster deployment or on top of your existing database node/cluster.",
+  "license": "Copyright (C) 2020 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
   "source": "https://github.com/severalnines/puppet",
   "project_page": "https://forge.puppetlabs.com/severalnines/clustercontrol",
   "issues_url": "https://github.com/severalnines/puppet/issues",
+  "dependencies": [
+
+  ],
+  "operatingsystem_support": [
+    {
+      "operatingsystem": "RedHat",
+      "operatingsystemrelease": [
+        "6",
+        "7",
+        "8"
+      ]
+    },
+    {
+      "operatingsystem": "CentOS",
+      "operatingsystemrelease": [
+        "6",
+        "7",
+        "8"
+      ]
+    },
+    {
+      "operatingsystem": "Debian",
+      "operatingsystemrelease": [
+        "7",
+        "8",
+        "9",
+        "10"
+      ]
+    },
+    {
+      "operatingsystem": "Ubuntu",
+      "operatingsystemrelease": [
+        "20.04 LTS",
+        "18.04 LTS",
+        "16.04 LTS"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 4.10.0 < 7.0.0"
+    }
+  ],
   "checksums": {
     "CHANGELOG": "d19853106bfa001f41ae172d79e96107",
     "Modulefile": "4a3233c9f683e048a932708e59393fe9",
@@ -30,31 +74,9 @@
   },
   "description": "ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and all of its components and dependencies. \n\nSupported database clusters:\n* Galera Cluster for MySQL\n* Percona XtraDB Cluster\n* MariaDB Galera Cluster\n* MySQL Replication\n* MySQL single instance\n* MySQL Cluster\n* MongoDB Replica Set\n* MongoDB Sharded Cluster\n* PostgreSQL Streaming Replication",
   "types": [
-  
+
   ],
-  "dependencies": [
-  
-  ],
-  "operatingsystem_support": [
-    {
-      "operatingsystem":"RedHat",
-      "operatingsystemrelease":[ "6", "7", "8" ]
-    },
-    {
-      "operatingsystem":"CentOS",
-      "operatingsystemrelease":[ "6", "7", "8" ]
-    },
-    {
-      "operatingsystem":"Debian",
-      "operatingsystemrelease":[ "7", "8", "9", "10" ]
-    },
-    {
-      "operatingsystem": "Ubuntu",
-      "operatingsystemrelease": [
-	"20.04 LTS",
-        "18.04 LTS",
-        "16.04 LTS"
-      ]
-    }
-  ]
+  "pdk-version": "1.18.1",
+  "template-url": "pdk-default#1.18.1",
+  "template-ref": "tags/1.18.1-0-g3d2e75c"
 }
