@@ -1,6 +1,6 @@
 # clustercontrol #
 
-##Table of Contents
+## Table of Contents
 
 1. [Overview](#overview)
 2. [Module Description](#module-description)
@@ -12,7 +12,7 @@
 5. [Limitations](#limitations)
 6. [Development](#development)
 
-##Overview
+## Overview
 
 Installs ClusterControl for your new database node/cluster deployment or on top of your existing database node/cluster. ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and configure it to manage and monitor an existing database cluster. 
 
@@ -27,7 +27,7 @@ Supported database clusters:
 More details at [Severalnines](http://www.severalnines.com/clustercontrol) website.
 
 
-##Module Description
+## Module Description
 
 The Puppet module for ClusterControl manages and configures ClusterControl and all of its components:
 * Install ClusterControl controller, cmonapi and UI via Severalnines package repository.
@@ -38,29 +38,29 @@ The Puppet module for ClusterControl manages and configures ClusterControl and a
 If you have any questions, you are welcome to get in touch via our [contact us](http://www.severalnines.com/contact-us) page or email us at info@severalnines.com.
 
 
-##Setup
+## Setup
 
-###What ClusterControl affects
+### What ClusterControl affects
 * Severalnines yum/apt repository
 * ClusterControl controller, cmonapi and web UI
 * MySQL server and client
 * Apache web server with PHP 5
 * SSH key (authorized_keys)
 
-###Requirements
+### Requirements
 
 Make sure you meet following criteria prior to the deployment:
 * ClusterControl node must run on a clean dedicated host with internet connection.
 * If you are running as non-root user, make sure the user is able to escalate to root with sudo command.
 
-###Pre-installation
+### Pre-installation
 
 ClusterControl requires an API token. Use the helper script located at `$modulepath/clustercontrol/files/s9s_helper.sh` to generate them:
 ```bash
 $ bash /etc/puppet/modules/clustercontrol/files/s9s_helper.sh --generate-token
 ```
 
-###Installation
+### Installation
 
 Specify the generated token in the node definition similar to example below:
 
@@ -93,64 +93,64 @@ ssh-copy-id 192.168.1.12  # galera2
 ssh-copy-id 192.168.1.13  # galera3
 ```
 
-##Usage
+## Usage
 
-###General Options
+### General Options
 
-####`is_controller`
+#### `is_controller`
 Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.
 Default: true
 
-####`clustercontrol_host`
+#### `clustercontrol_host`
 Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.
 Example: '192.168.0.10'
 
-####`email_address`
+#### `email_address`
 Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.
 Default: 'admin@domain.com'
 
-####`ssh_user`
+#### `ssh_user`
 Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.
 Default: 'root'
 
-####`ssh_key`
+#### `ssh_key`
 Specify the SSH key used by ``ssh_user`` to perform passwordless SSH to the database nodes.
 Default: '/home/$USER/.ssh/id_rsa' (non-root,sudoer)
 Default: '/root/.ssh/id_rsa' (root)
 
-####`ssh_port`
+#### `ssh_port`
 Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.
 Default: 22
 
-####`sudo_password`
+#### `sudo_password`
 If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.
 Example: 'mysud0p4ssword'
 
-####`api_token`
+#### `api_token`
 Specify the 40-character ClusterControl token generated from s9s_helper script.
 Example: 'b7e515255db703c659677a66c4a17952515dbaf5'
 
-####`mysql_cmon_root_password`
+#### `mysql_cmon_root_password`
 Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.
 Default: 'password'
 
-####`mysql_cmon_password`
+#### `mysql_cmon_password`
 Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.
 Default: 'cmon'
 
-####`mysql_cmon_port`
+#### `mysql_cmon_port`
 MySQL server port that holds CMON database.
 Default: 3306
 
-####`datadir`
+#### `datadir`
 MySQL datadir on ClusterControl node.
 Default: '/var/lib/mysql'
 
-####`modulepath`
+#### `modulepath`
 Change this to the location of Puppet's module path.
 Default: '/etc/puppet/modules/clustercontrol'
 
-##Limitations
+## Limitations
 
 This module has been tested on following platforms:
 * Debian 8.x (jessie)
@@ -165,7 +165,7 @@ This module only supports bootstrapping MySQL servers with IP address only (it e
 
 [ClusterControl known issues and limitations](http://www.severalnines.com/docs/troubleshooting.html#known-issues-and-limitations).
 
-##Development
+## Development
 
 Please report bugs or suggestions via our support channel: [https://support.severalnines.com](https://support.severalnines.com)
 
