@@ -50,6 +50,7 @@ If you have any questions, feel free to raise issues via https://github.com/seve
 ### What ClusterControl affects
 * Severalnines yum/apt repository
 * ClusterControl controller, frontend, cmon-cloud and cmon-clud, and cmon-ssh packages
+* Disables SELinux/AppArmor. *You can enable once setup correctly*.
 * MySQL server and client
 * Apache web server with PHP 5
 * SSH key (authorized_keys)

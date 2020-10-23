@@ -1,6 +1,6 @@
 {
   "name": "severalnines-clustercontrol",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "author": "Ashraf Sharif",
   "summary": "Installs ClusterControl v1.8.0, for your new database node/cluster deployment or on top of your existing database node/cluster.",
   "license": "Copyright (C) 2020 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
@@ -14,7 +14,6 @@
     {
       "operatingsystem": "RedHat",
       "operatingsystemrelease": [
-        "6",
         "7",
         "8"
       ]
@@ -22,7 +21,6 @@
     {
       "operatingsystem": "CentOS",
       "operatingsystemrelease": [
-        "6",
         "7",
         "8"
       ]
@@ -30,8 +28,6 @@
     {
       "operatingsystem": "Debian",
       "operatingsystemrelease": [
-        "7",
-        "8",
         "9",
         "10"
       ]
@@ -48,7 +44,7 @@
   "requirements": [
     {
       "name": "puppet",
-      "version_requirement": ">= 4.10.0 < 7.0.0"
+      "version_requirement": ">= 5.5 < 7.0.0"
     }
   ],
   "checksums": {
@@ -67,6 +63,7 @@
     "templates/my.cnf.erb": "ec51157ca932d47e328fbb52ac1be1be",
     "templates/s9s-repo.list.erb": "1dfde1aeb7e58e1889ecb6267773c66e",
     "templates/s9s-ssl.conf.erb": "ddf4b56d2ad70287fdee08086b679307",
+    "templates/s9s-security.conf.erb": "6d42a2125a4919a83225f4baf5e79822",
     "templates/s9s.conf.erb": "97ebc733483b82f068aefb3406c5b84e",
     "templates/selinux-config.erb": "d9f67bbd5809a1cf0c02aa6e74986597",
     "templates/ssl.conf.erb": "ae7babe4ea64d8aa590a61b5c8426368",

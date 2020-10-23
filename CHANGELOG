@@ -25,3 +25,9 @@
 * Tested with ClusterControl v1.8.0
 * Added   : support for RHEL/CentOS8, Debian 9 and 10, Ubuntu 20.04 and 18.04
 * Changed : manifests file
+
+2020-10-23 - 0.1.7
+* Fix issues on Ubuntu 20.04 (Focal Fossa)
+* Added   : support for RHEL/CentOS8, Debian 9 and 10, Ubuntu 20.04 and 18.04
+* Changed : manifests file
+
