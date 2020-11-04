@@ -20,7 +20,11 @@ class clustercontrol::params {
 	
 	case $osfamily {
 		'Redhat': {
-			$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}";
+			if ($operatingsystem == 'RedHat') {
+				$s9s_tools_repo_osname = "RHEL_${operatingsystemmajrelease}"
+			} else {
+				$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}"
+			}
 			$loc_dependencies  = [
 				'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 'php-xml', 'php-json', 'php-ldap',
 				'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 

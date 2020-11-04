@@ -31,3 +31,5 @@
 * Added   : support for RHEL/CentOS8, Debian 9 and 10, Ubuntu 20.04 and 18.04
 * Changed : manifests file
 
+2020-11-4 - 0.1.8
+* Fixed issue https://github.com/severalnines/puppet/issues/6
