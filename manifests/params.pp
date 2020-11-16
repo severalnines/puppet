@@ -55,14 +55,16 @@ class clustercontrol::params {
 				$mysql_packages   = ['mariadb','mariadb-server']
 				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysqlnd']
 			} else {
+				fail("This Puppet Module ClusterControl only supports RHEL/CentOS >= 7 versions. Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) if you see unusual behavior.")
+			}
+			
+			/* else {
 				$mysql_service    = 'mysqld'
 				$mysql_packages   = ['mysql','mysql-server']
 				$cc_dependencies = $loc_dependencies + ['nc', 'php-mysql']
 				
-				/*$cc_dependencies  = ['httpd', 'wget', 'mailx', 'curl', 'cronie', 'nc', 'bind-utils', 'php', 'php-mysql', 'php-gd', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
-				]*/
 				
-			}
+			}*/
 			
 			/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
 				os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , \

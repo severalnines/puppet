@@ -217,6 +217,17 @@ Default: 3306
 MySQL datadir on ClusterControl node.
 Default: '/var/lib/mysql'
 
+##### `disable_firewall`
+Disables the firewall by default which is set to true. When disable_firewall is true, it means that flushing the iptables, then stops the ufw/firewalld.
+Default: true
+
+##### `disable_os_sec_module`
+Disables the OS security module i.e. Apparmor or SELinux, which is by default. It's not the ideal setup for security. Since ClusterControl is a complex software, it's ideal to disable it as its known to have issues when running the cmon daemon, for example with SELinux enabled. You can later enable your security module anyway once you have setup required levels all sorted out. Once you have that, do not forget to change the security module as well so Puppet will not update your current CC setup.
+Default: true
+
+##### `controller_id`
+The controller_id is an arbitrary string which ClusterControl requires to work properly. By default, it uses a UUID random string which references the `uuidgen` Linux command which is part of the `libuuid` or util-linux package, so this shall be present in all recent Linux systems we support. Checkout the documentation for the components under the [CMON section](https://severalnines.com/docs/components.html#cmon) for more details.
+Default: UUID string
 
 ## Limitations
 

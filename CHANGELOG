@@ -33,3 +33,8 @@
 
 2020-11-4 - 0.1.8
 * Fixed issue https://github.com/severalnines/puppet/issues/6
+
+2020-11-17 - 0.1.9
+* Fixed issue on RHEL 8 blocking HTTP/HTTPS port with firewalld disabled
+* Fix outstanding controller_id bug which is resolve to use UUID format just as the recent format in 1.8.x version
+* Tested and proven to work with 1.8.1 version of CC

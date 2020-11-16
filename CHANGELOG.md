@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Release 0.1.8
+## Release 0.1.9
 
 **Features**
 * This version is tailored to work specifically the latest ClusterControl 1.8.x version.

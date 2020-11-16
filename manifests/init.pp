@@ -31,8 +31,15 @@ class clustercontrol (
   $modulepath               = '/etc/puppetlabs/code/environments/production/modules/clustercontrol/',
   $datadir                  = '/var/lib/mysql',
   $use_repo                 = true,
+  $disable_firewall			= true,		# flushes the iptables then disable iptables/firewalld/ufw
+  $disable_os_sec_module	= true,		# disable by default for SELinux/AppArmor
+  $controller_id		    = '',
   $enabled                  = true
 ) {
+	
+	#fail( "controller_id is ${::controller_id}") 
+	
+	
 	if $enabled {
 		$service_status = 'running'
 	} else {
@@ -62,7 +69,14 @@ class clustercontrol (
 
 	$backup_dir       = "$user_home/backups"
 	$staging_dir      = "$user_home/s9s_tmp"
-		
+	
+	if (empty($controller_id)) {
+		$l_controller_id	  = $::controller_id
+	} else {
+		$l_controller_id	  = $controller_id
+	}
+	
+	
 	$l_osfamily = downcase($osfamily);
 
 	if empty($mysql_basedir) {
@@ -89,6 +103,20 @@ class clustercontrol (
 			notify     => Exec['create-root-password']
 		}
 
+
+		
+	    #if $::iptables == "true" {
+	  #  }
+		
+			exec { 'disable-firewall' :
+				path        => ['/usr/sbin','/sbin'],
+				command     => 'iptables -F'
+			}
+			
+		    service { "iptables":
+		    	enable  => false,
+		        ensure  => stopped,
+		    }			
 		
 		if ($l_osfamily == 'redhat') {
 			## RHEL/CentOS
@@ -97,19 +125,29 @@ class clustercontrol (
 				content => template('clustercontrol/selinux-config.erb'),
 			}
 			
-			exec { 'disable-extra-security' :
+			exec { 'disable-os-security-module' :
 				path        => ['/usr/sbin','/bin'],
-				unless      => '/usr/sbin/getenforce | grep Permissive',
+				onlyif      => '/usr/sbin/getenforce | grep -i enforcing',
 				command     => 'setenforce 0',
 				require     => File['/etc/selinux/config']
 			}
+			
+		    service { 'firewalld':
+		        ensure     => stopped,
+		        enable     => false
+		    }
 		} elsif ($l_osfamily == 'debian') {
 			## Debian/Ubuntu
-			exec { 'disable-extra-security' :
+			exec { 'disable-os-security-module' :
 				path        => ['/usr/sbin', '/usr/bin'],
 				onlyif      => 'which apparmor_status',
 				command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
 			}
+			
+		    service { 'ufw':
+		        ensure     => stopped,
+		        enable     => false
+		    }
 			
 		}
 
@@ -337,7 +375,7 @@ class clustercontrol (
 			
 			exec { "enable-securityconf-sameorigin" :
 				unless => "grep -q '^Header set X-Frame-Options: \"sameorigin\"' $clustercontrol::params::apache_security_conf_file",
-				command => "sed -i 's|\#Header set X-Frame-Options: \"sameorigin\"|Header set X-Frame-Options: \"sameorigin\"|' $clustercontrol::params::apache_security_conf_file",
+				command => "sed -i 's|\\#Header set X-Frame-Options: \"sameorigin\"|Header set X-Frame-Options: \"sameorigin\"|' $clustercontrol::params::apache_security_conf_file",
 				subscribe => File["$clustercontrol::params::apache_mods_header_target_file"]
 			}
 			
