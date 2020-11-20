@@ -119,115 +119,115 @@ ssh-copy-id 192.168.1.13  # galera3
 ### General Options
 
 #### `is_controller`
-Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.
-Default: true
+Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.  
+**Default: true**
 
 #### `clustercontrol_host`
-Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.
-Example: '192.168.0.10'
+Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.  
+**Example: '192.168.0.10'**
 
 #### `email_address`
-Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.
-Default: 'admin@domain.com'
+Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.  
+**Default: 'admin@domain.com'**
 
 #### `ssh_user`
-Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.
-Default: 'root'
+Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
+**Default: 'root'**
 
 #### `ssh_key`
 #####`is_controller`
-Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.
-Default: true
+Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.  
+**Default: true**
 
 ##### `clustercontrol_host`
-Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.
-Example: '192.168.0.10'
+Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.  
+**Example: '192.168.0.10'**
 
 ##### `email_address`
-Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.
-Default: 'admin@domain.com'
+Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.  
+**Default: 'admin@domain.com'**
 
 ##### `ssh_user`
-Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.
-Default: 'root'
+Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
+**Default: 'root'**
 
 ##### `ssh_key`
-Specify the SSH key used by ``ssh_user`` to perform passwordless SSH to the database nodes.
-Default: '/home/$USER/.ssh/id_rsa' (non-root,sudoer)
-Default: '/root/.ssh/id_rsa' (root)
+Specify the SSH key used by ``ssh_user`` to perform passwordless SSH to the database nodes.  
+**Default: '/home/$USER/.ssh/id_rsa' (non-root,sudoer)**  
+**Default: '/root/.ssh/id_rsa' (root)**
 
 #### `ssh_port`
-Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.
-Default: 22
+Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.  
+**Default: 22**
 
 #### `sudo_password`
-If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.
-Example: 'mysud0p4ssword'
+If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.  
+**Example: 'mysud0p4ssword'**
 
 #### `api_token`
-Specify the 40-character ClusterControl token generated from s9s_helper script.
-Example: 'b7e515255db703c659677a66c4a17952515dbaf5'
+Specify the 40-character ClusterControl token generated from s9s_helper script.  
+**Example: 'b7e515255db703c659677a66c4a17952515dbaf5'**
 
 #### `mysql_cmon_root_password`
-Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.
-Default: 'password'
+Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.  
+**Default: 'password'**
 
 #### `mysql_cmon_password`
-Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.
-Default: 'cmon'
+Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.  
+**Default: 'cmon'**
 
 #### `mysql_cmon_port`
-MySQL server port that holds CMON database.
-Default: 3306
+MySQL server port that holds CMON database.  
+**Default: 3306**
 
 #### `datadir`
-MySQL datadir on ClusterControl node.
-Default: '/var/lib/mysql'
+MySQL datadir on ClusterControl node.  
+**Default: '/var/lib/mysql'**
 
 #### `modulepath`
-The modulepath of your Puppet Server setup, equivalent to what's defined in your environment.conf with the clustercontrol module name.
-Default: '/etc/puppetlabs/code/environments/production/modules/clustercontrol/'
+The modulepath of your Puppet Server setup, equivalent to what's defined in your environment.conf with the clustercontrol module name.  
+**Default: '/etc/puppetlabs/code/environments/production/modules/clustercontrol/'**
 
 
 ##### `ssh_port`
-Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.
-Default: 22
+Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.  
+**Default: 22**
 
 ##### `sudo_password`
-If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.
-Example: 'mysud0p4ssword'
+If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.  
+**Example: 'mysud0p4ssword'**
 
 ##### `api_token`
-Specify the 40-character ClusterControl token generated from s9s_helper script.
-Example: 'b7e515255db703c659677a66c4a17952515dbaf5'
+Specify the 40-character ClusterControl token generated from s9s_helper script.  
+**Example: 'b7e515255db703c659677a66c4a17952515dbaf5'**
 
 ##### `mysql_cmon_root_password`
-Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.
-Default: 'password'
+Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.  
+**Default: 'password'**
 
 ##### `mysql_cmon_password`
-Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.
-Default: 'cmon'
+Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.  
+**Default: 'cmon'**
 
 ##### `mysql_cmon_port`
-MySQL server port that holds CMON database.
-Default: 3306
+MySQL server port that holds CMON database.  
+**Default: 3306**
 
 ##### `datadir`
-MySQL datadir on ClusterControl node.
-Default: '/var/lib/mysql'
+MySQL datadir on ClusterControl node.  
+**Default: '/var/lib/mysql'**
 
 ##### `disable_firewall`
-Disables the firewall by default which is set to true. When disable_firewall is true, it means that flushing the iptables, then stops the ufw/firewalld. If `disable_firewall` is set to false, the module will just do nothing and let your current firewall configuration untouched.
-Default: true
+Disables the firewall by default which is set to true. When disable_firewall is true, it means that flushing the iptables, then stops the ufw/firewalld. If `disable_firewall` is set to false, the module will just do nothing and let your current firewall configuration untouched.  
+**Default: true**
 
 ##### `disable_os_sec_module`
-Disables the OS security module i.e. Apparmor or SELinux, which is by default. It's not the ideal setup for security. Since ClusterControl is a complex software, it's ideal to disable it as its known to have issues when running the cmon daemon, for example with SELinux enabled. You can later enable your security module anyway once you have setup required levels all sorted out. Once you have that, do not forget to change the security module as well so Puppet will not update your current CC setup.  If `disable_os_sec_module` is set to false, the module will just do nothing and let your current Apparmor/SELinux configuration untouched.
-Default: true
+Disables the OS security module i.e. Apparmor or SELinux, which is by default. It's not the ideal setup for security. Since ClusterControl is a complex software, it's ideal to disable it as its known to have issues when running the cmon daemon, for example with SELinux enabled. You can later enable your security module anyway once you have setup required levels all sorted out. Once you have that, do not forget to change the security module as well so Puppet will not update your current CC setup.  If `disable_os_sec_module` is set to false, the module will just do nothing and let your current Apparmor/SELinux configuration untouched.  
+**Default: true**
 
 ##### `controller_id`
-The controller_id is an arbitrary string which ClusterControl requires to work properly. By default, it uses a UUID random string which references the `uuidgen` Linux command which is part of the `libuuid` or util-linux package, so this shall be present in all recent Linux systems we support. Checkout the documentation for the components under the [CMON section](https://severalnines.com/docs/components.html#cmon) for more details.
-Default: UUID string
+The controller_id is an arbitrary string which ClusterControl requires to work properly. By default, it uses a UUID random string which references the `uuidgen` Linux command which is part of the `libuuid` or util-linux package, so this shall be present in all recent Linux systems we support. Checkout the documentation for the components under the [CMON section](https://severalnines.com/docs/components.html#cmon) for more details.  
+**Default: UUID string**
 
 ## Limitations
 
