@@ -1,5 +1,5 @@
 name    'severalnines-clustercontrol'
-version '0.1.9'
+version '0.1.10'
 source 'https://github.com/severalnines/puppet'
 author 'Ashraf Sharif'
 license 'Copyright (C) 2020 Severalnines AB. Licensed under the Licensed under (Apache 2.0).'

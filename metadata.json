@@ -1,6 +1,6 @@
 {
   "name": "severalnines-clustercontrol",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "author": "Ashraf Sharif",
   "summary": "Installs ClusterControl v1.8.1, for your new database node/cluster deployment or on top of your existing database node/cluster.",
   "license": "Copyright (C) 2020 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",

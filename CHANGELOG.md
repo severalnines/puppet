@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Release 0.1.9
+## Release 0.1.10
 
 **Features**
 * This version is tailored to work specifically the latest ClusterControl 1.8.x version.
@@ -19,6 +19,8 @@ All versions of the supported OS's that passed its EOL or almost reached its EOL
 **Bugfixes**
 - separate dependency over disabling SELinux/AppArmor
 - make sure it works on MySQL 8 especially the default installation of Focal Fosa in Ubuntu.
+- Absence of conditional statement to handle the disable_firewall and disable_os_sec_module is now present.
+- Updated docs for disable_firewall and disable_os_sec_module during set to false.
 
 **Known Issues**
 As of this version, it's revamped from inactivity. Please file if you find any issues or bump into specific problems. Thanks.

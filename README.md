@@ -218,11 +218,11 @@ MySQL datadir on ClusterControl node.
 Default: '/var/lib/mysql'
 
 ##### `disable_firewall`
-Disables the firewall by default which is set to true. When disable_firewall is true, it means that flushing the iptables, then stops the ufw/firewalld.
+Disables the firewall by default which is set to true. When disable_firewall is true, it means that flushing the iptables, then stops the ufw/firewalld. If `disable_firewall` is set to false, the module will just do nothing and let your current firewall configuration untouched.
 Default: true
 
 ##### `disable_os_sec_module`
-Disables the OS security module i.e. Apparmor or SELinux, which is by default. It's not the ideal setup for security. Since ClusterControl is a complex software, it's ideal to disable it as its known to have issues when running the cmon daemon, for example with SELinux enabled. You can later enable your security module anyway once you have setup required levels all sorted out. Once you have that, do not forget to change the security module as well so Puppet will not update your current CC setup.
+Disables the OS security module i.e. Apparmor or SELinux, which is by default. It's not the ideal setup for security. Since ClusterControl is a complex software, it's ideal to disable it as its known to have issues when running the cmon daemon, for example with SELinux enabled. You can later enable your security module anyway once you have setup required levels all sorted out. Once you have that, do not forget to change the security module as well so Puppet will not update your current CC setup.  If `disable_os_sec_module` is set to false, the module will just do nothing and let your current Apparmor/SELinux configuration untouched.
 Default: true
 
 ##### `controller_id`

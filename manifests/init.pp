@@ -108,6 +108,7 @@ class clustercontrol (
 	    #if $::iptables == "true" {
 	  #  }
 		
+		if ($disable_firewall) {
 			exec { 'disable-firewall' :
 				path        => ['/usr/sbin','/sbin'],
 				command     => 'iptables -F'
@@ -116,39 +117,49 @@ class clustercontrol (
 		    service { "iptables":
 		    	enable  => false,
 		        ensure  => stopped,
-		    }			
+		    }	
+		}		
 		
 		if ($l_osfamily == 'redhat') {
 			## RHEL/CentOS
-			file { '/etc/selinux/config':
-				ensure  => present,
-				content => template('clustercontrol/selinux-config.erb'),
+			
+			if ($disable_os_sec_module) {
+				file { '/etc/selinux/config':
+					ensure  => present,
+					content => template('clustercontrol/selinux-config.erb'),
+				}
+			
+				exec { 'disable-os-security-module' :
+					path        => ['/usr/sbin','/bin'],
+					onlyif      => '/usr/sbin/getenforce | grep -i enforcing',
+					command     => 'setenforce 0',
+					require     => File['/etc/selinux/config']
+				}
 			}
 			
-			exec { 'disable-os-security-module' :
-				path        => ['/usr/sbin','/bin'],
-				onlyif      => '/usr/sbin/getenforce | grep -i enforcing',
-				command     => 'setenforce 0',
-				require     => File['/etc/selinux/config']
+			if ($disable_firewall) {
+			    service { 'firewalld':
+			        ensure     => stopped,
+			        enable     => false
+			    }
 			}
 			
-		    service { 'firewalld':
-		        ensure     => stopped,
-		        enable     => false
-		    }
 		} elsif ($l_osfamily == 'debian') {
 			## Debian/Ubuntu
-			exec { 'disable-os-security-module' :
-				path        => ['/usr/sbin', '/usr/bin'],
-				onlyif      => 'which apparmor_status',
-				command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+			if ($disable_os_sec_module) {
+				exec { 'disable-os-security-module' :
+					path        => ['/usr/sbin', '/usr/bin'],
+					onlyif      => 'which apparmor_status',
+					command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
+				}
 			}
 			
-		    service { 'ufw':
-		        ensure     => stopped,
-		        enable     => false
-		    }
-			
+			if ($disable_firewall) {
+			    service { 'ufw':
+			        ensure     => stopped,
+			        enable     => false
+			    }
+			}
 		}
 
 		package { $clustercontrol::params::mysql_packages :

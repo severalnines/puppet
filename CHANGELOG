@@ -38,3 +38,7 @@
 * Fixed issue on RHEL 8 blocking HTTP/HTTPS port with firewalld disabled
 * Fix outstanding controller_id bug which is resolve to use UUID format just as the recent format in 1.8.x version
 * Tested and proven to work with 1.8.1 version of CC
+
+2020-11-17 - 0.1.10
+* Absence of conditional statement to handle the disable_firewall and disable_os_sec_module is now present.
+* Updated docs for disable_firewall and disable_os_sec_module during set to false.
