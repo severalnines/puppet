@@ -67,7 +67,7 @@
 	  "templates/selinux-config.erb" : "d9f67bbd5809a1cf0c02aa6e74986597",
 	  "templates/ssl.conf.erb" : "40d32c461f566505bb8f9000108a2822",
 	  "templates/s9s-security.conf.erb" : "6d42a2125a4919a83225f4baf5e79822",
-	  "tests/init.pp" : "707c446d2531da34c2c96dd10dbc345d",
+	  "tests/init.pp" : "829b7b112e376912d97a927457b82297",
 	  "Modulefile" : "79f8c12f577273f3d728fa6caea6cfd7",
 	  "appveyor.yml" : "4aa690537aadcdd9341e0e3cca957d38",
 	  "hiera.yaml" : "32cbde25e4fa9a157199896fd2a5fed5",

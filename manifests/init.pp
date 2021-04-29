@@ -670,33 +670,17 @@ class clustercontrol (
 			hasstatus    => true
 		}
 	
-
-
-/*
-    export S9S_USER_CONFIG=$HOME/.s9s/ccrpc.conf
-    s9s user --create --generate-key --group=admins --controller=https://localhost:9501 ccrpc
-    [[ $? -ne 0 ]] && log_msg "Unable to create the 'ccrpc' user! Please check your s9s installation." && exit 1
-    s9s user --whoami --cmon-user=ccrpc --private-key-file=$HOME/.s9s/ccrpc.key &>/dev/null
-    [[ $? -ne 0 ]] && log_msg "Unable to verify s9s ccrpc private key" && exit 1
-
-    s9s user --set --first-name=RPC --last-name=API &>/dev/null
-    s9s user --change-password --new-password=${rpc_key} ccrpc &>/dev/null
-    [[ $? -ne 0 ]] && log_msg "Unable to change s9s ccrpc password" && exit 1
-
-    unset S9S_USER_CONFIG
-
-*/
 		$username = "root"
 		$home = "home_$username"
 		$home_path = inline_template("<%= scope.lookupvar('::$home') %>")
 		$user_path = "${home_path}/.s9s/ccrpc.conf"
 		
-		
+		/*
 		notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool 
 			home_path: ${home_path}, \
 			user_path: ${user_path}, \
 			home: ${home}": 
-		}
+		}*/
 		
 		
 
@@ -708,24 +692,10 @@ class clustercontrol (
 			require => Service['cmon']
 		}
 
-		/*
-		exec { "declare_ccrpc_config_var":
-			environment => ["S9S_USER_CONFIG=${user_path}"],
-			user => "root",
-			require =>  File["$home_path/.s9s/"]
-		}*/
-
 		exec { "create_ccrpc_user":
 			command => "sudo S9S_USER_CONFIG=${user_path} s9s user --create --new-password=$api_token --generate-key --private-key-file=~/.s9s/ccrpc.key --group=admins --controller=https://localhost:9501 ccrpc",
 			require =>  [Service['cmon'],File["${home_path}/.s9s/"]]
 		}
-		/*
-		exec { "create_ccrpc_set_private_key":
-			command => "s9s user --whoami --cmon-user=ccrpc --private-key-file=~/.s9s/ccrpc.key",
-			user => "root",
-			provider => "shell",
-			require =>  File["${home_path}/.s9s/"]
-		} */
 
 
 		exec { "create_ccrpc_set_firstname":
@@ -734,37 +704,6 @@ class clustercontrol (
 			require =>  [File["${home_path}/.s9s/"],Service['cmon']]
 		}
 
-	
-/*			
-		exec { "delete-s9sconf":
-			command => "rm -rf /etc/s9s* /root/.s9s/*",
-			#require => Exec["apt-update-severalnines"],
-			require => Service['cmon-ssh']
-		}
-
-
-
-		exec { "create-newadmin":
-			'user' => 'root',
-			command => "s9s user --create --generate-key --group=admins --controller=\"https://localhost:9501\" newadmin",
-			#require => Exec["apt-update-severalnines"],
-			#require => Service['cmon-ssh']
-			require => Exec['delete-s9sconf']
-		}
-
-	
-		exec { "create-crpcuser":
-			command => "s9s user --create --new-password=$api_token --group=admins --controller=\"https://localhost:9501\" ccrpc",
-			#require => Exec["apt-update-severalnines"],
-			require => Exec['create-newadmin']
-		}
-
-		exec { "execute_crpcuser":
-			command => "/bin/bash /root/ccrpcuser.sh",
-			#require => Exec["apt-update-severalnines"],
-			require => Service['cmon','cmon-ssh']
-		}
-*/
 		
     } else {
           
