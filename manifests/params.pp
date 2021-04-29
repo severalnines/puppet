@@ -1,4 +1,4 @@
-class clustercontrol::params {
+class clustercontrol::params ($online_install = true) {
 	$repo_host = 'repo.severalnines.com'
 	$cc_controller = 'clustercontrol-controller'
 	$cc_ui = 'clustercontrol'
@@ -6,6 +6,8 @@ class clustercontrol::params {
 	$cc_clud = 'clustercontrol-clud'
 	$cc_ssh = 'clustercontrol-ssh'
 	$cc_notif = 'clustercontrol-notifications'
+	$libs9s = 'libs9s'
+	$s9stools = 's9s-tools'
 	$cmon_conf = '/etc/cmon.cnf'
 	$cmon_sql_path  = '/usr/share/cmon'
 	$apache_httpd_extra_options = 'Require all granted'
@@ -25,11 +27,23 @@ class clustercontrol::params {
 			} else {
 				$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}"
 			}
-			$loc_dependencies  = [
-				'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 'php-xml', 'php-json', 'php-ldap',
-				'mod_ssl', 'openssl', 'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 
-				'clustercontrol-clud', 's9s-tools'
-			]
+			
+			
+			if ($online_install) {	
+				$loc_dependencies  = [
+					'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
+					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 
+					'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+				]
+			} else {
+				$loc_dependencies  = [
+					'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
+					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'gnuplot', 'expect', 'perl-XML-XPath',
+					'psmisc'
+				]
+			}
+			
+			
 			
 			$apache_conf_file = "/etc/httpd/conf/httpd.conf"
 			$apache_security_conf_file = "/etc/httpd/conf.d/security.conf"
@@ -72,25 +86,28 @@ class clustercontrol::params {
 				cc_dependencies: ${cc_dependencies}": 
 			}*/
 			
-			yumrepo {
-				"s9s-repo":
-				descr     => "Severalnines Repository",
-				baseurl   => "http://$repo_host/rpm/os/x86_64",
-				enabled   => 1,
-				gpgkey    => "http://$repo_host/severalnines-repos.asc",
-				gpgcheck  => 1
-			}
+			if ($online_install) {
+				## Execute repo fetch and updates for s9s only when has internet connection or access to s9s site.
+				yumrepo {
+					"s9s-repo":
+					descr     => "Severalnines Repository",
+					baseurl   => "http://$repo_host/rpm/os/x86_64",
+					enabled   => 1,
+					gpgkey    => "http://$repo_host/severalnines-repos.asc",
+					gpgcheck  => 1
+				}
 			
-			yumrepo {
-				"s9s-tools-repo":
-				descr     => "s9s-tools $s9s_tools_repo_osname",
-				baseurl   => "http://$repo_host/s9s-tools/$s9s_tools_repo_osname",
-				enabled   => 1,
-				gpgkey    => "http://$repo_host/s9s-tools/$s9s_tools_repo_osname/repodata/repomd.xml.key",
-				gpgcheck  => 1
-			}
+				yumrepo {
+					"s9s-tools-repo":
+					descr     => "s9s-tools $s9s_tools_repo_osname",
+					baseurl   => "http://$repo_host/s9s-tools/$s9s_tools_repo_osname",
+					enabled   => 1,
+					gpgkey    => "http://$repo_host/s9s-tools/$s9s_tools_repo_osname/repodata/repomd.xml.key",
+					gpgcheck  => 1
+				}
 			
-			$severalnines_repo = Yumrepo[["s9s-repo","s9s-tools-repo"]]
+				$severalnines_repo = Yumrepo[["s9s-repo","s9s-tools-repo"]]
+			}
 			
 		}
 		'Debian': {
@@ -121,13 +138,26 @@ class clustercontrol::params {
 				$repo_source      = '/etc/apt/sources.list.d/s9s-repo.list'
 				$repo_tools_src   = '/etc/apt/sources.list.d/s9s-tools.list'
 			
-			
-				$mysql_packages   = ['mysql-client','mysql-server']
-				$cc_dependencies  = [
-					'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 'php-ldap', 'php-curl',
-					'php-json', 'php-fpm', 'php-xml', 'libapache2-mod-php', 'clustercontrol-notifications', 'clustercontrol-ssh',
-					'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
-				]
+				if ($operatingsystem == 'Debian') {
+					$mysql_packages   = ['mariadb-client','mariadb-server']
+				} else {
+					$mysql_packages   = ['mysql-client','mysql-server']
+				}
+				
+				if ($online_install) {
+					$cc_dependencies  = [
+						'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 
+						'php-ldap', 'php-curl',	'php-json', 'php-fpm', 'php-xml', 'libapache2-mod-php', 
+						'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 
+						'clustercontrol-clud', 's9s-tools'
+					]
+				} else {
+					$cc_dependencies  = [
+						'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 
+						'php-ldap', 'php-curl',	'php-json', 'php-fpm', 'php-xml', 'libapache2-mod-php'
+					]
+				}
+				
 
 				/* Remove unwanted config files, retain only s9s config files */
 				file {
@@ -150,37 +180,44 @@ class clustercontrol::params {
 				$apache_httpd_extra_options  = ''
 				*/
 			}
+			
+			if ($online_install) {
+				## Execute repo fetch and updates for s9s only when has internet connection or access to s9s site.
+				exec { 'apt-update-severalnines' :
+					path        => ['/bin','/usr/bin'],
+					command     => 'apt-get update',
+					require     => File[
+							["$clustercontrol::params::repo_source"],
+							["$clustercontrol::params::repo_tools_src"]
+					],
+					refreshonly => true
+				}
 
-			exec { 'apt-update-severalnines' :
-				path        => ['/bin','/usr/bin'],
-				command     => 'apt-get update',
-				require     => File[["$clustercontrol::params::repo_source"],["$clustercontrol::params::repo_tools_src"]],
-				refreshonly => true
+				exec { 'import-severalnines-key' :
+					path        => ['/bin','/usr/bin'],
+					command     => "wget http://$clustercontrol::params::repo_host/severalnines-repos.asc -O- | apt-key add -"
+				}
+
+				exec { 'import-severalnines-tools-key' :
+					path        => ['/bin','/usr/bin'],
+					command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$lsbdistcodename/Release.key -O- | apt-key add -"
+				}
+
+				file { "$repo_source":
+					content     => template('clustercontrol/s9s-repo.list.erb'),
+					require     => Exec['import-severalnines-key'],
+					notify      => Exec['apt-update-severalnines']
+				}
+
+				file { "$repo_tools_src":
+					content     => template('clustercontrol/s9s-tools.list.erb'),
+					require     => Exec['import-severalnines-tools-key'],
+					notify      => Exec['apt-update-severalnines']
+				}
+
+				$severalnines_repo = Exec['apt-update-severalnines']
+				
 			}
-
-			exec { 'import-severalnines-key' :
-				path        => ['/bin','/usr/bin'],
-				command     => "wget http://$clustercontrol::params::repo_host/severalnines-repos.asc -O- | apt-key add -"
-			}
-
-			exec { 'import-severalnines-tools-key' :
-				path        => ['/bin','/usr/bin'],
-				command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$lsbdistcodename/Release.key -O- | apt-key add -"
-			}
-
-			file { "$repo_source":
-				content     => template('clustercontrol/s9s-repo.list.erb'),
-				require     => Exec['import-severalnines-key'],
-				notify      => Exec['apt-update-severalnines']
-			}
-
-			file { "$repo_tools_src":
-				content     => template('clustercontrol/s9s-tools.list.erb'),
-				require     => Exec['import-severalnines-tools-key'],
-				notify      => Exec['apt-update-severalnines']
-			}
-
-			$severalnines_repo = Exec['apt-update-severalnines']
 		
 		}
 		default: {

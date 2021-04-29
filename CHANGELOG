@@ -42,3 +42,7 @@
 2020-11-17 - 0.1.10
 * Absence of conditional statement to handle the disable_firewall and disable_os_sec_module is now present.
 * Updated docs for disable_firewall and disable_os_sec_module during set to false.
+
+2021-04-29 - 1.0.0
+* Supports the ClusterControl version 1.8.2 which supports the new LDAP, PgBouncer, and new User Management which has the better access control than the to be phased out old User Management.
+* Supports offline installation. Please check out our README on how to use this.

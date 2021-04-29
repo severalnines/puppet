@@ -120,114 +120,181 @@ ssh-copy-id 192.168.1.13  # galera3
 
 #### `is_controller`
 Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.  
-**Default: true**
+**Default: (Boolean) true**
 
 #### `clustercontrol_host`
 Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.  
-**Example: '192.168.0.10'**
+**Example: (String) '192.168.0.10'**
 
 #### `email_address`
 Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.  
-**Default: 'admin@domain.com'**
+**Default: (String) 'admin@domain.com'**
 
 #### `ssh_user`
 Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
-**Default: 'root'**
+**Default: (String) 'root'**
 
 #### `ssh_key`
 #####`is_controller`
 Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.  
-**Default: true**
+**Default: (Boolean) true**
 
 ##### `clustercontrol_host`
 Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.  
-**Example: '192.168.0.10'**
+**Example: (String) '192.168.0.10'**
 
 ##### `email_address`
 Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.  
-**Default: 'admin@domain.com'**
+**Default: (String) 'admin@domain.com'**
 
 ##### `ssh_user`
 Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
-**Default: 'root'**
+**Default: (String) 'root'**
 
 ##### `ssh_key`
 Specify the SSH key used by ``ssh_user`` to perform passwordless SSH to the database nodes.  
-**Default: '/home/$USER/.ssh/id_rsa' (non-root,sudoer)**  
-**Default: '/root/.ssh/id_rsa' (root)**
+**Default: (String) '/home/$USER/.ssh/id_rsa' (non-root,sudoer)**  
+**Default: (String) '/root/.ssh/id_rsa' (root)**
 
 #### `ssh_port`
 Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.  
-**Default: 22**
+**Default: (Integer) 22**
 
 #### `sudo_password`
 If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.  
-**Example: 'mysud0p4ssword'**
+**Example: (String) 'mysud0p4ssword'**
 
 #### `api_token`
 Specify the 40-character ClusterControl token generated from s9s_helper script.  
-**Example: 'b7e515255db703c659677a66c4a17952515dbaf5'**
+**Example: (String) 'b7e515255db703c659677a66c4a17952515dbaf5'**
 
 #### `mysql_cmon_root_password`
 Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.  
-**Default: 'password'**
+**Default: (String) 'password'**
 
 #### `mysql_cmon_password`
 Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.  
-**Default: 'cmon'**
+**Default: (String) 'cmon'**
 
 #### `mysql_cmon_port`
 MySQL server port that holds CMON database.  
-**Default: 3306**
+**Default: (Integer) 3306**
 
 #### `datadir`
 MySQL datadir on ClusterControl node.  
-**Default: '/var/lib/mysql'**
+**Default: (String) '/var/lib/mysql'**
 
 #### `modulepath`
 The modulepath of your Puppet Server setup, equivalent to what's defined in your environment.conf with the clustercontrol module name.  
-**Default: '/etc/puppetlabs/code/environments/production/modules/clustercontrol/'**
+**Default:  (String) '/etc/puppetlabs/code/environments/production/modules/clustercontrol/'**
 
 
 ##### `ssh_port`
 Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.  
-**Default: 22**
+**Default (Integer) 22**
 
 ##### `sudo_password`
 If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.  
-**Example: 'mysud0p4ssword'**
+**Example: (String) 'mysud0p4ssword'**
 
 ##### `api_token`
 Specify the 40-character ClusterControl token generated from s9s_helper script.  
-**Example: 'b7e515255db703c659677a66c4a17952515dbaf5'**
+**Example: (String) 'b7e515255db703c659677a66c4a17952515dbaf5'**
 
 ##### `mysql_cmon_root_password`
 Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.  
-**Default: 'password'**
+**Default: (String) 'password'**
 
 ##### `mysql_cmon_password`
 Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.  
-**Default: 'cmon'**
+**Default: (String) 'cmon'**
 
 ##### `mysql_cmon_port`
 MySQL server port that holds CMON database.  
-**Default: 3306**
+**Default: (Integer) 3306**
 
 ##### `datadir`
 MySQL datadir on ClusterControl node.  
-**Default: '/var/lib/mysql'**
+**Default: (String) '/var/lib/mysql'**
 
 ##### `disable_firewall`
 Disables the firewall by default which is set to true. When disable_firewall is true, it means that flushing the iptables, then stops the ufw/firewalld. If `disable_firewall` is set to false, the module will just do nothing and let your current firewall configuration untouched.  
-**Default: true**
+**Default: (Boolean) true**
 
 ##### `disable_os_sec_module`
 Disables the OS security module i.e. Apparmor or SELinux, which is by default. It's not the ideal setup for security. Since ClusterControl is a complex software, it's ideal to disable it as its known to have issues when running the cmon daemon, for example with SELinux enabled. You can later enable your security module anyway once you have setup required levels all sorted out. Once you have that, do not forget to change the security module as well so Puppet will not update your current CC setup.  If `disable_os_sec_module` is set to false, the module will just do nothing and let your current Apparmor/SELinux configuration untouched.  
-**Default: true**
+**Default: (Boolean) true**
 
 ##### `controller_id`
-The controller_id is an arbitrary string which ClusterControl requires to work properly. By default, it uses a UUID random string which references the `uuidgen` Linux command which is part of the `libuuid` or util-linux package, so this shall be present in all recent Linux systems we support. Checkout the documentation for the components under the [CMON section](https://severalnines.com/docs/components.html#cmon) for more details.  
-**Default: UUID string**
+The `controller_id` is an arbitrary string which ClusterControl requires to work properly. By default, it uses a UUID random string which references the `uuidgen` Linux command which is part of the `libuuid` or util-linux package, so this shall be present in all recent Linux systems we support. Checkout the documentation for the components under the [CMON section](https://severalnines.com/docs/components.html#cmon) for more details.  
+**Default: (UUID) string**
+
+##### `is_online_install`
+The `is_online_install` option is used to flag whether the type of setup for installation is online (default) or offline. By default, the option `is_online_install` is set to true and it will always rely on the repository to access the internet to download and install OS packages. For more private and encapsulated type of environment, then offline installation is for you. You just have to set the `is_online_install` to false or `is_online_install=false`.  
+**Default: (Boolean) true**
+
+##### `cc_packages_path`
+The `cc_packages_path` option is a Hash data type which uses key-value. This option defines the following key-value as shown below:
+
+```
+## For Debian/Ubuntu
+  $cc_packages_path				= {
+  	'clustercontrol-controller' => '',
+	'clustercontrol' => '',
+	'clustercontrol-cloud' => '',
+	'clustercontrol-clud' => '',
+	'clustercontrol-ssh' => '',
+	'clustercontrol-notifications' => '',
+	'libs9s' => '',
+	's9s-tools' => ''
+  },
+## For RHEL/CentOS
+  $cc_packages_path				= {
+  	'clustercontrol-controller' => '',
+	'clustercontrol' => '',
+	'clustercontrol-cloud' => '',
+	'clustercontrol-clud' => '',
+	'clustercontrol-ssh' => '',
+	'clustercontrol-notifications' => '',
+	's9s-tools' => ''
+  },
+```
+The keys has to be exactly as shown above, and its values is the exact full path where the packages are located and it has to be coming from the target host/node where CC is to be installed. To grab the ClusterControl packages, click this page https://severalnines.com/downloads/cmon/?C=M;O=D. For the s9s CLI tools, click check out http://repo.severalnines.com/s9s-tools/. For example, my target hostname called `pupnode2.puppet.local` where ClusterControl will be installed is a Debian 10 (Buster). Then in my manifests file `/etc/puppetlabs/code/environments/production/manifests/clustercontrol.pp`, here's the following:
+```
+node 'pupnode2.puppet.local' { # Applies only to mentioned node. If nothing mentioned, applies to all.
+
+        class { 'clustercontrol':
+                        is_controller => true,
+                        ip_address => '192.168.40.20',
+                        mysql_root_password => 'R00tP@55',
+                        mysql_cmon_root_password => 'R00tP@55',
+                        mysql_cmon_password => 'R00tP@55',
+                        api_token => '6df80ef0cf75be2537f9bd07f00fd35813e5a59b',
+                        ssh_user => 'vagrant',
+                        is_online_install => false,
+                        cc_packages_path => {
+                                'clustercontrol-controller' => '/opt/clustercontrol/binaries/clustercontrol-controller-1.8.2-4478-x86_64.deb',
+                                'clustercontrol' => '/opt/clustercontrol/binaries/clustercontrol_1.8.2-7804_x86_64.deb',
+                                'clustercontrol-cloud' => '/opt/clustercontrol/binaries/clustercontrol-cloud_1.8.2-280_x86_64.deb',
+                                'clustercontrol-clud' => '/opt/clustercontrol/binaries/clustercontrol-clud_1.8.2-280_x86_64.deb',
+                                'clustercontrol-ssh' => '/opt/clustercontrol/binaries/clustercontrol-ssh_1.8.2-105_x86_64.deb',
+                                'clustercontrol-notifications' => '/opt/clustercontrol/binaries/clustercontrol-notifications_1.8.2-267_x86_64.deb',
+                                'libs9s' => '/opt/clustercontrol/binaries/s9s_debian_buster/libs9s0_1.8.20210126-release1_amd64.deb',
+                                's9s-tools' => '/opt/clustercontrol/binaries/s9s_debian_buster/s9s-tools_1.8.20210126-release1_amd64.deb'
+                        }/*
+                        cc_packages_path => {
+                                'clustercontrol-controller' => '/opt/clustercontrol/binaries/clustercontrol-controller-1.8.2-4478-x86_64.rpm',
+                                'clustercontrol' => '/opt/clustercontrol/binaries/clustercontrol-1.8.2-7836-x86_64.rpm',
+                                'clustercontrol-cloud' => '/opt/clustercontrol/binaries/clustercontrol-cloud-1.8.2-286-x86_64.rpm',
+                                'clustercontrol-clud' => '/opt/clustercontrol/binaries/clustercontrol-clud-1.8.2-286-x86_64.rpm',
+                                'clustercontrol-ssh' => '/opt/clustercontrol/binaries/clustercontrol-ssh-1.8.2-105-x86_64.rpm',
+                                'clustercontrol-notifications' => '/opt/clustercontrol/binaries/clustercontrol-notifications-1.8.2-267-x86_64.rpm',
+                                's9s-tools' => '/opt/clustercontrol/binaries/s9s_el8/s9s-tools-1.8-11.1.x86_64.rpm'
+                        }*/
+        }
+}
+``` 
+**Default: (Hash) key-value**  
 
 ## Limitations
 
@@ -251,4 +318,3 @@ This module only supports bootstrapping MySQL servers with IP address only (it e
 ## Development
 
 Please report bugs or suggestions via our support channel: [https://support.severalnines.com](https://support.severalnines.com)
-

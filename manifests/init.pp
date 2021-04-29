@@ -34,7 +34,21 @@ class clustercontrol (
   $disable_firewall			= true,		# flushes the iptables then disable iptables/firewalld/ufw
   $disable_os_sec_module	= true,		# disable by default for SELinux/AppArmor
   $controller_id		    = '',
+  $is_online_install		= true,
+  
+  # path of your CC packages. Set this only when you are using offline installation i.e. $is_online_install == false
+  $cc_packages_path				= {
+  	'clustercontrol-controller' => '',
+	'clustercontrol' => '',
+	'clustercontrol-cloud' => '',
+	'clustercontrol-clud' => '',
+	'clustercontrol-ssh' => '',
+	'clustercontrol-notifications' => '',
+	'libs9s' => '',
+	's9s-tools' => ''
+  },
   $enabled                  = true
+  
 ) {
 	
 	#fail( "controller_id is ${::controller_id}") 
@@ -87,7 +101,10 @@ class clustercontrol (
 	
 
 	if $is_controller {
-		include clustercontrol::params
+		
+		class { 'clustercontrol::params': 
+			online_install => $is_online_install 
+		}
 		
 		/* setup MySQL first needed as the CMONDB */
 		service { $clustercontrol::params::mysql_service :
@@ -216,6 +233,7 @@ class clustercontrol (
 		}
 		
 		/* Populate the CMONDB with data */
+		/* The statements shall be run only when cc packages are setup properly */
 		exec { "create-cmon-db" :
 			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE SCHEMA IF NOT EXISTS cmon;'",
 			notify  => Exec['import-cmon-db']
@@ -233,7 +251,8 @@ class clustercontrol (
 			],
 			command => "mysql -f -u root -p\"$mysql_cmon_root_password\" cmon < $clustercontrol::params::cmon_sql_path/cmon_db.sql && \
 			mysql -f -u root -p\"$mysql_cmon_root_password\" cmon < $clustercontrol::params::cmon_sql_path/cmon_data.sql",
-			notify => Exec['configure-cmon-db']
+			notify => Exec['configure-cmon-db'],
+			require => Package[$clustercontrol::params::cc_controller]
 		}
 
 		exec { 'configure-cmon-db' :
@@ -247,23 +266,27 @@ class clustercontrol (
 
 		file { '/tmp/configure_cmon_db.sql' :
 			ensure  => present,
-			content => template('clustercontrol/configure_cmon_db.sql.erb')
+			content => template('clustercontrol/configure_cmon_db.sql.erb'),
+			require => Package[$clustercontrol::params::cc_controller]
 		}
 
 
 		exec { "import-dcps-db" :
 			onlyif  => "test -f $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
 			command => "mysql -f -u root -p\"$mysql_cmon_root_password\" dcps < $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
-			notify => Exec['create-dcps-api']
+			notify => Exec['create-dcps-api'],
+			require => Package[$clustercontrol::params::cc_controller]
 		}
 
    	    exec { "create-dcps-api" :
 			onlyif => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'SHOW SCHEMAS LIKE \"dcps\";' 2>/dev/null",
             command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'REPLACE INTO dcps.apis(id, company_id, user_id, url, token) VALUES (1, 1, 1, \"http://127.0.0.1/cmonapi\", \"$api_token\");'",
+			require => Package[$clustercontrol::params::cc_controller]
         }   
 
 		
 		/* Required dependencies must be present */
+
 		package { $clustercontrol::params::cc_dependencies :
 			ensure  => installed,
 			notify  => [Exec['allow-override-all'], File[
@@ -274,16 +297,109 @@ class clustercontrol (
 			]]
 		}
 		
-		/* setup the Apache server required for frontend HTTP/HTTPS */
-		package { $clustercontrol::params::cc_controller :
-			ensure => installed,
-			require => [$clustercontrol::params::severalnines_repo, Package[$clustercontrol::params::cc_dependencies]]
-		}
+		if ($is_online_install) {
 		
-		package { $clustercontrol::params::cc_ui : 
-			ensure  => installed, 
-			require => Package[[$clustercontrol::params::cc_controller]],
-			notify  => Exec['create-dcps-db']
+			/* setup the Apache server required for frontend HTTP/HTTPS */
+			package { $clustercontrol::params::cc_controller :
+				ensure => installed,
+				require => [
+						$clustercontrol::params::severalnines_repo, 
+						Package[$clustercontrol::params::cc_dependencies]
+				]
+			}
+		
+			package { $clustercontrol::params::cc_ui : 
+				ensure  => installed, 
+				require => Package[[$clustercontrol::params::cc_controller]],
+				notify  => Exec['create-dcps-db']
+			}
+		} else {
+
+			if ($l_osfamily == 'redhat') {
+				$l_provider = "rpm"
+				$l_provider_pkg = "rpm"
+			} elsif ($l_osfamily == 'debian') {
+				$l_provider = "apt"
+				$l_provider_pkg = "dpkg"
+			} else {
+				fail("Offline installation for this Puppet Module ClusterControl only supports RHEL/CentOS >= 7, Ubuntu >= 16, Debian >= 9 versions. Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) if you see unusual behavior.")
+			}
+			
+			
+			package { 
+			 	$clustercontrol::params::cc_cloud :
+				ensure => "installed",
+				provider => $l_provider,
+				source => $cc_packages_path[$clustercontrol::params::cc_cloud],
+				require => Package[$clustercontrol::params::cc_dependencies],
+			}
+
+			package { 
+			 	$clustercontrol::params::cc_clud :
+				ensure => "installed",
+				provider => $l_provider,
+				source => $cc_packages_path[$clustercontrol::params::cc_clud],
+				require => Package[$clustercontrol::params::cc_cloud],
+			}
+
+			package { 
+			 	$clustercontrol::params::cc_ssh :
+				ensure => "installed",
+				provider => $l_provider,
+				source => $cc_packages_path[$clustercontrol::params::cc_ssh],
+				require => Package[$clustercontrol::params::cc_clud],
+			}
+
+			package { 
+			 	$clustercontrol::params::cc_notif :
+				ensure => "installed",
+				provider => $l_provider,
+				source => $cc_packages_path[$clustercontrol::params::cc_notif],
+				require => Package[$clustercontrol::params::cc_ssh],
+			}
+
+			if ($l_osfamily == 'redhat') {
+				package { 
+				 	$clustercontrol::params::s9stools :
+					ensure => "installed",
+					provider => $l_provider,
+					source => $cc_packages_path[$clustercontrol::params::s9stools],
+					require => Package[$clustercontrol::params::cc_notif],
+				}
+			} elsif ($l_osfamily == 'debian') {
+				package { 
+				 	$clustercontrol::params::libs9s :
+					ensure => "installed",
+					provider => $l_provider_pkg, # for some reasons, using apt doesn't work. Better use dpkg
+					source => $cc_packages_path[$clustercontrol::params::libs9s],
+					require => Package[$clustercontrol::params::cc_notif],
+				}
+
+				package { 
+				 	$clustercontrol::params::s9stools :
+					ensure => "installed",
+					provider => $l_provider,
+					source => $cc_packages_path[$clustercontrol::params::s9stools],
+					require => Package[$clustercontrol::params::libs9s],
+				}
+			}
+
+			package { 
+			 	$clustercontrol::params::cc_ui :
+				ensure => "installed",
+				provider => $l_provider,
+				source => $cc_packages_path[$clustercontrol::params::cc_ui],
+				require => Package[$clustercontrol::params::s9stools],
+			}
+
+			package { 
+			 	$clustercontrol::params::cc_controller:
+				ensure => "installed",
+				provider => $l_provider,
+				source => $cc_packages_path[$clustercontrol::params::cc_controller],
+				require => Package[$clustercontrol::params::cc_ui]
+			}
+			
 		}
 
 		file { $clustercontrol::params::cert_file :
@@ -413,7 +529,9 @@ class clustercontrol (
 			require => Package[$clustercontrol::params::cc_dependencies],
 			hasrestart  => true,
 			hasstatus   => true,
-			subscribe  => File[$clustercontrol::params::apache_s9s_conf_file, $clustercontrol::params::apache_s9s_ssl_conf_file]
+			subscribe  => File[$clustercontrol::params::apache_s9s_conf_file,
+				 $clustercontrol::params::apache_s9s_ssl_conf_file
+			]
 		}
 
 		/* Section to setup ssh user */
@@ -502,7 +620,7 @@ class clustercontrol (
 			notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']],
 		}
 
-
+		  
 		service { 'cmon-cloud' :
 			ensure  => $service_status,
 			enable  => $enabled,
@@ -551,7 +669,102 @@ class clustercontrol (
 			hasrestart   => true,
 			hasstatus    => true
 		}
+	
 
+
+/*
+    export S9S_USER_CONFIG=$HOME/.s9s/ccrpc.conf
+    s9s user --create --generate-key --group=admins --controller=https://localhost:9501 ccrpc
+    [[ $? -ne 0 ]] && log_msg "Unable to create the 'ccrpc' user! Please check your s9s installation." && exit 1
+    s9s user --whoami --cmon-user=ccrpc --private-key-file=$HOME/.s9s/ccrpc.key &>/dev/null
+    [[ $? -ne 0 ]] && log_msg "Unable to verify s9s ccrpc private key" && exit 1
+
+    s9s user --set --first-name=RPC --last-name=API &>/dev/null
+    s9s user --change-password --new-password=${rpc_key} ccrpc &>/dev/null
+    [[ $? -ne 0 ]] && log_msg "Unable to change s9s ccrpc password" && exit 1
+
+    unset S9S_USER_CONFIG
+
+*/
+		$username = "root"
+		$home = "home_$username"
+		$home_path = inline_template("<%= scope.lookupvar('::$home') %>")
+		$user_path = "${home_path}/.s9s/ccrpc.conf"
+		
+		
+		notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool 
+			home_path: ${home_path}, \
+			user_path: ${user_path}, \
+			home: ${home}": 
+		}
+		
+		
+
+		file { "${home_path}/.s9s/":
+			ensure  => directory,
+			owner   => "root",
+			group   => "root",
+			mode    => "0700",
+			require => Service['cmon']
+		}
+
+		/*
+		exec { "declare_ccrpc_config_var":
+			environment => ["S9S_USER_CONFIG=${user_path}"],
+			user => "root",
+			require =>  File["$home_path/.s9s/"]
+		}*/
+
+		exec { "create_ccrpc_user":
+			command => "sudo S9S_USER_CONFIG=${user_path} s9s user --create --new-password=$api_token --generate-key --private-key-file=~/.s9s/ccrpc.key --group=admins --controller=https://localhost:9501 ccrpc",
+			require =>  [Service['cmon'],File["${home_path}/.s9s/"]]
+		}
+		/*
+		exec { "create_ccrpc_set_private_key":
+			command => "s9s user --whoami --cmon-user=ccrpc --private-key-file=~/.s9s/ccrpc.key",
+			user => "root",
+			provider => "shell",
+			require =>  File["${home_path}/.s9s/"]
+		} */
+
+
+		exec { "create_ccrpc_set_firstname":
+			user => "root",
+			command => "sudo S9S_USER_CONFIG=${user_path} s9s user --set --first-name=RPC --last-name=API",
+			require =>  [File["${home_path}/.s9s/"],Service['cmon']]
+		}
+
+	
+/*			
+		exec { "delete-s9sconf":
+			command => "rm -rf /etc/s9s* /root/.s9s/*",
+			#require => Exec["apt-update-severalnines"],
+			require => Service['cmon-ssh']
+		}
+
+
+
+		exec { "create-newadmin":
+			'user' => 'root',
+			command => "s9s user --create --generate-key --group=admins --controller=\"https://localhost:9501\" newadmin",
+			#require => Exec["apt-update-severalnines"],
+			#require => Service['cmon-ssh']
+			require => Exec['delete-s9sconf']
+		}
+
+	
+		exec { "create-crpcuser":
+			command => "s9s user --create --new-password=$api_token --group=admins --controller=\"https://localhost:9501\" ccrpc",
+			#require => Exec["apt-update-severalnines"],
+			require => Exec['create-newadmin']
+		}
+
+		exec { "execute_crpcuser":
+			command => "/bin/bash /root/ccrpcuser.sh",
+			#require => Exec["apt-update-severalnines"],
+			require => Service['cmon','cmon-ssh']
+		}
+*/
 		
     } else {
           
