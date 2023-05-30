@@ -67,7 +67,7 @@ $ puppet module install puppet-zypprepo
 
 ### Installation
 
-Our ClusterControl module for puppet is available either on [Puppet Forge](https://forge.puppet.com/severalnines/clustercontrol) or using this [Severalnines Puppet](https://github.com/severalnines/puppet) by cloning or downloading it as a zip. Then place it under puppetlabs modulepath directory, i.e. */etc/puppetlabs/code/environments/production/modules/clustercontrol* for example.
+Our ClusterControl module for puppet is available either on [Puppet Forge](https://forge.puppet.com/severalnines/clustercontrol) or using this [Severalnines Puppet](https://github.com/severalnines/puppet) by cloning or downloading it as a zip. Then place it under puppetlabs modulepath directory and make sure to name your module directory as *clustercontrol*, i.e. */etc/puppetlabs/code/environments/production/modules/clustercontrol* for example.
 
 First you need to generate an API Token. To do this, go to $modulepath/clustercontrol/files, then run the following. For example,
 ```bash
