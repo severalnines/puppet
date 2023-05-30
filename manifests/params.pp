@@ -2,6 +2,7 @@ class clustercontrol::params ($online_install = true) {
 	$repo_host = 'repo.severalnines.com'
 	$cc_controller = 'clustercontrol-controller'
 	$cc_ui = 'clustercontrol'
+	$cc_ui2 = 'clustercontrol2'
 	$cc_cloud = 'clustercontrol-cloud'
 	$cc_clud = 'clustercontrol-clud'
 	$cc_ssh = 'clustercontrol-ssh'
@@ -20,6 +21,9 @@ class clustercontrol::params ($online_install = true) {
 	$typevar = type($os_majrelease)
 	$lower_operatingsystem = downcase($operatingsystem)
 	
+	$cc_v2_config_ui_file = "/var/www/html/clustercontrol2/config.js"
+
+	notice(">>>>>> CC Debugger >>>>>> value is: $$osfamily + ${operatingsystemmajrelease}")
 	case $osfamily {
 		'Redhat': {
 			if ($operatingsystem == 'RedHat') {
@@ -81,7 +85,7 @@ class clustercontrol::params ($online_install = true) {
 			}*/
 			
 			/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
-				os_majrelease: ${$os_majrelease}, ${ipaddress_lo}, codename: ${lsbdistcodename} , \
+				os_majrelease: ${$os_majrelease}, ${cc_hostname_lo}, codename: ${lsbdistcodename} , \
 				os_majrelease: ${os_majrelease} and data-type is: ${typevar}), \
 				cc_dependencies: ${cc_dependencies}": 
 			}*/
@@ -114,7 +118,7 @@ class clustercontrol::params ($online_install = true) {
 			
 			if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 16) or ($operatingsystem == 'Debian' and $os_majrelease > 7) {
 				
-				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${ipaddress_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
+				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${cc_hostname_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
 			
 				$apache_log_dir = "/var/log/apache2/"
 				$wwwroot          = '/var/www/html'
@@ -123,6 +127,12 @@ class clustercontrol::params ($online_install = true) {
 				$apache_s9s_target_file = '/etc/apache2/sites-enabled/001-s9s.conf'
 				$apache_s9s_ssl_conf_file = '/etc/apache2/sites-available/s9s-ssl.conf'
 				$apache_s9s_ssl_target_file = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
+
+				$apache_s9s_cc_frontend_conf_file = '/etc/apache2/sites-available/cc-frontend.conf'
+				$apache_s9s_cc_frontend_target_file = '/etc/apache2/sites-enabled/cc-frontend.conf'
+				$apache_s9s_cc_proxy_conf_file = '/etc/apache2/sites-available/cc-proxy.conf'
+				$apache_s9s_cc_proxy_target_file = '/etc/apache2/sites-enabled/cc-proxy.conf'
+				
 				$apache_security_conf_file = "//etc/apache2/conf-available/security.conf"
 				$apache_security_target_conf_file = "/etc/apache2/conf-enabled/security.conf"
 				$apache_mods_header_file = '/etc/apache2/mods-available/headers.load'
@@ -217,6 +227,97 @@ class clustercontrol::params ($online_install = true) {
 
 				$severalnines_repo = Exec['apt-update-severalnines']
 				
+			}
+		
+		}
+		'Suse': {
+			
+			if (Integer($operatingsystemmajrelease) >= 15) {
+				if ($operatingsystemmajrelease == '15') {
+					$s9s_tools_repo_osname = "${operatingsystemrelease}"
+				} else {
+					$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemrelease}"
+				}
+			
+				if ($online_install) {	
+					$loc_dependencies  = [
+						'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 
+						## shall fix the issues with systemd and sysvinit scripts
+						'sysvinit-tools', 'insserv', 
+						'openssl', 'ca-certificates', 
+						'gnuplot', 'expect', 'perl-XML-XPath', 'psmisc',
+						#'mod_ssl',
+						'php7', 'php7-mysql', 'apache2-mod_php7', 'php7-gd', 'php7-curl', 'php7-ldap', 
+						'php7-xmlreader', 'php7-ctype', 'php7-json',
+						'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+					]
+				} else {
+					$loc_dependencies  = [
+						'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 
+						'openssl', 'ca-certificates', 'gnuplot', 'expect', 'perl-XML-XPath', 'psmisc',
+						#'mod_ssl',
+						'php7', 'php7-mysql', 'apache2-mod_php7', 'php7-gd', 'php7-curl', 'php7-ldap', 
+						'php7-xmlreader', 'php7-ctype', 'php7-json'
+					]
+				}
+				
+				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${cc_hostname_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
+			
+				#$apache_s9s_conf_file = '/etc/apache2/vhosts.d/s9s.conf'
+				$apache_s9s_conf_file = '/etc/apache2/vhosts.d/s9s.conf'
+				$apache_s9s_ssl_conf_file = '/etc/apache2/vhosts.d/ssl.conf'
+
+				$apache_s9s_cc_frontend_conf_file = '/etc/apache2/vhosts.d/cc-frontend.conf'
+				$apache_s9s_cc_proxy_conf_file = '/etc/apache2/vhosts.d/cc-proxy.conf'
+				
+
+				$cert_file        = '/etc/ssl/certs/s9server.crt'
+				$key_file         = '/etc/ssl/private/s9server.key'
+				$apache_user      = 'wwwrun'
+				$apache_service   = 'apache2'
+			
+				$apache_log_dir   = "/var/log/apache2/"
+				$wwwroot          = '/var/www/html'
+				$mysql_cnf        = '/etc/my.cnf'
+			
+				
+				if (Integer($operatingsystemmajrelease) >= 15) {
+					$mysql_service    = 'mariadb'
+					$mysql_packages   = ['mariadb','mariadb-server']
+					$cc_dependencies = $loc_dependencies # + ['nmap-ncat', 'php-mysqlnd']
+				} else {
+
+					fail("This Puppet Module ClusterControl only supports SUSE/OpenSUSE >= 15 versions. " +
+						 "Obsolete or versions that passed EOL is no longer supported. Please contact " + 
+						 "Severalnines (support@severalnines.com) if you see unusual behavior.")
+				}
+			
+			} else {
+				fail("This Puppet Module ClusterControl only supports SUSE/OpenSUSE >= 15 versions. " +
+					 "Obsolete or versions that passed EOL is no longer supported. Please contact " + 
+					 "Severalnines (support@severalnines.com) if you see unusual behavior.")
+			}
+			
+		
+			if ($online_install) {
+				## Execute repo fetch and updates for s9s only when has internet connection or access to s9s site.
+				zypprepo {
+					"s9s-repo":
+					descr     => "Severalnines Repository",
+					baseurl   => "http://$repo_host/rpm/os/x86_64",
+					enabled   => 1,
+					gpgkey    => "http://$repo_host/severalnines-repos.asc",
+					gpgcheck  => 1
+				}
+		
+				zypprepo {
+					"s9s-tools-repo":
+					descr     => "s9s-tools - $s9s_tools_repo_osname",
+					baseurl   => "http://$repo_host/s9s-tools/$s9s_tools_repo_osname",
+					enabled   => 1,
+					gpgkey    => "http://$repo_host/s9s-tools/$s9s_tools_repo_osname/repodata/repomd.xml.key",
+					gpgcheck  => 1
+				}
 			}
 		
 		}

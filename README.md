@@ -60,6 +60,10 @@ If you have any questions, feel free to raise issues via https://github.com/seve
 Make sure you meet following criteria prior to the deployment:
 * ClusterControl node must run on a clean dedicated host with internet connection.
 * If you are running as non-root user, make sure the user is able to escalate to root with sudo command.
+* For SUSE(SLES) or OpenSUSE Linux, make sure you install tye zypprepo module (Checkout Zypprepo [here](https://forge.puppet.com/modules/puppet/zypprepo/readme)). You can do that by installing it to your puppet master as follows,
+```bash
+$ puppet module install puppet-zypprepo
+```
 
 ### Installation
 
@@ -85,12 +89,12 @@ Then, create a manifests file, let say we named it *clustercontrol.pp*
 root@master:/etc/puppetlabs/code/environments/production# ls -alth manifests/clustercontrol.pp
 -rw-r--r-- 1 root root 1.4K Oct 23 15:00 manifests/clustercontrol.pp
 ```
-Then have the following example puppet agent node definition for ClusterControl as follows:
+Then have the following example puppet agent node below where the hostname of the target to install CC using puppet is 192.168.40.90. Below is the definition for ClusterControl as follows:
 ```puppet
 node 'clustercontrol.puppet.local' { # Applies only to mentioned node. If nothing mentioned, applies to all.
         class { 'clustercontrol':
             is_controller => true,
-            ip_address => '192.168.40.90',
+            cc_hostname => '192.168.40.90',
             mysql_cmon_password => 'R00tP@55',
             api_token => 'efc6ac7fbea2da1b056b901541697ec7a9be6a77',
             ssh_user => 'vagrant'
@@ -265,7 +269,7 @@ node 'pupnode2.puppet.local' { # Applies only to mentioned node. If nothing ment
 
         class { 'clustercontrol':
                         is_controller => true,
-                        ip_address => '192.168.40.20',
+                        cc_hostname => '192.168.40.20',
                         mysql_root_password => 'R00tP@55',
                         mysql_cmon_root_password => 'R00tP@55',
                         mysql_cmon_password => 'R00tP@55',

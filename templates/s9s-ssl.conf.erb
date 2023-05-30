@@ -1,7 +1,6 @@
-
 <IfModule mod_ssl.c>
 	<VirtualHost _default_:443>
-        ServerName cc.severalnines.local
+        ServerName <%= @cc_hostname %>
         ServerAdmin webmaster@localhost
 
 		DocumentRoot <%= @wwwroot %>
@@ -13,6 +12,9 @@
 		RewriteRule ^/clustercontrol/ssh/term/ws/(.*)$ ws://127.0.0.1:9511/ws/$1 [P,L]
 		RewriteRule ^/clustercontrol/ssh/term/(.*)$ http://127.0.0.1:9511/$1 [P]
 		RewriteRule ^/clustercontrol/sse/events/(.*)$ http://127.0.0.1:9510/events/$1 [P,L]
+
+        # HTTP Strict Transport Security (mod_headers is required) (63072000 seconds)
+        Header always set Strict-Transport-Security "max-age=63072000"
 
 		<Directory />
 			Options +FollowSymLinks
@@ -150,7 +152,15 @@
 		# MSIE 7 and newer should be able to use keepalive
 		BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
 
-	</VirtualHost>
+        </VirtualHost>
+# intermediate configuration
+SSLProtocol             all -SSLv3 -TLSv1 -TLSv1.1
+SSLCipherSuite          ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+SSLHonorCipherOrder     off
+SSLSessionTickets       off
+
+#SSLUseStapling On
+#SSLStaplingCache "shmcb:logs/ssl_stapling(32768)"
 </IfModule>
 
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
