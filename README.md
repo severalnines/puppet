@@ -62,7 +62,7 @@ Make sure you meet following criteria prior to the deployment:
 * If you are running as non-root user, make sure the user is able to escalate to root with sudo command.
 * For SUSE(SLES) or OpenSUSE Linux, make sure you install tye zypprepo module (Checkout Zypprepo [here](https://forge.puppet.com/modules/puppet/zypprepo/readme)). You can do that by installing it to your puppet master as follows,
 ```bash
-$ puppet module install puppet-zypprepo
+$ /opt/puppetlabs/bin/puppet module install puppet-zypprepo
 ```
 
 ### Installation
@@ -97,7 +97,8 @@ node 'clustercontrol.puppet.local' { # Applies only to mentioned node. If nothin
             cc_hostname => '192.168.40.90',
             mysql_cmon_password => 'R00tP@55',
             api_token => 'efc6ac7fbea2da1b056b901541697ec7a9be6a77',
-            ssh_user => 'vagrant'
+            ssh_user => 'vagrant',
+			ssh_user_group => 'vagrant'
         }
 }
 ```
@@ -136,6 +137,10 @@ Specify an email as root user for ClusterControl UI. You will login using this e
 
 #### `ssh_user`
 Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
+**Default: (String) 'root'**
+
+#### `ssh_user_group`
+Specify the SSH user system group that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
 **Default: (String) 'root'**
 
 #### `ssh_key`

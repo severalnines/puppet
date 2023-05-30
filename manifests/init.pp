@@ -16,7 +16,8 @@ class clustercontrol (
   $clustercontrol_host      = '', 
   $cc_hostname              = $cc_hostname,
   $api_token                = '',
-  $ssh_user                 = 'vagrant',
+  $ssh_user                 = 'root',
+  $ssh_user_group            = 'root',
   $ssh_port                 = '22',
   $ssh_key_type             = 'ssh-rsa',
   $ssh_key                  = '',
@@ -861,7 +862,7 @@ class clustercontrol (
 		file { "$ssh_identity" :
 			ensure => present,
 			owner  => $ssh_user,
-			group  => $ssh_user,
+			group  => $ssh_user_group,
 			mode   => '0600',
 			source => 'puppet:///modules/clustercontrol/id_rsa_s9s'
 		}
