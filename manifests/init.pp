@@ -870,7 +870,7 @@ class clustercontrol (
 		file { "$ssh_identity_pub" :
 			ensure  => present,
 			owner   => $ssh_user,
-			group   => $ssh_user,
+			group   => $ssh_user_group,
 			mode    => '0644',
 			source  => 'puppet:///modules/clustercontrol/id_rsa_s9s.pub'
 		}

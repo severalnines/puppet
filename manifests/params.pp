@@ -202,15 +202,22 @@ class clustercontrol::params ($online_install = true) {
 					],
 					refreshonly => true
 				}
+				
+				## gpg ensures in Debian Bullseye not to fail (ensuring gpg is installed)
+				package { 'gpg' :
+					ensure => "installed",
+				}
 
 				exec { 'import-severalnines-key' :
 					path        => ['/bin','/usr/bin'],
-					command     => "wget http://$clustercontrol::params::repo_host/severalnines-repos.asc -O- | apt-key add -"
+					command     => "wget -qO - http://$clustercontrol::params::repo_host/severalnines-repos.asc | apt-key add -",
+					require     => Package["gpg"]
 				}
 
 				exec { 'import-severalnines-tools-key' :
 					path        => ['/bin','/usr/bin'],
-					command     => "wget http://$clustercontrol::params::repo_host/s9s-tools/$lsbdistcodename/Release.key -O- | apt-key add -"
+					command     => "wget -qO - http://$clustercontrol::params::repo_host/s9s-tools/$lsbdistcodename/Release.key | apt-key add -",
+					require     => Package["gpg"]
 				}
 
 				file { "$repo_source":
@@ -243,7 +250,7 @@ class clustercontrol::params ($online_install = true) {
 					$loc_dependencies  = [
 						'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 
 						## shall fix the issues with systemd and sysvinit scripts
-						'sysvinit-tools', 'insserv', 
+						'insserv-compat', 'sysvinit-tools', 
 						'openssl', 'ca-certificates', 
 						'gnuplot', 'expect', 'perl-XML-XPath', 'psmisc',
 						#'mod_ssl',
@@ -253,7 +260,7 @@ class clustercontrol::params ($online_install = true) {
 					]
 				} else {
 					$loc_dependencies  = [
-						'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 
+						'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'insserv-compat', 'sysvinit-tools',
 						'openssl', 'ca-certificates', 'gnuplot', 'expect', 'perl-XML-XPath', 'psmisc',
 						#'mod_ssl',
 						'php7', 'php7-mysql', 'apache2-mod_php7', 'php7-gd', 'php7-curl', 'php7-ldap', 
