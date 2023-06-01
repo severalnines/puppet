@@ -310,10 +310,12 @@ node 'pupnode2.puppet.local' { # Applies only to mentioned node. If nothing ment
 ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS combination of Linux OS versions. From these supported distros, all versions that had passed its EOL or almost reaching its EOL are no longer supported. Below are the supported versions:
 * Debian 9.x (stretch)
 * Debian 10.x (buster)
+* Debian 11.x (bullseye)
 * Ubuntu 16.x LTS (Xenial Xerus)
 * Ubuntu 18.x LTS(Bionic Beaver)
 * Ubuntu 20.04.x LTS (Focal Fossa)
-* RHEL/CentOS 7.x/8.x
+* Ubuntu 22.04 LTS (Jammy Jellyfish)
+* AlmaLinux/Oracle Linux/Rocky/RHEL/CentOS 7.x/8.x/9.x
 
 Puppet Labs has no support yet for the version below,
 * Ubuntu 20.10 LTS (Groovy Gorilla)
