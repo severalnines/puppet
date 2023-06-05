@@ -31,23 +31,28 @@ class clustercontrol::params ($online_install = true) {
 			} else {
 				$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}"
 			}
+
 			
+		    if ($os_majrelease >= 9) {
+   				# RHEL/CentOS v 9.x and up
+   				$mailer = 's-nail'
+			} else {			
+   				$mailer = 'mailx'
+			}
 			
 			if ($online_install) {	
 				$loc_dependencies  = [
-					'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
+					'httpd', 'wget', $mailer, 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
 					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 
 					'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 				]
 			} else {
 				$loc_dependencies  = [
-					'httpd', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
-					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'gnuplot', 'expect', 'perl-XML-XPath',
-					'psmisc'
+					'httpd', 'wget', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
+					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'gnuplot', 'expect',
+					 'perl-XML-XPath', $mailer,	'psmisc'
 				]
 			}
-			
-			
 			
 			$apache_conf_file = "/etc/httpd/conf/httpd.conf"
 			$apache_security_conf_file = "/etc/httpd/conf.d/security.conf"

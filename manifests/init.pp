@@ -25,8 +25,7 @@ class clustercontrol (
   $sudo_password            = undef,
   $mysql_server_addresses   = '',
   $mysql_root_password      = 'R00tP@55',
-  $mysql_cmon_root_password = 'userP@55',
-  $mysql_cmon_password      = 'cmon',
+  $mysql_cmon_password      = 'userP@55',
   $mysql_cmon_port          = '3306',
   $mysql_basedir		    = '',
   $modulepath               = '/etc/puppetlabs/code/environments/production/modules/clustercontrol/',
@@ -96,9 +95,9 @@ class clustercontrol (
 	$l_osfamily = downcase($osfamily);
 
 	if empty($mysql_basedir) {
-		Exec { path => ['/usr/bin','/bin']}
+		Exec { path => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin']}
 	} else {
-		Exec { path => ['/usr/bin','/bin',"$mysql_basedir/bin"]}
+		Exec { path => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin', "$mysql_basedir/bin"]}
 	}
 	
 
@@ -182,7 +181,7 @@ class clustercontrol (
 			
 			if ($disable_firewall) {
 				exec { 'check-firewalld-presence' :
-					path        => ['/usr/sbin', '/usr/bin'],
+					path        => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 					onlyif      => 'which firewall-cmd',
 					command     => 'firewall-cmd --stat',
 				}
@@ -198,7 +197,7 @@ class clustercontrol (
 			## Debian/Ubuntu
 			if ($disable_os_sec_module) {
 				exec { 'disable-os-security-module' :
-					path        => ['/usr/sbin', '/usr/bin'],
+					path        => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 					onlyif      => 'which apparmor_status',
 					command     => '/etc/init.d/apparmor stop; /etc/init.d/apparmor teardown; update-rc.d -f apparmor remove',
 				}
@@ -224,7 +223,7 @@ class clustercontrol (
 			}
 			
 			exec { 'refresh-zypper-auto-import-refresh' :
-				path        => ['/usr/sbin', '/usr/bin'],
+				path        =>['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 				command     => 'zypper -n --gpg-auto-import-keys refresh',
 			}
 		} else {
@@ -248,57 +247,53 @@ class clustercontrol (
 			content  => template('clustercontrol/my.cnf.erb'),
 			owner    => root, 
 			group => root,
-			mode     => '0644'
+			mode     => '0644',
+			require => Package[$clustercontrol::params::mysql_packages],
+			notify  => Service[$clustercontrol::params::mysql_service]
 		}
 		
 
 		exec { 'create-root-password' :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 			onlyif  => "mysqladmin -u root status",
-			command => "mysqladmin -u root password \"$mysql_cmon_root_password\"",
-			notify  => Exec[
-			  'grant-cmon-localhost', 
-			  'grant-cmon-127.0.0.1', 
-			  'grant-cmon-ip-address',
-			  'grant-cmon-fqdn'
-			  ]
+			command => "mysqladmin -u root password \"${mysql_root_password}\""
 		}
 
 		exec { "grant-cmon-localhost" :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -hlocalhost status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@localhost IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@localhost WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -hlocalhost status && mysql -u root -p\"${mysql_root_password}\" -e 'SHOW GRANTS FOR cmon@localhost'",
+			command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER cmon@localhost IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@localhost WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 
 		exec { "grant-cmon-127.0.0.1" :
 			path   => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h127.0.0.1 status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@127.0.0.1 IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h127.0.0.1 status && mysql -u root -p\"${mysql_root_password}\" -e 'SHOW GRANTS FOR cmon@\"127.0.0.1\"'",
+			command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER cmon@\"127.0.0.1\" IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"127.0.0.1\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 
 		exec { "grant-cmon-ip-address" :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h\"${cc_hostname}\" status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@\"${cc_hostname}\" IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"${cc_hostname}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h\"${cc_hostname}\" status && mysql -u root -p\"${mysql_root_password}\" -e 'SHOW GRANTS FOR cmon@\"${cc_hostname}\"'",
+			command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER cmon@\"${cc_hostname}\" IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"${cc_hostname}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 
 		exec { "grant-cmon-fqdn" :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h\"$fqdn\" status",
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE USER cmon@\"$fqdn\" IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+			unless  => "mysqladmin -u cmon -p\"$mysql_cmon_password\" -h\"$fqdn\" status && mysql -u root -p\"${mysql_root_password}\" -e 'SHOW GRANTS FOR cmon@\"${fqdn}\"'",
+			command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER cmon@\"$fqdn\" IDENTIFIED BY  \"$mysql_cmon_password\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"$fqdn\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 		
 		/* Populate the CMONDB with data */
 		/* The statements shall be run only when cc packages are setup properly */
 		exec { "create-cmon-db" :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE SCHEMA IF NOT EXISTS cmon;'",
+			command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE SCHEMA IF NOT EXISTS cmon;'",
 			notify  => Exec['import-cmon-db']
 		}
 
 		exec { "create-dcps-db" :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'CREATE SCHEMA IF NOT EXISTS dcps;'",
+			command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE SCHEMA IF NOT EXISTS dcps;'",
 			notify  => Exec['import-dcps-db']
 		}
 
@@ -308,8 +303,8 @@ class clustercontrol (
 			  "test -f $clustercontrol::params::cmon_sql_path/cmon_db.sql",
 			  "test -f $clustercontrol::params::cmon_sql_path/cmon_data.sql"
 			],
-			command => "mysql -f -u root -p\"$mysql_cmon_root_password\" cmon < $clustercontrol::params::cmon_sql_path/cmon_db.sql && \
-			mysql -f -u root -p\"$mysql_cmon_root_password\" cmon < $clustercontrol::params::cmon_sql_path/cmon_data.sql",
+			command => "mysql -f -u root -p\"${mysql_root_password}\" cmon < $clustercontrol::params::cmon_sql_path/cmon_db.sql && \
+			mysql -f -u root -p\"${mysql_root_password}\" cmon < $clustercontrol::params::cmon_sql_path/cmon_data.sql",
 			notify => Exec['configure-cmon-db'],
 			require => Package[$clustercontrol::params::cc_controller]
 		}
@@ -320,7 +315,7 @@ class clustercontrol (
 			  "test -f $clustercontrol::params::cmon_sql_path/cmon_db.sql",
 			  "test -f $clustercontrol::params::cmon_sql_path/cmon_data.sql"
 			],
-			command => "mysql -f -u root -p\"$mysql_cmon_root_password\" cmon < /tmp/configure_cmon_db.sql",
+			command => "mysql -f -u root -p\"${mysql_root_password}\" cmon < /tmp/configure_cmon_db.sql",
 			require => File["/tmp/configure_cmon_db.sql"]
 		}
 
@@ -334,15 +329,15 @@ class clustercontrol (
 		exec { "import-dcps-db" :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 			onlyif  => "test -f $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
-			command => "mysql -f -u root -p\"$mysql_cmon_root_password\" dcps < $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
+			command => "mysql -f -u root -p\"${mysql_root_password}\" dcps < $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
 			notify => Exec['create-dcps-api'],
 			require => Package[$clustercontrol::params::cc_controller]
 		}
 
    	    exec { "create-dcps-api" :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			onlyif => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'SHOW SCHEMAS LIKE \"dcps\";' 2>/dev/null",
-            command => "mysql -u root -p\"$mysql_cmon_root_password\" -e 'REPLACE INTO dcps.apis(id, company_id, user_id, url, token) VALUES (1, 1, 1, \"http://127.0.0.1/cmonapi\", \"$api_token\");'",
+			onlyif => "mysql -u root -p\"${mysql_root_password}\" -e 'SHOW SCHEMAS LIKE \"dcps\";' 2>/dev/null",
+            command => "mysql -u root -p\"${mysql_root_password}\" -e 'REPLACE INTO dcps.apis(id, company_id, user_id, url, token) VALUES (1, 1, 1, \"http://127.0.0.1/cmonapi\", \"$api_token\");'",
 			require => Package[$clustercontrol::params::cc_controller]
         }   
 
@@ -365,12 +360,15 @@ class clustercontrol (
 		/* Required dependencies must be present */
 		package { $clustercontrol::params::cc_dependencies :
 			ensure  => installed,
-			notify  => [Exec['allow-override-all'], File[
-				$clustercontrol::params::cert_file, 
-				$clustercontrol::params::key_file, 
-				$clustercontrol::params::apache_s9s_ssl_conf_file,
-				$clustercontrol::params::apache_s9s_conf_file
-			]]
+			notify  => [
+				Exec['allow-override-all'], 
+				File[
+					$clustercontrol::params::cert_file, 
+					$clustercontrol::params::key_file, 
+					$clustercontrol::params::apache_s9s_ssl_conf_file,
+					$clustercontrol::params::apache_s9s_conf_file
+				]
+			]
 		}
 		
 		if ($is_online_install) {
@@ -735,7 +733,7 @@ class clustercontrol (
 			}
 			
 			exec { 'enable-apache-modules': 
-				path  => ['/usr/sbin','/sbin', '/usr/bin'],
+				path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 				command => "a2enmod ssl rewrite proxy proxy_http proxy_wstunnel",
 				loglevel => info,
 				require => Package[$clustercontrol::params::cc_dependencies] 
@@ -781,7 +779,7 @@ class clustercontrol (
 			}
 			
 			exec { 'enable-apache-modules': 
-				path  => ['/usr/sbin','/sbin', '/usr/bin'],
+				path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 				command => "a2enmod ssl && a2enmod rewrite && a2enmod headers && a2enmod proxy && a2enmod proxy_http && a2enmod proxy_wstunnel",
 				loglevel => info,
 				require => Package[$clustercontrol::params::cc_dependencies] 
@@ -884,9 +882,8 @@ class clustercontrol (
 		}
 
 		/* Manage all CMON related packages, events, etc. */
-		service { 'cmon' :
-			ensure  => $service_status,
-			enable  => $enabled,
+		exec { "restart-db-${clustercontrol::params::mysql_service}-before-cmon-start":
+			command => "systemctl restart ${clustercontrol::params::mysql_service}",
 			require => Package[
 				$clustercontrol::params::cc_controller,
 				$clustercontrol::params::cc_ui,
@@ -894,13 +891,17 @@ class clustercontrol (
 				$clustercontrol::params::cc_clud,
 				$clustercontrol::params::cc_notif,
 				$clustercontrol::params::cc_ssh
-			],
+			]
+		}
+		
+		service { 'cmon' :
+			ensure  => $service_status,
+			enable  => $enabled,
+			require => Exec["restart-db-${clustercontrol::params::mysql_service}-before-cmon-start"],
 			subscribe    => File[$clustercontrol::params::cmon_conf],
 			hasrestart   => true,
 			hasstatus    => true
 		}
-		
-
 
 		
 		# file { "/etc/ssl/certs/rpc_tls.crt" :
@@ -927,7 +928,7 @@ class clustercontrol (
 		#
 
 		exec { "change-owner-to-apache-user" :
-			path  => ['/usr/sbin','/sbin', '/usr/bin'],
+			path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 			command => "chown -R ${clustercontrol::params::apache_user}:${clustercontrol::params::apache_user} \
 						${clustercontrol::params::wwwroot}/cmon/ \
 						${clustercontrol::params::wwwroot}/clustercontrol \
@@ -1050,8 +1051,8 @@ class clustercontrol (
 
 
 		exec { "pause-5s-to-propagate-cmon-library" :
-			path  => ['/usr/sbin','/sbin', '/usr/bin'],
-			command => "sleep 5",
+			path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+			command => "sleep 10",
 			subscribe => [
 				Service['cmon'],
 				File[
@@ -1064,7 +1065,6 @@ class clustercontrol (
 	    file {"/var/lib/cmon/ca/cmon/rpc_tls.crt":
 			ensure  => file,
 			validate_cmd => 'test -f /var/lib/cmon/ca/cmon/rpc_tls.crt',
-			subscribe => Service['cmon'],
 			require => Exec["pause-5s-to-propagate-cmon-library"]
 	    }
 		
@@ -1090,7 +1090,7 @@ class clustercontrol (
 		}
 
 		exec { "create_ccrpc_user":
-			path  => ['/usr/sbin','/sbin', '/usr/bin'],
+			path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 			command => "sudo S9S_USER_CONFIG=${user_path} s9s user --create --new-password=$api_token --generate-key --private-key-file=~/.s9s/ccrpc.key --group=admins --controller=https://127.0.0.1:9501 ccrpc",
 			# require =>  [Service['cmon'],File["${home_path}/.s9s/"]]
 			require =>  File["${home_path}/.s9s/"]
@@ -1098,7 +1098,7 @@ class clustercontrol (
 
 
 		exec { "create_ccrpc_set_firstname":
-			path  => ['/usr/sbin','/sbin', '/usr/bin'],
+			path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 			user => "root",
 			command => "sudo S9S_USER_CONFIG=${user_path} s9s user --set --first-name=RPC --last-name=API",
 			# require =>  [File["${home_path}/.s9s/"],Service['cmon']]
