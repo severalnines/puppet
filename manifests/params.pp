@@ -36,6 +36,11 @@ class clustercontrol::params ($online_install = true) {
 		    if ($os_majrelease >= 9) {
    				# RHEL/CentOS v 9.x and up
    				$mailer = 's-nail'
+				
+				## fail for now since we don't support PHP 8.x which is the default shipped package for
+				## RHEL/CentOS/Rocky/AlmaLinux/Oracle 9.x
+
+				fail("This Puppet Module ClusterControl only supports RHEL/CentOS/Rocky/AlmaLinux/Oracle >= 7 to 8.x versions only. Enterprise Linux version 9.x has PHP 8.x versions which we don't support as of this time")
 			} else {			
    				$mailer = 'mailx'
 			}
