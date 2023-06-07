@@ -40,7 +40,7 @@ class clustercontrol::params ($online_install = true) {
 				## fail for now since we don't support PHP 8.x which is the default shipped package for
 				## RHEL/CentOS/Rocky/AlmaLinux/Oracle 9.x
 
-				fail("This Puppet Module ClusterControl only supports RHEL/CentOS/Rocky/AlmaLinux/Oracle >= 7 to 8.x versions only. Enterprise Linux version 9.x has PHP 8.x versions which we don't support as of this time")
+				notify("This Puppet Module ClusterControl only supports RHEL/CentOS/Rocky/AlmaLinux/Oracle >= 7 to 8.x versions only. Enterprise Linux version 9.x has PHP 8.x versions which we don't support as of this time. ClusterControl UI version 1 does not support PHP 8.x, so if it don't work, you need to downgrade your PHP 8.x to PHP 7.x version")
 			} else {			
    				$mailer = 'mailx'
 			}

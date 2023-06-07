@@ -317,12 +317,10 @@ ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS com
 * Ubuntu 22.04 LTS (Jammy Jellyfish)
 * AlmaLinux/Oracle Linux/Rocky/RHEL/CentOS 7.x/8.x/9.x
 
-Puppet Labs has no support yet for the version below,
-* Ubuntu 20.10 LTS (Groovy Gorilla)
-Once this is totally supported and ClusterControl works, then we'll have it included in the supported versions in the future.
 
+Currently, ClusterControl does not support PHP. 8.x. For RHEL/Oracle Linux/CentOS 9.x versions, you need to downgrade from PHP 8.x to PHP 7.x since the ClusterControl UI version 1 cannot work with PHP 8.x, unless you are going to use ClusterControl version 2.
 
-This module only supports bootstrapping MySQL servers with IP address only (it expects skip-name-resolve is enabled on all MySQL nodes). However, for MongoDB you can specify hostname as described under MongoDB Specific Options.
+This module only supports bootstrapping MySQL servers with IP address only (it expects skip-name-resolve is enabled on all MySQL nodes). 
 
 [ClusterControl known issues and limitations](http://www.severalnines.com/docs/troubleshooting.html#known-issues-and-limitations).
 
