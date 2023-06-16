@@ -1,9 +1,9 @@
 {
   "name": "severalnines-clustercontrol",
-  "version": "1.0.0",
-  "author": "Ashraf Sharif/Paul Namuag",
-  "summary": "Installs ClusterControl v1.8.2 (supports online and offline setup) for your new database node/cluster deployment or on top of your existing database node/cluster.",
-  "license": "Copyright (C) 2021 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
+  "version": "1.0.1",
+  "author": "Paul Namuag",
+  "summary": "Installs ClusterControl (supports online and offline setup) for your new database node/cluster deployment or on top of your existing database node/cluster.",
+  "license": "Copyright (C) 2023 Severalnines AB. Licensed under the Licensed under (Apache 2.0).",
   "source": "https://github.com/severalnines/puppet",
   "project_page": "https://forge.puppetlabs.com/severalnines/clustercontrol",
   "issues_url": "https://github.com/severalnines/puppet/issues",
@@ -76,7 +76,7 @@
 	  "CHANGELOG.md" : "686233c8d5d784b4ce512b506c82e59e",
 	  "lib/facter/controller_id.rb" : "d8e0f0583dd946d8c529be6053906968",
 	  "lib/facter/iptables.rb" : "e4bb6d152c4f8ef0bed2e3d7d492d1f7",
-	  "lib/facter/home_user.rb" : "7bfaeba55d64491deb004f7b369258f7",
+	  "lib/facter/home_user.rb" : "7bfaeba55d64491deb004f7b369258f7"
   },
   "description": "ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and all of its components and dependencies. \n\nSupported database clusters:\n* Galera Cluster for MySQL\n* Percona XtraDB Cluster\n* MariaDB Galera Cluster\n* MySQL Replication\n* MySQL single instance\n* MySQL Cluster\n* MongoDB Replica Set\n* MongoDB Sharded Cluster\n* PostgreSQL Streaming Replication",
   "types": [
