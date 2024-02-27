@@ -127,6 +127,11 @@ ssh-copy-id 192.168.1.13  # galera3
 Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.  
 **Default: (Boolean) true**
 
+#### `only_cc_v2`
+This parameter will allow you to specify if there is a need to enable CC v1 installation. CC v2 is not enforce in this tool so you can either
+have CC v2 (or CC v1 and CC v2) installation setup. Setting to true means you will have both versions of UI, while setting to false will only install CC v2.
+**Default: (Boolean) true**
+
 #### `clustercontrol_host`
 Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.  
 **Example: (String) '192.168.0.10'**
@@ -316,9 +321,10 @@ ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS com
 * Ubuntu 20.04.x LTS (Focal Fossa)
 * Ubuntu 22.04 LTS (Jammy Jellyfish)
 * AlmaLinux/Oracle Linux/Rocky/RHEL/CentOS 7.x/8.x/9.x
+* SLES version 15
 
 
-Currently, ClusterControl does not support PHP. 8.x. For RHEL/Oracle Linux/CentOS 9.x versions, you need to downgrade from PHP 8.x to PHP 7.x since the ClusterControl UI version 1 cannot work with PHP 8.x, unless you are going to use ClusterControl version 2.
+ClusterControl UI version 1 (CC v1) does not support PHP. 8.x. The tool will automatically setup PHP7.x version for you so no need to do something here. This is very common for distros such as RHEL/Oracle Linux/CentOS 9.x or Ubuntu versions >= 22.0 (Jammy) versions.
 
 This module only supports bootstrapping MySQL servers with IP address only (it expects skip-name-resolve is enabled on all MySQL nodes). 
 

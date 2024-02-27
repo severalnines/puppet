@@ -31,39 +31,82 @@ class clustercontrol::params ($online_install = true) {
 			} else {
 				$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}"
 			}
-
 			
-		    if ($os_majrelease >= 9) {
-   				# RHEL/CentOS v 9.x and up
-   				$mailer = 's-nail'
-				
+            if ($os_majrelease >= 9) {
+				# RHEL/CentOS v 9.x and up
+                $mailer = 's-nail'
 				## fail for now since we don't support PHP 8.x which is the default shipped package for
 				## RHEL/CentOS/Rocky/AlmaLinux/Oracle 9.x
 
-				notify("This Puppet Module ClusterControl only supports RHEL/CentOS/Rocky/AlmaLinux/Oracle >= 7 to 8.x versions only. Enterprise Linux version 9.x has PHP 8.x versions which we don't support as of this time. ClusterControl UI version 1 does not support PHP 8.x, so if it don't work, you need to downgrade your PHP 8.x to PHP 7.x version")
-			} else {			
-   				$mailer = 'mailx'
+				notice(
+					"This Puppet Module ClusterControl only supports RHEL/CentOS/Rocky/AlmaLinux/Oracle >= 7 to 8.x versions only. 
+					Enterprise Linux version 9.x has PHP 8.x versions which we don't support as of this time. 
+					ClusterControl UI version 1 does not support PHP 8.x, so if it don't work, 
+					you need to downgrade your PHP 8.x to PHP 7.x version"
+				)
+				
+                notify {"Setting up PHP 7 ...": }
+
+				exec { 'yum-install-remi-release-9' :
+					path        => ['/bin','/usr/bin'],
+					command     => 'dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm'
+				}
+
+				# exec { 'yum-module-reset-php' :
+				# 	path        => ['/bin','/usr/bin'],
+				# 	command     => 'yum module reset php'
+				# }
+				#
+				# exec { 'yum-module-enable-php-repo-7' :
+				# 	path        => ['/bin','/usr/bin'],
+				# 	command     => 'yum module enable php:remi-7.4'
+				# }
+				package { 'php:module':
+				    ensure   => disabled,
+				    name     => 'php',
+				    provider => dnfmodule,      # Configs module, not package
+				}
+				
+				package { 'php:remi-7.4':          # Use resource title to choose stream
+				    ensure      => present,
+				    provider    => dnfmodule,
+				    enable_only => true,        # Don't install whole module
+				}
+				  
+
+			    # yum install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
+			    # yum module reset php
+			    # yum module enable php:remi-7.4 -y
+
+				notify {"Using PHP 7 repository ...": }
+			} else {
+				$mailer = 'mailx'
 			}
+			
 			
 			if ($online_install) {	
 				$loc_dependencies  = [
-					'httpd', 'wget', $mailer, 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
+					'httpd', 'wget', $mailer, 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm',
 					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 
 					'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 				]
 			} else {
 				$loc_dependencies  = [
-					'httpd', 'wget', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm', 
+					'httpd', 'wget', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm',
 					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'gnuplot', 'expect',
-					 'perl-XML-XPath', $mailer,	'psmisc'
+					'perl-XML-XPath', $mailer, 'psmisc'
 				]
 			}
+			
+			
 			
 			$apache_conf_file = "/etc/httpd/conf/httpd.conf"
 			$apache_security_conf_file = "/etc/httpd/conf.d/security.conf"
 			$apache_log_dir = "/var/log/httpd/"
 			$apache_s9s_conf_file = '/etc/httpd/conf.d/s9s.conf'
 			$apache_s9s_ssl_conf_file = '/etc/httpd/conf.d/ssl.conf'
+			$apache_s9s_cc_frontend_conf_file = '/etc/httpd/conf.d/cc-frontend.conf'
+			$apache_s9s_cc_proxy_conf_file = '/etc/httpd/conf.d/cc-proxy.conf'
 			$cert_file        = '/etc/pki/tls/certs/s9server.crt'
 			$key_file         = '/etc/pki/tls/private/s9server.key'
 			$apache_user      = 'apache'
@@ -129,7 +172,40 @@ class clustercontrol::params ($online_install = true) {
 			if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 16) or ($operatingsystem == 'Debian' and $os_majrelease > 7) {
 				
 				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${cc_hostname_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
-			
+
+				# notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${cc_hostname_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }
+				
+				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${cc_hostname_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
+
+				if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 22) {
+					# Jhammy and up
+					## fail for now since we don't support PHP 8.x which is the default shipped package for
+					# Ubuntu Jhammy and up
+					notify {"This Puppet Module ClusterControl only supports versions of Ubuntu < 22.04 versions only. ClusterControl does not support PHP 8.x version. ClusterControl UI version 1 does not support PHP 8.x.": }
+                    notify {"Setting up PHP 7 ...": }
+
+					exec { 'apt-update-for-php7-prep' :
+						path        => ['/bin','/usr/bin'],
+						command     => 'apt-get update'
+					}
+
+					package { 'software-properties-common':
+					  ensure => installed
+					}
+
+					package { 'apt-transport-https':
+					  ensure => installed
+					}
+
+					exec { 'add-apt-php7-repo' :
+						path        => ['/bin','/usr/bin'],
+						command     => 'add-apt-repository -y ppa:ondrej/php'
+					}
+
+					notify {"Using PHP 7 repository ...": }
+
+				}
+							
 				$apache_log_dir = "/var/log/apache2/"
 				$wwwroot          = '/var/www/html'
 				$apache_conf_file = "/etc/apache2/apache2.conf"
@@ -164,18 +240,28 @@ class clustercontrol::params ($online_install = true) {
 					$mysql_packages   = ['mysql-client','mysql-server']
 				}
 				
-				if ($online_install) {
-					$cc_dependencies  = [
-						'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 
-						'php-ldap', 'php-curl',	'php-json', 'php-fpm', 'php-xml', 'libapache2-mod-php', 
-						'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 
-						'clustercontrol-clud', 's9s-tools'
+				if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 22) {
+					## jammy
+					$php_dependencies = [ 
+						'php7.4-mysql', 'php7.4-gd', 'libapache2-mod-php7.4', 'php7.4-curl', 
+						'php7.4-ldap', 'php7.4-xml', 'php7.4-json'#, 'php7.4-fpm',
 					]
 				} else {
-					$cc_dependencies  = [
-						'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'php-common', 'php-mysql', 'php-gd', 
-						'php-ldap', 'php-curl',	'php-json', 'php-fpm', 'php-xml', 'libapache2-mod-php'
+					$php_dependencies = [ 
+						'php-mysql', 'php-gd', 'libapache2-mod-php', 'php-curl', 
+						'php-ldap', 'php-xml', 'php-json'#, 'php-fpm',
 					]
+				}
+				
+				if ($online_install) {
+					$cc_packges = [
+						'clustercontrol-notifications', 'clustercontrol-ssh', 
+						'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+					]
+					
+					$cc_dependencies = ['apache2', 'wget', 'mailutils', 'curl', 'dnsutils'] + $php_dependencies + $cc_packges
+				} else {
+					$cc_dependencies = ['apache2', 'wget', 'mailutils', 'curl', 'dnsutils'] + $php_dependencies
 				}
 				
 
@@ -190,7 +276,9 @@ class clustercontrol::params ($online_install = true) {
 					require => Package[$cc_dependencies]
 				}
 			} else {
-				fail("This Puppet Module ClusterControl only supports Ubuntu >= 16 versions and Debian >=9 versions. Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) if you see unusual behavior.")
+				fail("This Puppet Module ClusterControl only supports Ubuntu >= 16 versions and Debian >=9 versions. 
+				Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) 
+				if you see unusual behavior.")
 				/*
 				$wwwroot          = '/var/www'
 				$apache_s9s_conf_file = '/etc/apache2/sites-available/000-default.conf'

@@ -1,11 +1,12 @@
-Listen 9443
+Listen <%= @cc_frontend_ssl_port %>
 
 <VirtualHost *:80>
         ServerName <%= @cc_hostname %>
-        Redirect permanent / https://<%= @cc_hostname %>/
+        Redirect permanent / <% if @only_cc_v2 == true %>https://<%= @cc_hostname %>/<% else %>https://<%= @cc_hostname %>:<%= @cc_frontend_ssl_port %>/<% end %>
 </VirtualHost>
 
-<VirtualHost *:9443>
+
+<VirtualHost *:<%= @cc_frontend_ssl_port %>>
         ServerName <%= @cc_hostname %>
         ServerAlias *.severalnines.local
 
@@ -19,8 +20,8 @@ Listen 9443
         Header always set Strict-Transport-Security "max-age=63072000"
 
         SSLEngine on
-		SSLCertificateFile	<%= @cert_file %>
-		SSLCertificateKeyFile <%= @key_file %>
+        SSLCertificateFile <%= @cert_file %>
+        SSLCertificateKeyFile <%= @key_file %>
 
         <Directory />
                 Options +FollowSymLinks
@@ -40,6 +41,30 @@ Listen 9443
                 # If the requested resource doesn't exist, use index.html
                 RewriteRule ^ /index.html
         </Directory>
+
+        # Proxy settings
+        SSLProxyEngine on
+        SSLProxyVerify none
+        SSLProxyCheckPeerCN off
+        SSLProxyCheckPeerExpire off
+        SSLProxyCheckPeerName off
+        SSLProxyCACertificateFile /var/lib/cmon/ca/cmon/rpc_tls.crt
+
+        <LocationMatch /cc-license>
+            ProxyPass https://severalnines.com/service/lic.php
+            ProxyPassReverse https://severalnines.com/service/lic.php
+        </LocationMatch>
+
+        <LocationMatch /api/v2/>
+            ProxyPass https://127.0.0.1:9501/v2/
+            ProxyPassReverse https://127.0.0.1:9501/v2/
+        </LocationMatch>
+
+        <LocationMatch /api/events-test/>
+            ProxyPass http://127.0.0.1:9510/test/
+            ProxyPassReverse http://127.0.0.1:9510/test/
+        </LocationMatch>
+				
 </VirtualHost>
 # intermediate configuration
 SSLProtocol             all -SSLv3 -TLSv1 -TLSv1.1

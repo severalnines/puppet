@@ -33,10 +33,16 @@ Listen 19501
                 ProxyPassReverse https://severalnines.com/service/lic.php
         </LocationMatch>
 
-        <LocationMatch "^((?!/v2/cc-license).)*$">
+        <LocationMatch "^/v2/(?!cc-license).*$">
+                Header always set Access-Control-Expose-Headers "Server"
                 ProxyPass https://127.0.0.1:9501/
                 ProxyPassReverse https://127.0.0.1:9501/
         </LocationMatch>
+
+        RewriteEngine On
+        RewriteCond %{REQUEST_URI} !^/v2
+        RewriteRule ^/(.*) https://%{SERVER_ADDR}:9443/$1 [R=301,L]
+		
 </VirtualHost>
 # intermediate configuration
 SSLProtocol             all -SSLv3 -TLSv1 -TLSv1.1

@@ -20,7 +20,8 @@ innodb-log-files-in-group = 2
 innodb-thread-concurrency = 0
 #innodb-file-format = barracuda
 innodb-flush-method = O_DIRECT
-<% if scope.lookupvar("clustercontrol::params::lower_operatingsystem") == "ubuntu" and scope.lookupvar("clustercontrol::params::os_majrelease") == 20 %>
+<% if (scope.lookupvar("clustercontrol::params::lower_operatingsystem") == "ubuntu" and scope.lookupvar("clustercontrol::params::os_majrelease") >= 20) or (scope.lookupvar("clustercontrol::params::$lower_osfamily") == "redhat" and scope.lookupvar("clustercontrol::params::os_majrelease") >= 9) 
+%>
 #innodb_locks_unsafe_for_binlog = 1
 <% else %>
 innodb_locks_unsafe_for_binlog = 1

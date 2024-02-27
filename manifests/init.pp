@@ -48,7 +48,12 @@ class clustercontrol (
 	's9s-tools' => '',
 	'clustercontrol2' => ''
   },
-  $enabled                  = true
+  $enabled                  = true,
+  $ccsetup_email = "admin@clustercontrol.com",
+	
+  ## only_cc_v2 {true = if only ccv2, false = if ccv1 and ccv2 combination (the installation setup in 1.9.6 below when ccv2 had been suppported)}
+  $only_cc_v2 = false
+  ## your desired admin email for your clustercontrol setup. Email field will use this as auto-fill value during registration form
   
 ) {
 	
@@ -99,6 +104,12 @@ class clustercontrol (
 	} else {
 		Exec { path => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin', "$mysql_basedir/bin"]}
 	}
+	
+	if ($only_cc_v2) {
+		$cc_frontend_ssl_port = 443
+	} else {
+		$cc_frontend_ssl_port = 9443
+		}
 	
 
 	if $is_controller {
@@ -224,7 +235,7 @@ class clustercontrol (
 			
 			exec { 'refresh-zypper-auto-import-refresh' :
 				path        =>['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-				command     => 'zypper -n --gpg-auto-import-keys refresh',
+				command     => 'zypper -n --gpg-auto-import-keys refresh 2>/dev/null',
 			}
 		} else {
 			package { $clustercontrol::params::mysql_packages :
@@ -606,22 +617,48 @@ class clustercontrol (
 		
 		if $l_osfamily == 'redhat' {
 			## RedHat/CentOS
-			file { $clustercontrol::params::apache_s9s_conf_file :
+			if ($only_cc_v2 == false) {
+				file { $clustercontrol::params::apache_s9s_conf_file :
+					ensure  => present,
+					mode    => '0644',
+					owner   => root, 
+					group => root,
+					content => template('clustercontrol/s9s.conf.erb'),
+					require => Package[$clustercontrol::params::cc_dependencies],
+					# notify  => Service[$clustercontrol::params::apache_service]
+				}
+
+				file { $clustercontrol::params::apache_s9s_ssl_conf_file :
+					ensure  => present,
+					mode    => '0644',
+					owner   => root, 
+					group => root,
+					content => template('clustercontrol/s9s-ssl.conf.erb'),
+					require => Package[$clustercontrol::params::cc_dependencies],
+					# notify  => Service[$clustercontrol::params::apache_service]
+				}
+			}
+			
+			## For CCv2
+			file { "$clustercontrol::params::apache_s9s_cc_frontend_conf_file" :
 				ensure  => present,
+				content => template('clustercontrol/cc-frontend.conf.erb'),
 				mode    => '0644',
-				owner   => root, group => root,
-				content => template('clustercontrol/s9s.conf.erb'),
-				require => Package[$clustercontrol::params::cc_dependencies],
-				# notify  => Service[$clustercontrol::params::apache_service]
+				owner   => root, 
+				group => root,
+				require => Package[$clustercontrol::params::cc_ui],
+				notify   => File[$clustercontrol::params::apache_s9s_cc_proxy_conf_file]
 			}
 
-			file { $clustercontrol::params::apache_s9s_ssl_conf_file :
+			file { "$clustercontrol::params::apache_s9s_cc_proxy_conf_file" :
 				ensure  => present,
-				owner   => root, group => root,
-				content => template('clustercontrol/s9s-ssl.conf.erb'),
-				require => Package[$clustercontrol::params::cc_dependencies],
-				# notify  => Service[$clustercontrol::params::apache_service]
+				content => template('clustercontrol/cc-proxy.conf.erb'),
+				mode    => '0644',
+				owner   => root, 
+				group => root,
+				require => Package[$clustercontrol::params::cc_ui]
 			}
+			
 
 	        # enable sameorigin header
 			file { $clustercontrol::params::apache_security_conf_file :
@@ -646,34 +683,36 @@ class clustercontrol (
 		
 		} elsif $l_osfamily == 'debian' {
 			## Debian/Ubuntu
-			file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
-				ensure  => present,
-				content => template('clustercontrol/s9s-ssl.conf.erb'),
-				mode    => '0644',
-				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui],
-				notify   => File[$clustercontrol::params::apache_s9s_ssl_target_file]
-			}
+			if ($only_cc_v2 == false) {
+				file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
+					ensure  => present,
+					content => template('clustercontrol/s9s-ssl.conf.erb'),
+					mode    => '0644',
+					owner   => root, group => root,
+					require => Package[$clustercontrol::params::cc_ui],
+					notify   => File[$clustercontrol::params::apache_s9s_ssl_target_file]
+				}
 
-			file { "$clustercontrol::params::apache_s9s_ssl_target_file" :
-				ensure => 'link',
-				target => "$clustercontrol::params::apache_s9s_ssl_conf_file",
-				subscribe => File["$clustercontrol::params::apache_s9s_ssl_conf_file"]
-			}
+				file { "$clustercontrol::params::apache_s9s_ssl_target_file" :
+					ensure => 'link',
+					target => "$clustercontrol::params::apache_s9s_ssl_conf_file",
+					subscribe => File["$clustercontrol::params::apache_s9s_ssl_conf_file"]
+				}
 
-			file { "$clustercontrol::params::apache_s9s_conf_file" :
-				ensure  => present,
-				content => template('clustercontrol/s9s.conf.erb'),
-				mode    => '0644',
-				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui],
-				notify   => File[$clustercontrol::params::apache_s9s_target_file]
-			}
+				file { "$clustercontrol::params::apache_s9s_conf_file" :
+					ensure  => present,
+					content => template('clustercontrol/s9s.conf.erb'),
+					mode    => '0644',
+					owner   => root, group => root,
+					require => Package[$clustercontrol::params::cc_ui],
+					notify   => File[$clustercontrol::params::apache_s9s_target_file]
+				}
 
-			file { "$clustercontrol::params::apache_s9s_target_file" :
-				ensure => 'link',
-				target => "$clustercontrol::params::apache_s9s_conf_file",
-				subscribe => File["$clustercontrol::params::apache_s9s_conf_file"]
+				file { "$clustercontrol::params::apache_s9s_target_file" :
+					ensure => 'link',
+					target => "$clustercontrol::params::apache_s9s_conf_file",
+					subscribe => File["$clustercontrol::params::apache_s9s_conf_file"]
+				}
 			}
 			
 			## For CCv2
@@ -742,22 +781,24 @@ class clustercontrol (
 			}
 		} elsif $l_osfamily == 'suse' {
 			## SUSE (SLES/OpenSUSE 15>=)
-			file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
-				ensure  => present,
-				content => template('clustercontrol/s9s-ssl.conf.erb'),
-				mode    => '0644',
-				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui],
-				notify   => File[$clustercontrol::params::apache_s9s_conf_file]
-			}
+			if ($only_cc_v2 == false) {
+				file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
+					ensure  => present,
+					content => template('clustercontrol/s9s-ssl.conf.erb'),
+					mode    => '0644',
+					owner   => root, group => root,
+					require => Package[$clustercontrol::params::cc_ui],
+					notify   => File[$clustercontrol::params::apache_s9s_conf_file]
+				}
 
-			file { "$clustercontrol::params::apache_s9s_conf_file" :
-				ensure  => present,
-				content => template('clustercontrol/s9s.conf.erb'),
-				mode    => '0644',
-				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui],
-				notify   => File[$clustercontrol::params::apache_s9s_cc_frontend_conf_file]
+				file { "$clustercontrol::params::apache_s9s_conf_file" :
+					ensure  => present,
+					content => template('clustercontrol/s9s.conf.erb'),
+					mode    => '0644',
+					owner   => root, group => root,
+					require => Package[$clustercontrol::params::cc_ui],
+					notify   => File[$clustercontrol::params::apache_s9s_cc_frontend_conf_file]
+				}
 			}
 			
 			## For CCv2
@@ -1103,6 +1144,20 @@ class clustercontrol (
 			command => "sudo S9S_USER_CONFIG=${user_path} s9s user --set --first-name=RPC --last-name=API",
 			# require =>  [File["${home_path}/.s9s/"],Service['cmon']]
 			require => Exec["create_ccrpc_user"]
+		}
+
+		exec { "ccsetup_unlink":
+			user => "root",
+			command => "sudo rm -f /tmp/ccsetup.conf",
+			require =>  [
+				Exec['create_ccrpc_set_firstname'],
+				Exec['create_ccrpc_user']
+			]
+		}
+
+		exec { "create_ccsetup_user":			
+			command => "sudo S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --email-address='${ccsetup_email}' --controller='https://127.0.0.1:9501' ccsetup",
+			require =>  [Service['cmon'],File["${home_path}/.s9s/"]]
 		}
 
 		
