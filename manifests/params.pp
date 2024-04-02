@@ -1,4 +1,4 @@
-class clustercontrol::params ($online_install = true) {
+class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
 	$repo_host = 'repo.severalnines.com'
 	$cc_controller = 'clustercontrol-controller'
 	$cc_ui = 'clustercontrol'
@@ -23,7 +23,7 @@ class clustercontrol::params ($online_install = true) {
 	
 	$cc_v2_config_ui_file = "/var/www/html/clustercontrol2/config.js"
 
-	notice(">>>>>> CC Debugger >>>>>> value is: $$osfamily + ${operatingsystemmajrelease}")
+	notice(">>>>>> CC Debugger >>>>>> value is: $osfamily + ${operatingsystemmajrelease}")
 	case $osfamily {
 		'Redhat': {
 			if ($operatingsystem == 'RedHat') {
@@ -32,73 +32,71 @@ class clustercontrol::params ($online_install = true) {
 				$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemmajrelease}"
 			}
 			
+			if ($os_majrelease >= 10) {
+				fail("ClusterControl has no support for RHEL versions >= 10.")
+			}
+
+			
             if ($os_majrelease >= 9) {
 				# RHEL/CentOS v 9.x and up
                 $mailer = 's-nail'
 				## fail for now since we don't support PHP 8.x which is the default shipped package for
 				## RHEL/CentOS/Rocky/AlmaLinux/Oracle 9.x
 
-				notice(
-					"This Puppet Module ClusterControl only supports RHEL/CentOS/Rocky/AlmaLinux/Oracle >= 7 to 8.x versions only. 
-					Enterprise Linux version 9.x has PHP 8.x versions which we don't support as of this time. 
-					ClusterControl UI version 1 does not support PHP 8.x, so if it don't work, 
-					you need to downgrade your PHP 8.x to PHP 7.x version"
-				)
+				if (! $only_cc_v2) {
+					notice(
+						"This Puppet Module ClusterControl only supports RHEL/CentOS/Rocky/AlmaLinux/Oracle >= 7 to 8.x versions only. 
+						Enterprise Linux version 9.x has PHP 8.x versions which we don't support as of this time. 
+						ClusterControl UI version 1 does not support PHP 8.x, so if it don't work, 
+						you need to downgrade your PHP 8.x to PHP 7.x version"
+					)
 				
-                notify {"Setting up PHP 7 ...": }
+	                notify {"Setting up PHP 7 ...": }
 
-				exec { 'yum-install-remi-release-9' :
-					path        => ['/bin','/usr/bin'],
-					command     => 'dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm'
-				}
+					exec { 'yum-install-remi-release-9' :
+						path        => ['/bin','/usr/bin'],
+						command     => 'dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm',
+						unless      => 'rpm -qa|egrep -i remi'
+					}
 
-				# exec { 'yum-module-reset-php' :
-				# 	path        => ['/bin','/usr/bin'],
-				# 	command     => 'yum module reset php'
-				# }
-				#
-				# exec { 'yum-module-enable-php-repo-7' :
-				# 	path        => ['/bin','/usr/bin'],
-				# 	command     => 'yum module enable php:remi-7.4'
-				# }
-				package { 'php:module':
-				    ensure   => disabled,
-				    name     => 'php',
-				    provider => dnfmodule,      # Configs module, not package
-				}
+					package { 'php:module':
+					    ensure   => disabled,
+					    name     => 'php',
+					    provider => dnfmodule,      # Configs module, not package
+					}
 				
-				package { 'php:remi-7.4':          # Use resource title to choose stream
-				    ensure      => present,
-				    provider    => dnfmodule,
-				    enable_only => true,        # Don't install whole module
-				}
+					package { 'php:remi-7.4':          # Use resource title to choose stream
+					    ensure      => present,
+					    provider    => dnfmodule,
+					    enable_only => true,        # Don't install whole module
+					}
 				  
 
-			    # yum install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
-			    # yum module reset php
-			    # yum module enable php:remi-7.4 -y
+				    # yum install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
+				    # yum module reset php
+				    # yum module enable php:remi-7.4 -y
 
-				notify {"Using PHP 7 repository ...": }
+					notify {"Using PHP 7 repository ...": }
+				}
+				
 			} else {
 				$mailer = 'mailx'
 			}
 			
+			$php_packages_inc = ['php', 'php-gd', 'php-fpm', 'php-xml', 'php-json', 'php-ldap']
+
+			$cc_packages = [
+				'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+			]
 			
 			if ($online_install) {	
-				$loc_dependencies  = [
-					'httpd', 'wget', $mailer, 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm',
-					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'clustercontrol-notifications', 
-					'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
-				]
+				$loc_dependencies  = ['httpd', 'wget', $mailer, 'curl', 'cronie', 'bind-utils', 'mod_ssl', 'openssl', 'nmap-ncat']
 			} else {
 				$loc_dependencies  = [
-					'httpd', 'wget', 'curl', 'cronie', 'bind-utils', 'php', 'php-gd', 'php-fpm',
-					'php-xml', 'php-json', 'php-ldap', 'mod_ssl', 'openssl', 'gnuplot', 'expect',
-					'perl-XML-XPath', $mailer, 'psmisc'
+					'httpd', 'wget', 'curl', 'cronie', 'bind-utils', 'mod_ssl', 'openssl', 
+					'nmap-ncat', 'gnuplot', 'expect','perl-XML-XPath', $mailer, 'psmisc'
 				]
 			}
-			
-			
 			
 			$apache_conf_file = "/etc/httpd/conf/httpd.conf"
 			$apache_security_conf_file = "/etc/httpd/conf.d/security.conf"
@@ -113,29 +111,25 @@ class clustercontrol::params ($online_install = true) {
 			$apache_service   = 'httpd'
 			$wwwroot          = '/var/www/html'
 			$mysql_cnf        = '/etc/my.cnf'
-			
+
+			$mysql_service    = 'mariadb'
+			$mysql_packages   = ['mariadb','mariadb-server']
 				
 			if ($os_majrelease == 7) {
-				$mysql_service    = 'mariadb'
-				$mysql_packages   = ['mariadb','mariadb-server']
-				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysql']
-				
+				$php_packages = $php_packages_inc + ['php-mysql']			
 			} elsif ($os_majrelease > 7) {
 				# RHEL/CentOS v 8.0 and up
-				$mysql_service    = 'mariadb'
-				$mysql_packages   = ['mariadb','mariadb-server']
-				$cc_dependencies = $loc_dependencies + ['nmap-ncat', 'php-mysqlnd']
+				$php_packages = $php_packages_inc + ['php-mysqlnd']
 			} else {
 				fail("This Puppet Module ClusterControl only supports RHEL/CentOS >= 7 versions. Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) if you see unusual behavior.")
 			}
-			
-			/* else {
-				$mysql_service    = 'mysqld'
-				$mysql_packages   = ['mysql','mysql-server']
-				$cc_dependencies = $loc_dependencies + ['nc', 'php-mysql']
-				
-				
-			}*/
+
+			if ($only_cc_v2) {
+				$cc_dependencies = $loc_dependencies + $cc_packages	
+			} else {
+				$cc_dependencies = $loc_dependencies + $php_packages + $cc_packages			
+			}
+
 			
 			/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>s9s tool reponame: ${$s9s_tools_repo_osname}, \
 				os_majrelease: ${$os_majrelease}, ${cc_hostname_lo}, codename: ${lsbdistcodename} , \
@@ -169,7 +163,7 @@ class clustercontrol::params ($online_install = true) {
 		}
 		'Debian': {
 			
-			if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 16) or ($operatingsystem == 'Debian' and $os_majrelease > 7) {
+			if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 18) or ($operatingsystem == 'Debian' and $os_majrelease > 7) {
 				
 				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${cc_hostname_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
 
@@ -177,11 +171,17 @@ class clustercontrol::params ($online_install = true) {
 				
 				/*notify{"<<<<<<<<<<<<<CC Debugger:>>>>>>>>>>>>>The value is: ${lower_operatingsystem}  and ${cc_hostname_lo} and ${lsbdistcodename} and ${os_majrelease} and data-type is: ${typevar})": }*/
 
-				if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 22) {
+				if (($operatingsystem == 'Ubuntu' and $os_majrelease >= 23) or (operatingsystem == 'Debian' and $os_majrelease >= 11)) {
+					fail("ClusterControl has no support yet to Ubuntu versions >= 23 or Debian >= 11.")
+				}
+				
+				if ($only_cc_v2 == false and $operatingsystem == 'Ubuntu' and $os_majrelease >= 22) {
+					## only CC v1 requires PHP
 					# Jhammy and up
 					## fail for now since we don't support PHP 8.x which is the default shipped package for
 					# Ubuntu Jhammy and up
-					notify {"This Puppet Module ClusterControl only supports versions of Ubuntu < 22.04 versions only. ClusterControl does not support PHP 8.x version. ClusterControl UI version 1 does not support PHP 8.x.": }
+					notify {"ClusterControl UI version 1 does not support PHP 8.x version.": }
+      			  	notify {"Instead, ClusterControl will downgrade and setup PHP 7 for you...": }
                     notify {"Setting up PHP 7 ...": }
 
 					exec { 'apt-update-for-php7-prep' :
@@ -240,28 +240,35 @@ class clustercontrol::params ($online_install = true) {
 					$mysql_packages   = ['mysql-client','mysql-server']
 				}
 				
-				if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 22) {
-					## jammy
-					$php_dependencies = [ 
-						'php7.4-mysql', 'php7.4-gd', 'libapache2-mod-php7.4', 'php7.4-curl', 
-						'php7.4-ldap', 'php7.4-xml', 'php7.4-json'#, 'php7.4-fpm',
-					]
-				} else {
-					$php_dependencies = [ 
-						'php-mysql', 'php-gd', 'libapache2-mod-php', 'php-curl', 
-						'php-ldap', 'php-xml', 'php-json'#, 'php-fpm',
-					]
+
+				if ($only_cc_v2) {
+					## php is not needed for ccv2
+					$php_packages = []
+				} else {						
+					if ($operatingsystem == 'Ubuntu' and $os_majrelease >= 22) {
+						## jammy
+						$php_packages = [ 
+							'php7.4-mysql', 'php7.4-gd', 'libapache2-mod-php7.4', 'php7.4-curl', 
+							'php7.4-ldap', 'php7.4-xml', 'php7.4-json'#, 'php7.4-fpm',
+						]
+					} else {
+						$php_packages = [ 
+							'php-mysql', 'php-gd', 'libapache2-mod-php', 'php-curl', 
+							'php-ldap', 'php-xml', 'php-json'#, 'php-fpm',
+						]
+					}
 				}
 				
+
 				if ($online_install) {
 					$cc_packges = [
 						'clustercontrol-notifications', 'clustercontrol-ssh', 
 						'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
 					]
 					
-					$cc_dependencies = ['apache2', 'wget', 'mailutils', 'curl', 'dnsutils'] + $php_dependencies + $cc_packges
+					$cc_dependencies = ['apache2', 'wget', 'mailutils', 'curl', 'dnsutils'] + $php_packages + $cc_packges
 				} else {
-					$cc_dependencies = ['apache2', 'wget', 'mailutils', 'curl', 'dnsutils'] + $php_dependencies
+					$cc_dependencies = ['apache2', 'wget', 'mailutils', 'curl', 'dnsutils'] + $php_packages
 				}
 				
 
@@ -344,6 +351,19 @@ class clustercontrol::params ($online_install = true) {
 					$s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemrelease}"
 				}
 			
+
+				if ($only_cc_v2) {
+					## no php packages
+					$php_packages = []
+				} else {
+					$php_packages = [
+						'php7', 'php7-mysql', 'apache2-mod_php7', 'php7-gd', 'php7-curl', 'php7-ldap', 
+						'php7-xmlreader', 'php7-ctype', 'php7-json',
+					]
+				}
+
+				$cc_packages = ['clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools']
+
 				if ($online_install) {	
 					$loc_dependencies  = [
 						'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 
@@ -351,18 +371,13 @@ class clustercontrol::params ($online_install = true) {
 						'insserv-compat', 'sysvinit-tools', 
 						'openssl', 'ca-certificates', 
 						'gnuplot', 'expect', 'perl-XML-XPath', 'psmisc',
-						#'mod_ssl',
-						'php7', 'php7-mysql', 'apache2-mod_php7', 'php7-gd', 'php7-curl', 'php7-ldap', 
-						'php7-xmlreader', 'php7-ctype', 'php7-json',
-						'clustercontrol-notifications', 'clustercontrol-ssh', 'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools'
+						#'mod_ssl'
 					]
 				} else {
 					$loc_dependencies  = [
 						'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils', 'insserv-compat', 'sysvinit-tools',
 						'openssl', 'ca-certificates', 'gnuplot', 'expect', 'perl-XML-XPath', 'psmisc',
-						#'mod_ssl',
-						'php7', 'php7-mysql', 'apache2-mod_php7', 'php7-gd', 'php7-curl', 'php7-ldap', 
-						'php7-xmlreader', 'php7-ctype', 'php7-json'
+						#'mod_ssl'
 					]
 				}
 				
@@ -388,8 +403,8 @@ class clustercontrol::params ($online_install = true) {
 				
 				if (Integer($operatingsystemmajrelease) >= 15) {
 					$mysql_service    = 'mariadb'
-					$mysql_packages   = ['mariadb','mariadb-server']
-					$cc_dependencies = $loc_dependencies # + ['nmap-ncat', 'php-mysqlnd']
+					$mysql_packages   = ['mariadb','mariadb-client']
+					$cc_dependencies = $loc_dependencies + $php_packages + $cc_packages
 				} else {
 
 					fail("This Puppet Module ClusterControl only supports SUSE/OpenSUSE >= 15 versions. " +

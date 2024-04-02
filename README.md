@@ -21,10 +21,13 @@ Supported database clusters:
 * MySQL Galera (Percona XtraDB/MariaDB)
 * MySQL Cluster (NDB)
 * TimesaleDB
-* PostgreSQL (supports Single or Streaming Replication)
-* MongoDB ReplicaSet (Percona/Mongodb)
-* MongoDB Shards (Percona/Mongodb)
-More details at [Severalnines](http://www.severalnines.com/clustercontrol) website.
+* PostgreSQL (supports Single or Streaming Replication), Supports also pgvector extension support, and EntperiseDB
+* MongoDB ReplicaSet (Percona/Mongodb) and also for MongoDB Enterprise
+* MongoDB Shards (Percona/Mongodb) and also for MongoDB Enterprise
+* MS SQL Server 2022
+* Redis Sentinel
+* Elasticsearch
+More details at [Severalnines ClusterControl](http://www.severalnines.com/clustercontrol) website.
 
 
 ## Module Description
@@ -98,7 +101,8 @@ node 'clustercontrol.puppet.local' { # Applies only to mentioned node. If nothin
             mysql_cmon_password => 'R00tP@55',
             api_token => 'efc6ac7fbea2da1b056b901541697ec7a9be6a77',
             ssh_user => 'vagrant',
-			ssh_user_group => 'vagrant'
+	    ssh_user_group => 'vagrant',
+            only_cc_v2 => true
         }
 }
 ```
@@ -110,14 +114,6 @@ puppet agent -t
 on the target clustercontrol, which is the host *clustercontrol.puppet.local* for this example installation.
 
 Once deployment is complete, open the ClusterControl web UI at https://[ClusterControl IP address]/clustercontrol and create a default admin login. You can now start to add existing database node/cluster, or deploy a new one. Ensure that passwordless SSH is configured properly from ClusterControl node to all DB nodes beforehand. 
-
-To setup passwordless SSH on target database nodes, use following commands on ClusterControl node (as ssh_user), e.g:
-
-```bash
-ssh-copy-id 192.168.1.11  # galera1
-ssh-copy-id 192.168.1.12  # galera2
-ssh-copy-id 192.168.1.13  # galera3
-```
 
 ## Usage
 
@@ -312,19 +308,18 @@ node 'pupnode2.puppet.local' { # Applies only to mentioned node. If nothing ment
 
 ## Limitations
 
-ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS combination of Linux OS versions. From these supported distros, all versions that had passed its EOL or almost reaching its EOL are no longer supported. Below are the supported versions:
+ClusterControl Module for Puppet supports only Debian/Ubuntu, RHEL/CentOS/Alma/Oracle/Rocky Linux of Linux-based operating systems. From these supported distros, all versions that had passed its EOL or almost reaching its EOL are no longer supported. Below are the supported versions:
 * Debian 9.x (stretch)
 * Debian 10.x (buster)
 * Debian 11.x (bullseye)
-* Ubuntu 16.x LTS (Xenial Xerus)
 * Ubuntu 18.x LTS(Bionic Beaver)
 * Ubuntu 20.04.x LTS (Focal Fossa)
 * Ubuntu 22.04 LTS (Jammy Jellyfish)
 * AlmaLinux/Oracle Linux/Rocky/RHEL/CentOS 7.x/8.x/9.x
-* SLES version 15
+* SLES version >= 15.x
 
 
-ClusterControl UI version 1 (CC v1) does not support PHP. 8.x. The tool will automatically setup PHP7.x version for you so no need to do something here. This is very common for distros such as RHEL/Oracle Linux/CentOS 9.x or Ubuntu versions >= 22.0 (Jammy) versions.
+ClusterControl UI version 1 (CCv1) does not support PHP. 8.x. The tool will automatically setup PHP7.x version for you so no need to do something here. This is very common for distros such as RHEL/Oracle Linux/CentOS 9.x or Ubuntu versions >= 22.0 (Jammy) versions. If you only install ClusterControl UI version 2 (CCv2), this does not depend anymore with PHP. If you want to intend to only install CCv2, make sure that you set `only_cc_v2` to true (default). If you want both CCv1 and CCv2 installed, set `only_cc_v2` to false. For more details, make sure you read the [Installation](#installation) section.
 
 This module only supports bootstrapping MySQL servers with IP address only (it expects skip-name-resolve is enabled on all MySQL nodes). 
 

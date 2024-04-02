@@ -39,21 +39,22 @@ class clustercontrol (
   # path of your CC packages. Set this only when you are using offline installation i.e. $is_online_install == false
   $cc_packages_path				= {
   	'clustercontrol-controller' => '',
-	'clustercontrol' => '',
-	'clustercontrol-cloud' => '',
-	'clustercontrol-clud' => '',
-	'clustercontrol-ssh' => '',
-	'clustercontrol-notifications' => '',
-	'libs9s' => '',
-	's9s-tools' => '',
-	'clustercontrol2' => ''
+		'clustercontrol' => '',
+		'clustercontrol-cloud' => '',
+		'clustercontrol-clud' => '',
+		'clustercontrol-ssh' => '',
+		'clustercontrol-notifications' => '',
+		'libs9s' => '',
+		's9s-tools' => '',
+		'clustercontrol2' => ''
   },
   $enabled                  = true,
+
+  ## your desired admin email for your clustercontrol setup. Email field will use this as auto-fill value during registration form
   $ccsetup_email = "admin@clustercontrol.com",
 	
   ## only_cc_v2 {true = if only ccv2, false = if ccv1 and ccv2 combination (the installation setup in 1.9.6 below when ccv2 had been suppported)}
-  $only_cc_v2 = false
-  ## your desired admin email for your clustercontrol setup. Email field will use this as auto-fill value during registration form
+  $only_cc_v2 = true
   
 ) {
 	
@@ -109,13 +110,13 @@ class clustercontrol (
 		$cc_frontend_ssl_port = 443
 	} else {
 		$cc_frontend_ssl_port = 9443
-		}
-	
+	}
 
 	if $is_controller {
 		
 		class { 'clustercontrol::params': 
-			online_install => $is_online_install 
+			online_install => $is_online_install,
+			only_cc_v2 => $only_cc_v2
 		}
 		
 		/* setup MySQL first needed as the CMONDB */
@@ -134,9 +135,9 @@ class clustercontrol (
 
 
 		
-	    #if $::iptables == "true" {
-	  #  }
-		
+		#if $::iptables == "true" {
+		#  }
+
 		if ($disable_firewall) {
 			exec { 'check-iptables-presence' :
 				path        => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
@@ -163,11 +164,11 @@ class clustercontrol (
 			
 			
 			if ($disable_os_sec_module) {
-			    #exec { "check-selinux-config":
-			    #  command => "ls -alth /etc/selinux/config",
-			    #  path    =>  ["/usr/bin","/usr/sbin", "/bin"],
+				#exec { "check-selinux-config":
+				#  command => "ls -alth /etc/selinux/config",
+				#  path    =>  ["/usr/bin","/usr/sbin", "/bin"],
 				#  onlyif  => 'test -f /etc/selinux/config'
-			    #}
+				#}
 				
 				## Only create the file if the /etc/selinux/config exists
 			    file {"/etc/selinux/config":
@@ -188,7 +189,6 @@ class clustercontrol (
 					require =>  File["/etc/selinux/config"]
 				}
 			}
-
 			
 			if ($disable_firewall) {
 				exec { 'check-firewalld-presence' :
@@ -203,7 +203,6 @@ class clustercontrol (
 					require    => Exec["check-firewalld-presence"]
 			    }
 			}
-			
 		} elsif ($l_osfamily == 'debian') {
 			## Debian/Ubuntu
 			if ($disable_os_sec_module) {
@@ -244,7 +243,6 @@ class clustercontrol (
 		}
 			
 		
-
 		file { $datadir :
 			ensure  => directory,
 			owner   => mysql, group => mysql,
@@ -262,7 +260,6 @@ class clustercontrol (
 			require => Package[$clustercontrol::params::mysql_packages],
 			notify  => Service[$clustercontrol::params::mysql_service]
 		}
-		
 
 		exec { 'create-root-password' :
 			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
@@ -302,10 +299,13 @@ class clustercontrol (
 			notify  => Exec['import-cmon-db']
 		}
 
-		exec { "create-dcps-db" :
-			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE SCHEMA IF NOT EXISTS dcps;'",
-			notify  => Exec['import-dcps-db']
+		if (! $only_cc_v2) {
+			## dcps schema is only used by CC v1
+			exec { "create-dcps-db" :
+				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE SCHEMA IF NOT EXISTS dcps;'",
+				notify  => Exec['import-dcps-db']
+			}
 		}
 
 		exec { "import-cmon-db" :
@@ -336,52 +336,73 @@ class clustercontrol (
 			require => Package[$clustercontrol::params::cc_controller]
 		}
 
+		if ($only_cc_v2 == false) {
+			## applies only when CC v1 is present.
+			exec { "import-dcps-db" :
+				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				onlyif  => "test -f $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
+				command => "mysql -f -u root -p\"${mysql_root_password}\" dcps < $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
+				notify => Exec['create-dcps-api'],
+				require => Package[$clustercontrol::params::cc_controller]
+			}
 
-		exec { "import-dcps-db" :
-			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			onlyif  => "test -f $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
-			command => "mysql -f -u root -p\"${mysql_root_password}\" dcps < $clustercontrol::params::wwwroot/clustercontrol/sql/dc-schema.sql",
-			notify => Exec['create-dcps-api'],
-			require => Package[$clustercontrol::params::cc_controller]
+			exec { "create-dcps-api" :
+				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				onlyif => "mysql -u root -p\"${mysql_root_password}\" -e 'SHOW SCHEMAS LIKE \"dcps\";' 2>/dev/null",
+				command => "mysql -u root -p\"${mysql_root_password}\" -e 'REPLACE INTO dcps.apis(id, company_id, user_id, url, token) VALUES (1, 1, 1, \"http://127.0.0.1/cmonapi\", \"$api_token\");'",
+				require => Package[$clustercontrol::params::cc_controller]
+			}   
 		}
-
-   	    exec { "create-dcps-api" :
-			path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			onlyif => "mysql -u root -p\"${mysql_root_password}\" -e 'SHOW SCHEMAS LIKE \"dcps\";' 2>/dev/null",
-            command => "mysql -u root -p\"${mysql_root_password}\" -e 'REPLACE INTO dcps.apis(id, company_id, user_id, url, token) VALUES (1, 1, 1, \"http://127.0.0.1/cmonapi\", \"$api_token\");'",
-			require => Package[$clustercontrol::params::cc_controller]
-        }   
 
 		
 		if ($l_osfamily == 'suse') {
 			## Importing gpg keys for CC repo and s9s-tools for SUSE-variant only
-	   	    exec { "import-gpg-keys-for-cc-repo" :
-			    path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "rpm --import \"http://${clustercontrol::params::repo_host}/severalnines-repos.asc\"",
+			exec { "import-gpg-keys-for-cc-repo" :
+				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				command => "rpm --import \"http://${clustercontrol::params::repo_host}/severalnines-repos.asc\"",
 				require => [Zypprepo["s9s-repo"],Zypprepo["s9s-tools-repo"]]
-	        }   
-			
-	   	    exec { "import-gpg-keys-for-s9s_tools-repo" :
-			    path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "rpm --import \"http://${clustercontrol::params::repo_host}/s9s-tools/${clustercontrol::params::s9s_tools_repo_osname}/repodata/repomd.xml.key\"",
+			}   
+
+			exec { "import-gpg-keys-for-s9s_tools-repo" :
+				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				command => "rpm --import \"http://${clustercontrol::params::repo_host}/s9s-tools/${clustercontrol::params::s9s_tools_repo_osname}/repodata/repomd.xml.key\"",
 				require => [Zypprepo["s9s-repo"],Zypprepo["s9s-tools-repo"]]
-	        }   
+			}   
 		}
-		
-		/* Required dependencies must be present */
+
+		## install cc dependencies first
+		# $clustercontrol::params::cc_dependencies.each |String $pkg| {
+		# 	package { $pkg :
+		# 		ensure  => installed
+		# 	}
+		# }
+
 		package { $clustercontrol::params::cc_dependencies :
-			ensure  => installed,
-			notify  => [
-				Exec['allow-override-all'], 
-				File[
-					$clustercontrol::params::cert_file, 
-					$clustercontrol::params::key_file, 
-					$clustercontrol::params::apache_s9s_ssl_conf_file,
-					$clustercontrol::params::apache_s9s_conf_file
-				]
-			]
+			ensure  => installed
+		}
+	
+		if ($is_online_install) {
+		
+			if ($only_cc_v2 == false){
+				package { $clustercontrol::params::cc_ui : 
+					ensure  => installed, 
+					require => Package[[$clustercontrol::params::cc_controller]],
+					notify  => Exec['create-dcps-db']
+				}
+			}
+
+			package { $clustercontrol::params::cc_ui2 : 
+				ensure  => installed, 
+				require => Package[[$clustercontrol::params::cc_controller]]
+			}
+
 		}
 		
+		class { 'clustercontrol::create_cert': 
+			cert_file => $clustercontrol::params::cert_file,
+			key_file => $clustercontrol::params::key_file
+		}
+
 		if ($is_online_install) {
 		
 			/* setup the Apache server required for frontend HTTP/HTTPS */
@@ -405,20 +426,8 @@ class clustercontrol (
 					]
 				}
 			}
-		
-			package { $clustercontrol::params::cc_ui : 
-				ensure  => installed, 
-				require => Package[[$clustercontrol::params::cc_controller]],
-				notify  => Exec['create-dcps-db']
-			}
-		
-			package { $clustercontrol::params::cc_ui2 : 
-				ensure  => installed, 
-				require => Package[[$clustercontrol::params::cc_controller]],
-				notify  => Exec['create-dcps-db']
-			}
-		} else {
 
+		} else {
 			if ($l_osfamily == 'redhat' or $l_osfamily == 'suse') {
 				## RHEL type distros/SUSE shares same file package manger
 				$l_provider = "rpm"
@@ -429,7 +438,6 @@ class clustercontrol (
 			} else {
 				fail("Offline installation for this Puppet Module ClusterControl only supports RHEL/CentOS >= 7, Ubuntu >= 16, Debian >= 9 versions. Obsolete or versions that passed EOL is no longer supported. Please contact Severalnines (support@severalnines.com) if you see unusual behavior.")
 			}
-			
 			
 			package { 
 			 	$clustercontrol::params::cc_cloud :
@@ -497,12 +505,14 @@ class clustercontrol (
 				}
 			} 
 
-			package { 
-			 	$clustercontrol::params::cc_ui :
-				ensure => "installed",
-				provider => $l_provider,
-				source => $cc_packages_path[$clustercontrol::params::cc_ui],
-				require => Package[$clustercontrol::params::s9stools],
+			if ($only_cc_v2 == false) {				
+				package { 
+				 	$clustercontrol::params::cc_ui :
+					ensure => "installed",
+					provider => $l_provider,
+					source => $cc_packages_path[$clustercontrol::params::cc_ui],
+					require => Package[$clustercontrol::params::s9stools],
+				}
 			}
 
 			package { 
@@ -518,97 +528,10 @@ class clustercontrol (
 				ensure => "installed",
 				provider => $l_provider,
 				source => $cc_packages_path[$clustercontrol::params::cc_controller],
-				require => Package[$clustercontrol::params::cc_ui]
+				require => Package[$clustercontrol::params::cc_ui2]
 			}
 			
 		}
-		
-		if ($l_osfamily == 'suse') {
-		    $domain="pupnode7"
-		    # $domain="*.severalnines.local"
-		    $commonname=$domain
-		    $san="pupnode7" #"dev.severalnines.local"
-		    $country="SE"
-		    $state="Stockholm"
-		    $locality=$state
-		    $organization='Severalnines AB'
-		    $organizationalunit="Severalnines"
-		    $email="support@severalnines.com"
-		    $keylength=2048
-		    $expires=1825
-		    $keyname="${clustercontrol::params::wwwroot}/clustercontrol/ssl/server.key"
-		    $certname="${clustercontrol::params::wwwroot}/clustercontrol/ssl/server.crt"
-		    $csrname="${clustercontrol::params::wwwroot}/clustercontrol/ssl/server.csr"
-	
-			$user_root = "root"
-			$home_root = "home_$username"
-			$home_path_root = inline_template("<%= scope.lookupvar('::$home') %>")
-	
-		    file {"/tmp/v3.ext":
-				ensure  => present,
-				content => template('clustercontrol/openssl-extension.txt.erb'),
-				owner  => 'root',
-				group  => 'root',
-				mode   => '0644'
-		    }
-		
-		    # "==> Generating tls certificate for $domain"
-			file { "${home_path_root}/.rnd" :
-				ensure  => present,
-				require => Package["$clustercontrol::params::cc_ui"]
-			}
-
-	   	    exec { "create-ssl-dir-for-ssl-keys" :
-				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "install -d ${clustercontrol::params::wwwroot}/clustercontrol/ssl",
-				require => File["${home_path_root}/.rnd"]
-	        }   
-		
-	   	    exec { "openssl-genrsa" :
-				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "openssl genrsa -out $keyname $keylength",
-				require => File["${home_path_root}/.rnd"]
-	        } 
-
-	   	    exec { "openssl-genrsa2" :
-				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "openssl req -new -key $keyname -out $csrname -addext \"subjectAltName = DNS:${san}\" -subj \"/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email\" &>/dev/null",
-				require => Exec["openssl-genrsa"]
-	        }   
-
-	   	    exec { "openssl-genrsa3" :
-				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "openssl req -new -key $keyname -out $csrname -subj \"/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email\"",
-				require => Exec["openssl-genrsa2"]
-	        }   
-
-	   	    exec { "openssl-genrsa4" :
-				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "openssl x509 -req -extfile /tmp/v3.ext -days $expires -sha256 -in $csrname -signkey $keyname -out $certname",
-				require => Exec["openssl-genrsa3"]
-	        }    
-
-	   	    exec { "openssl-genrsa5" :
-				path    => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-	            command => "rm -rf /tmp/v3.txt",
-				require => Exec["openssl-genrsa4"]
-	        }   
-		}
-
-
-		
-		file { $clustercontrol::params::cert_file :
-			ensure  => present,
-			source  => "$clustercontrol::params::wwwroot/clustercontrol/ssl/server.crt",
-			require => Package["$clustercontrol::params::cc_ui"]
-		}
-
-		file { $clustercontrol::params::key_file :
-			ensure  => present,
-			source  => "$clustercontrol::params::wwwroot/clustercontrol/ssl/server.key",
-			require => Package["$clustercontrol::params::cc_ui"]
-		}
-
 		
 		$wwwroot = $clustercontrol::params::wwwroot
 		$apache_httpd_extra_options = $clustercontrol::params::apache_httpd_extra_options
@@ -646,7 +569,7 @@ class clustercontrol (
 				mode    => '0644',
 				owner   => root, 
 				group => root,
-				require => Package[$clustercontrol::params::cc_ui],
+				require => Package[$clustercontrol::params::cc_ui2],
 				notify   => File[$clustercontrol::params::apache_s9s_cc_proxy_conf_file]
 			}
 
@@ -656,29 +579,37 @@ class clustercontrol (
 				mode    => '0644',
 				owner   => root, 
 				group => root,
-				require => Package[$clustercontrol::params::cc_ui]
+				require => Package[$clustercontrol::params::cc_ui2]
 			}
 			
 
-	        # enable sameorigin header
+	    # enable sameorigin header
+			if (! $only_cc_v2) {
+				$require_s9s_sec_conf_file = Exec["enable-ssl-servername-localhost"]
+			} else {
+				$require_s9s_sec_conf_file = []
+			}
+			
 			file { $clustercontrol::params::apache_security_conf_file :
 				ensure  => present,
 				owner   => root, group => root,
 				content => template('clustercontrol/s9s-security.conf.erb'),
-				require => Exec["enable-ssl-servername-localhost"]
+				require => $require_s9s_sec_conf_file
 			}
 		
 			## Add lines Listen and ServerName directive to httpd.conf to enable SSL/TLS
-			exec { "enable-ssl-port" :
-				unless => "grep -q 'Listen 443' $clustercontrol::params::apache_conf_file",
-				command => "sed -i '1s|^|Listen 443\\n|' $clustercontrol::params::apache_conf_file",
-				require => File[$clustercontrol::params::apache_s9s_conf_file]
-			}
+			if (! $only_cc_v2) {
+				exec { "enable-ssl-port" :
+					unless => "grep -q 'Listen 443' $clustercontrol::params::apache_conf_file",
+					command => "sed -i '1s|^|Listen 443\\n|' $clustercontrol::params::apache_conf_file",
+					require => File[$clustercontrol::params::apache_s9s_conf_file]
+				}
 		
-			exec { "enable-ssl-servername-localhost" :
-				unless => "grep -q 'ServerName 127.0.0.1' $clustercontrol::params::apache_conf_file",
-				command => "sed -i '1s|^|ServerName 127.0.0.1\\n|' $clustercontrol::params::apache_conf_file",
-				require => File[$clustercontrol::params::apache_s9s_conf_file]
+				exec { "enable-ssl-servername-localhost" :
+					unless => "grep -q 'ServerName 127.0.0.1' $clustercontrol::params::apache_conf_file",
+					command => "sed -i '1s|^|ServerName 127.0.0.1\\n|' $clustercontrol::params::apache_conf_file",
+					require => File[$clustercontrol::params::apache_s9s_conf_file]
+				}
 			}
 		
 		} elsif $l_osfamily == 'debian' {
@@ -721,7 +652,7 @@ class clustercontrol (
 				content => template('clustercontrol/cc-frontend.conf.erb'),
 				mode    => '0644',
 				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui],
+				require => Package[$clustercontrol::params::cc_ui2],
 				notify   => File[$clustercontrol::params::apache_s9s_cc_frontend_target_file]
 			}
 
@@ -736,7 +667,7 @@ class clustercontrol (
 				content => template('clustercontrol/cc-proxy.conf.erb'),
 				mode    => '0644',
 				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui],
+				require => Package[$clustercontrol::params::cc_ui2],
 				notify   => File[$clustercontrol::params::apache_s9s_cc_proxy_target_file]
 			}
 
@@ -782,6 +713,7 @@ class clustercontrol (
 		} elsif $l_osfamily == 'suse' {
 			## SUSE (SLES/OpenSUSE 15>=)
 			if ($only_cc_v2 == false) {
+				## ccv1 and ccv2
 				file { "$clustercontrol::params::apache_s9s_ssl_conf_file" :
 					ensure  => present,
 					content => template('clustercontrol/s9s-ssl.conf.erb'),
@@ -807,7 +739,7 @@ class clustercontrol (
 				content => template('clustercontrol/cc-frontend.conf.erb'),
 				mode    => '0644',
 				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui],
+				require => Package[$clustercontrol::params::cc_ui2],
 				notify   => File[$clustercontrol::params::apache_s9s_cc_proxy_conf_file]
 			}
 
@@ -816,7 +748,7 @@ class clustercontrol (
 				content => template('clustercontrol/cc-proxy.conf.erb'),
 				mode    => '0644',
 				owner   => root, group => root,
-				require => Package[$clustercontrol::params::cc_ui]
+				require => Package[$clustercontrol::params::cc_ui2]
 			}
 			
 			exec { 'enable-apache-modules': 
@@ -875,11 +807,14 @@ class clustercontrol (
 			}
 		}
 
-		exec { "allow-override-all" :
-			unless  => "grep 'AllowOverride All' $clustercontrol::params::apache_s9s_conf_file",
-			command => "sed -i 's|AllowOverride None|AllowOverride All|g' $clustercontrol::params::apache_s9s_conf_file",
-			require => File[$clustercontrol::params::apache_s9s_conf_file]
+		if (! $only_cc_v2) {
+			exec { "allow-override-all" :
+				unless  => "grep 'AllowOverride All' $clustercontrol::params::apache_s9s_conf_file",
+				command => "sed -i 's|AllowOverride None|AllowOverride All|g' $clustercontrol::params::apache_s9s_conf_file",
+				require => File[$clustercontrol::params::apache_s9s_conf_file]
+			}
 		}
+		
 
 		exec { "set-cmon-api-url" :
 			unless  => "grep 'CMON_API_URL' $clustercontrol::params::cc_v2_config_ui_file",
@@ -923,16 +858,32 @@ class clustercontrol (
 		}
 
 		/* Manage all CMON related packages, events, etc. */
-		exec { "restart-db-${clustercontrol::params::mysql_service}-before-cmon-start":
-			command => "systemctl restart ${clustercontrol::params::mysql_service}",
-			require => Package[
-				$clustercontrol::params::cc_controller,
-				$clustercontrol::params::cc_ui,
-				$clustercontrol::params::cc_cloud,
-				$clustercontrol::params::cc_clud,
-				$clustercontrol::params::cc_notif,
-				$clustercontrol::params::cc_ssh
-			]
+		if ($only_cc_v2) {
+			exec { "restart-db-${clustercontrol::params::mysql_service}-before-cmon-start":
+				command => "systemctl restart ${clustercontrol::params::mysql_service}",
+				require => Package[
+					$clustercontrol::params::cc_controller,
+					$clustercontrol::params::cc_ui2,
+					$clustercontrol::params::cc_cloud,
+					$clustercontrol::params::cc_clud,
+					$clustercontrol::params::cc_notif,
+					$clustercontrol::params::cc_ssh
+				]
+			}
+
+		} else {
+			exec { "restart-db-${clustercontrol::params::mysql_service}-before-cmon-start":
+				command => "systemctl restart ${clustercontrol::params::mysql_service}",
+				require => Package[
+					$clustercontrol::params::cc_controller,
+					$clustercontrol::params::cc_ui,
+					$clustercontrol::params::cc_cloud,
+					$clustercontrol::params::cc_clud,
+					$clustercontrol::params::cc_notif,
+					$clustercontrol::params::cc_ssh
+				]
+			}
+
 		}
 		
 		service { 'cmon' :
@@ -944,68 +895,84 @@ class clustercontrol (
 			hasstatus    => true
 		}
 
-		
-		# file { "/etc/ssl/certs/rpc_tls.crt" :
-		# 	ensure  => present,
-		# 	source  => "/var/lib/cmon/ca/cmon/rpc_tls.crt",
-		# 	require => Package["$clustercontrol::params::cc_ui"]
-		# }
-		
-		/* Now configure/setup the ClusterControl - installing packages, setting up required configurations, etc. */
-		# service { $clustercontrol::params::apache_service :
-		# 	ensure  => $service_status,
-		# 	enable  => $enabled,
-		# 	require => Service['cmon'],
-		# 	hasrestart  => true,
-		# 	hasstatus   => true,
-		# 	# subscribe  => [
-		# 	# 	File[
-		# 	# 		$clustercontrol::params::apache_s9s_conf_file,
-		# 	# 		$clustercontrol::params::apache_s9s_ssl_conf_file
-		# 	# 	],
-		# 	# 	Package[$clustercontrol::params::cc_controller]
-		# 	# ]
-		# }
-		#
-
-		exec { "change-owner-to-apache-user" :
+		exec { "create-cmon-upload-schema-directory" :
 			path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
-			command => "chown -R ${clustercontrol::params::apache_user}:${clustercontrol::params::apache_user} \
-						${clustercontrol::params::wwwroot}/cmon/ \
-						${clustercontrol::params::wwwroot}/clustercontrol \
-						${clustercontrol::params::wwwroot}/clustercontrol2 \
-			",
-			require => [Package[$clustercontrol::params::cc_ui],File["$ssh_identity", "$ssh_identity_pub"]],
-			notify  => Service['cmon']
+			command => "mkdir -p ${clustercontrol::params::wwwroot}/cmon/upload/schema",
+			require => [Package[$clustercontrol::params::apache_service],File["$ssh_identity", "$ssh_identity_pub"]]
 		}
 
-		exec { "configure-cc-bootstrap" :
-			command => "sed -i 's|DBPASS|$mysql_cmon_password|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php && \
-			sed -i 's|DBPORT|$mysql_cmon_port|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php",
-			require => Package[$clustercontrol::params::cc_controller]
+		if ($only_cc_v2) {
+			## ccv2 only
+			exec { "change-owner-to-apache-user" :
+				path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				command => "chown -R ${clustercontrol::params::apache_user}:${clustercontrol::params::apache_user} \
+							${clustercontrol::params::wwwroot}/cmon/ \
+							${clustercontrol::params::wwwroot}/clustercontrol2 \
+				",
+				require => [Package[$clustercontrol::params::cc_ui2],File["$ssh_identity", "$ssh_identity_pub"]],
+				notify  => Service['cmon']
+			}
+
+		} else {
+			## ccv1 and ccv2
+			exec { "add-option-indexes-to-cmon-dir" :
+				path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				command => "cat > ${clustercontrol::params::wwwroot}/cmon/.htaccess << EOF
+			Options -Indexes
+			EOF
+				",
+				require => [Package[$clustercontrol::params::cc_ui],File["$ssh_identity", "$ssh_identity_pub"]],
+			}
+
+			exec { "change-mod-to-rwrw---" :
+				path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				command => "chmod -R 770 ${clustercontrol::params::wwwroot}/clustercontrol/app/tmp/ \
+							${clustercontrol::params::wwwroot}/clustercontrol/app/upload  \
+							${clustercontrol::params::wwwroot}/cmon \
+				",
+				require => [Package[$clustercontrol::params::cc_ui],File["$ssh_identity", "$ssh_identity_pub"]]
+			}
+
+			exec { "change-owner-to-apache-user" :
+				path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
+				command => "chown -R ${clustercontrol::params::apache_user}:${clustercontrol::params::apache_user} \
+							${clustercontrol::params::wwwroot}/clustercontrol/app/tmp/ \
+							${clustercontrol::params::wwwroot}/clustercontrol/app/upload  \
+							${clustercontrol::params::wwwroot}/cmon \
+							${clustercontrol::params::wwwroot}/clustercontrol \
+							${clustercontrol::params::wwwroot}/clustercontrol2 \
+				",
+				require => [Package[$clustercontrol::params::cc_ui],File["$ssh_identity", "$ssh_identity_pub"]],
+				notify  => Service['cmon']
+			}
+
 		}
 
-		
-		exec { "configure-cmonapi-bootstrap" :
-			command => "sed -i 's|RPCTOKEN|$api_token|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php",
-			require => Package[$clustercontrol::params::cc_controller]
+		if ($only_cc_v2 == false) {
+			exec { "configure-cc-bootstrap" :
+				command => "sed -i 's|DBPASS|$mysql_cmon_password|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php && \
+				sed -i 's|DBPORT|$mysql_cmon_port|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php",
+				require => Package[$clustercontrol::params::cc_controller]
+			}
+			exec { "configure-cmonapi-bootstrap" :
+				command => "sed -i 's|RPCTOKEN|$api_token|g' $clustercontrol::params::wwwroot/clustercontrol/bootstrap.php",
+				require => Package[$clustercontrol::params::cc_controller]
+			}
+			file { "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php" :
+				ensure  => present,
+				replace => no,
+				source  => "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php.default",
+				require => Package["$clustercontrol::params::cc_ui"],
+				notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']],
+			}
 		}
-
-		file { "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php" :
-			ensure  => present,
-			replace => no,
-			source  => "$clustercontrol::params::wwwroot/clustercontrol/bootstrap.php.default",
-			require => Package["$clustercontrol::params::cc_ui"],
-			notify  => Exec[['configure-cmonapi-bootstrap','configure-cc-bootstrap']],
-		}
-
 		  
 		service { 'cmon-cloud' :
 			ensure  => $service_status,
 			enable  => $enabled,
 			require => Package[
 				$clustercontrol::params::cc_controller,
-				$clustercontrol::params::cc_ui,
+				$clustercontrol::params::cc_ui2,
 				$clustercontrol::params::cc_cloud,
 				$clustercontrol::params::cc_clud,
 				$clustercontrol::params::cc_notif,
@@ -1022,7 +989,7 @@ class clustercontrol (
 			enable  => $enabled,
 			require => Package[
 				$clustercontrol::params::cc_controller,
-				$clustercontrol::params::cc_ui,
+				$clustercontrol::params::cc_ui2,
 				$clustercontrol::params::cc_cloud,
 				$clustercontrol::params::cc_clud,
 				$clustercontrol::params::cc_notif,
@@ -1038,7 +1005,7 @@ class clustercontrol (
 			enable  => $enabled,
 			require => Package[
 				$clustercontrol::params::cc_controller,
-				$clustercontrol::params::cc_ui,
+				$clustercontrol::params::cc_ui2,
 				$clustercontrol::params::cc_cloud,
 				$clustercontrol::params::cc_clud,
 				$clustercontrol::params::cc_notif,
@@ -1071,43 +1038,36 @@ class clustercontrol (
 			require => Service['cmon']
 		}
 
-		# exec { "enable-apache-server13" :
-		# 	path  => ['/usr/sbin','/sbin', '/usr/bin'],
-		# 	command => "sleep 10",
-		# 	subscribe => [Service['cmon'],File[$clustercontrol::params::apache_s9s_conf_file,$clustercontrol::params::apache_s9s_ssl_conf_file]]
-		# }
-		#
-		# exec { "enable-apache-server1" :
-		# 	path  => ['/usr/sbin','/sbin', '/usr/bin'],
-		# 	command => "tree /var/lib/cmon >> /tmp/cmon_tree",
-		# 	subscribe => [Service['cmon'],File[$clustercontrol::params::apache_s9s_conf_file,$clustercontrol::params::apache_s9s_ssl_conf_file]]
-		# }
-		#
-		# exec { "enable-apache-server" :
-		# 	path  => ['/usr/sbin','/sbin', '/usr/bin'],
-		# 	command => "systemctl enable apache2; sleep 2; systemctl start apache2",
-		# 	subscribe => [Service['cmon'],File[$clustercontrol::params::apache_s9s_conf_file,$clustercontrol::params::apache_s9s_ssl_conf_file]],
-		# 	onlyif => 'test -f /var/lib/cmon/ca/cmon/rpc_tls.crt'
-		# }
+		if (! $only_cc_v2) {
+			$ccv1_file_array = 
+				File[
+					$clustercontrol::params::apache_s9s_conf_file,
+					$clustercontrol::params::apache_s9s_ssl_conf_file,
+					$clustercontrol::params::apache_s9s_cc_frontend_conf_file,
+					$clustercontrol::params::apache_s9s_cc_proxy_conf_file,
+				]
+		} else {
+			$ccv1_file_array = 
+				File[
+					$clustercontrol::params::apache_s9s_cc_frontend_conf_file,
+					$clustercontrol::params::apache_s9s_cc_proxy_conf_file,
 
+				]
+		}
 
 		exec { "pause-5s-to-propagate-cmon-library" :
 			path  => ['/usr/sbin','/sbin', '/bin', '/usr/bin', '/usr/local/bin'],
 			command => "sleep 10",
 			subscribe => [
-				Service['cmon'],
-				File[
-					$clustercontrol::params::apache_s9s_conf_file,
-					$clustercontrol::params::apache_s9s_ssl_conf_file
-				]
+				Service['cmon']
 			]
 		}	
 
-	    file {"/var/lib/cmon/ca/cmon/rpc_tls.crt":
+    file {"/var/lib/cmon/ca/cmon/rpc_tls.crt":
 			ensure  => file,
 			validate_cmd => 'test -f /var/lib/cmon/ca/cmon/rpc_tls.crt',
 			require => Exec["pause-5s-to-propagate-cmon-library"]
-	    }
+    }
 		
 		service { $clustercontrol::params::apache_service :
 			ensure  => $service_status,
@@ -1121,12 +1081,9 @@ class clustercontrol (
 			# 	],
 			# 	Package[$clustercontrol::params::cc_controller]
 			# ]
-			require => File["/var/lib/cmon/ca/cmon/rpc_tls.crt"],
+			# require => File["/var/lib/cmon/ca/cmon/rpc_tls.crt"],
 			subscribe => [
-				File[
-					$clustercontrol::params::apache_s9s_conf_file,
-					$clustercontrol::params::apache_s9s_ssl_conf_file
-				]
+				$ccv1_file_array
 			]
 		}
 
@@ -1161,7 +1118,7 @@ class clustercontrol (
 		}
 
 		
-    } else {
+	} else {
           
 		ssh_authorized_key { '$ssh_user' :
 			ensure => present,
@@ -1187,5 +1144,5 @@ class clustercontrol (
 			command => "mysql -u root -p\"$mysql_root_password\" -e 'GRANT ALL PRIVILEGES ON *.* TO cmon@127.0.0.1 IDENTIFIED BY \"$mysql_cmon_password\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
 		}
 		
-   }
+	}
 }
