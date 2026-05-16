@@ -274,10 +274,18 @@ class clustercontrol (
       command  => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'${cc_hostname}' IDENTIFIED BY '${mysql_cmon_password}'; GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'${cc_hostname}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
       provider => shell,
     }
-    exec { 'grant-cmon-fqdn':
-      unless  => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${facts['networking']['fqdn']}\" status",
-      command => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'${facts['networking']['fqdn']}' IDENTIFIED BY '${mysql_cmon_password}'; GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'${facts['networking']['fqdn']}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
+    # Use CREATE USER + GRANT in separate calls to avoid MariaDB ERROR 1133
+    # The combined statement fails in some MariaDB versions on FLUSH PRIVILEGES
+    exec { 'grant-cmon-fqdn-create':
+      unless   => "mysql -u root -p\"${mysql_root_password}\" -e \"SELECT 1 FROM mysql.user WHERE user='cmon' AND host='${facts['networking']['fqdn']}'\" | grep -q 1",
+      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'${facts['networking']['fqdn']}' IDENTIFIED BY '${mysql_cmon_password}';\"",
       provider => shell,
+    }
+    exec { 'grant-cmon-fqdn-grant':
+      unless   => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${facts['networking']['fqdn']}\" status",
+      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'${facts['networking']['fqdn']}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
+      provider => shell,
+      require  => Exec['grant-cmon-fqdn-create'],
     }
 
     # ------------------------------------------------------------------------
@@ -683,6 +691,7 @@ class clustercontrol (
         Exec['grant-cmon-localhost'],
         Exec['grant-cmon-127.0.0.1'],
         Exec['grant-cmon-ip-address'],
+        Exec['grant-cmon-fqdn-grant'],
       ],
     }
 
@@ -788,23 +797,34 @@ class clustercontrol (
     # ------------------------------------------------------------------------
     # Apache web server
     # ------------------------------------------------------------------------
-    service { $clustercontrol::params::apache_service:
-      ensure     => $service_status,
-      enable     => $enabled,
-      hasrestart => true,
-      hasstatus  => true,
-      require    => [
-        Service['cmon-proxy'],
-        File[$clustercontrol::params::apache_s9s_cc_frontend_conf_file],
-        File[$clustercontrol::params::apache_s9s_cc_proxy_conf_file],
-      ],
+    # In CC 2.4.x with only_cc_v2=true, cmon-proxy (ccmgr) IS the web server
+    # and listens on 80/443 directly. Apache is only required for legacy CCv1.
+    # See: https://docs.severalnines.com/clustercontrol/latest/reference-manuals/components/clustercontrol-proxy/
+    if (!$only_cc_v2) {
+      service { $clustercontrol::params::apache_service:
+        ensure     => $service_status,
+        enable     => $enabled,
+        hasrestart => true,
+        hasstatus  => true,
+        require    => [
+          Service['cmon-proxy'],
+          File[$clustercontrol::params::apache_s9s_cc_frontend_conf_file],
+          File[$clustercontrol::params::apache_s9s_cc_proxy_conf_file],
+        ],
+      }
+    } else {
+      # Ensure Apache is stopped and disabled - cmon-proxy owns the ports
+      service { $clustercontrol::params::apache_service:
+        ensure => stopped,
+        enable => false,
+      }
     }
 
-    # Apache upload dir
+    # Cmon upload schema directory (always needed)
     exec { 'create-cmon-upload-schema-directory':
       command => "mkdir -p ${clustercontrol::params::wwwroot}/cmon/upload/schema",
       require => [
-        Package[$clustercontrol::params::apache_service],
+        Package[$clustercontrol::params::cc_dependencies],
         File[$ssh_identity, $ssh_identity_pub],
       ],
     }
@@ -838,11 +858,10 @@ class clustercontrol (
     }
 
     # ------------------------------------------------------------------------
-    # s9s / ccrpc user setup
+    # ClusterControl user setup
     # ------------------------------------------------------------------------
-    $username  = 'root'
-    # Puppet 8: resolve home directory directly instead of via inline_template
-    # ssh_user root -> /root; other users -> /home/<user>
+    # CC 2.4.x: Use ccmgradm to manage cmon-proxy users (replaces old s9s ccrpc/ccsetup)
+    # See: https://docs.severalnines.com/clustercontrol/latest/reference-manuals/components/clustercontrol-proxy/
     $home_path = $ssh_user ? {
       'root'  => '/root',
       default => "/home/${ssh_user}",
@@ -857,32 +876,47 @@ class clustercontrol (
       require => Service['cmon'],
     }
 
-    exec { 'create_ccrpc_user':
-      command  => "S9S_USER_CONFIG=${user_path} s9s user --create --new-password=${api_token} --generate-key --private-key-file=/root/.s9s/ccrpc.key --group=admins --controller=https://127.0.0.1:9501 ccrpc",
-      provider => shell,
-      unless   => "test -f ${user_path}",
-      require  => [Service['cmon'], File["${home_path}/.s9s/"]],
-    }
+    # ----- CCv2 user setup via ccmgradm (CC 2.4.x) -----
+    if ($only_cc_v2) {
+      # Create the initial admin user for cmon-proxy GUI
+      # Default password 'admin' - user is prompted to change on first login
+      exec { 'ccmgradm-add-admin-user':
+        command  => "ccmgradm adduser --email '${ccsetup_email}' admin admin",
+        provider => shell,
+        unless   => "ccmgradm listusers 2>/dev/null | grep -qw admin",
+        require  => [
+          Service['cmon-proxy'],
+          Exec['ccmgradm-init'],
+        ],
+      }
+    } else {
+      # ----- Legacy CCv1 user setup via s9s -----
+      exec { 'create_ccrpc_user':
+        command  => "S9S_USER_CONFIG=${user_path} s9s user --create --new-password=${api_token} --generate-key --private-key-file=/root/.s9s/ccrpc.key --group=admins --controller=https://127.0.0.1:9501 ccrpc",
+        provider => shell,
+        unless   => "S9S_USER_CONFIG=${user_path} s9s user --list 2>/dev/null | grep -q ccrpc",
+        require  => [Service['cmon'], File["${home_path}/.s9s/"]],
+      }
 
-    exec { 'create_ccrpc_set_firstname':
-      command  => "S9S_USER_CONFIG=${user_path} s9s user --set --first-name=RPC --last-name=API",
-      provider => shell,
-      unless   => "S9S_USER_CONFIG=${user_path} s9s user --list --long 2>/dev/null | grep -q RPC",
-      require  => Exec['create_ccrpc_user'],
-    }
+      exec { 'create_ccrpc_set_firstname':
+        command  => "S9S_USER_CONFIG=${user_path} s9s user --set --first-name=RPC --last-name=API",
+        provider => shell,
+        unless   => "S9S_USER_CONFIG=${user_path} s9s user --list --long 2>/dev/null | grep -q RPC",
+        require  => Exec['create_ccrpc_user'],
+      }
 
-    exec { 'ccsetup_unlink':
-      command  => 'rm -f /tmp/ccsetup.conf',
-      provider => shell,
-      require  => [Exec['create_ccrpc_set_firstname'], Exec['create_ccrpc_user']],
-    }
+      exec { 'ccsetup_unlink':
+        command  => 'rm -f /tmp/ccsetup.conf',
+        provider => shell,
+        require  => [Exec['create_ccrpc_set_firstname'], Exec['create_ccrpc_user']],
+      }
 
-    # ccsetup user - triggers the initial admin registration screen on first UI open
-    exec { 'create_ccsetup_user':
-      command  => "S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --email-address='${ccsetup_email}' --controller='https://127.0.0.1:9501' ccsetup",
-      provider => shell,
-      unless   => "S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --list 2>/dev/null | grep -q ccsetup",
-      require  => [Service['cmon'], File["${home_path}/.s9s/"]],
+      exec { 'create_ccsetup_user':
+        command  => "S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --email-address='${ccsetup_email}' --controller='https://127.0.0.1:9501' ccsetup",
+        provider => shell,
+        unless   => "S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --list 2>/dev/null | grep -q ccsetup",
+        require  => [Service['cmon'], File["${home_path}/.s9s/"]],
+      }
     }
 
   # ==========================================================================
