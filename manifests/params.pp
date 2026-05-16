@@ -326,7 +326,7 @@ class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
         # Import s9s-tools repo signing key
         exec { 'import-severalnines-tools-key':
           path    => ['/bin', '/usr/bin'],
-          command => "wget -qO ${apt_keyrings_dir}/severalnines-tools.asc http://${repo_host}/s9s-tools/${lsbdistcodename}/Release.key",
+          command => "wget -qO ${apt_keyrings_dir}/severalnines-tools.asc http://${repo_host}/s9s-tools/${facts['os']['distro']['codename']}/Release.key",
           unless  => "test -f ${apt_keyrings_dir}/severalnines-tools.asc",
           require => [Package['gpg'], Exec['create-apt-keyrings-dir']],
         }

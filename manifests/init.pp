@@ -839,8 +839,12 @@ class clustercontrol (
     # s9s / ccrpc user setup
     # ------------------------------------------------------------------------
     $username  = 'root'
-    $home      = "home_${username}"
-    $home_path = inline_template("<%= scope.lookupvar('::${home}') %>")
+    # Puppet 8: resolve home directory directly instead of via inline_template
+    # ssh_user root -> /root; other users -> /home/<user>
+    $home_path = $ssh_user ? {
+      'root'  => '/root',
+      default => "/home/${ssh_user}",
+    }
     $user_path = "${home_path}/.s9s/ccrpc.conf"
 
     file { "${home_path}/.s9s/":

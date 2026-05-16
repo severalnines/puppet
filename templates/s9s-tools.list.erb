@@ -1,1 +1,1 @@
-deb [signed-by=/etc/apt/keyrings/severalnines-tools.asc] http://<%= @repo_host %>/s9s-tools/<%= @lsbdistcodename %>/ ./
+deb [signed-by=/etc/apt/keyrings/severalnines-tools.asc] http://<%= @repo_host %>/s9s-tools/<%= scope.lookupvar("facts")&.dig('os', 'distro', 'codename') || scope.lookupvar("facts")&.dig('os', 'lsb', 'distcodename') %>/ ./
