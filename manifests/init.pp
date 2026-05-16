@@ -274,19 +274,9 @@ class clustercontrol (
       command  => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'${cc_hostname}' IDENTIFIED BY '${mysql_cmon_password}'; GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'${cc_hostname}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
       provider => shell,
     }
-    # Use CREATE USER + GRANT in separate calls to avoid MariaDB ERROR 1133
-    # The combined statement fails in some MariaDB versions on FLUSH PRIVILEGES
-    exec { 'grant-cmon-fqdn-create':
-      unless   => "mysql -u root -p\"${mysql_root_password}\" -e \"SELECT 1 FROM mysql.user WHERE user='cmon' AND host='${facts['networking']['fqdn']}'\" | grep -q 1",
-      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'${facts['networking']['fqdn']}' IDENTIFIED BY '${mysql_cmon_password}';\"",
-      provider => shell,
-    }
-    exec { 'grant-cmon-fqdn-grant':
-      unless   => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${facts['networking']['fqdn']}\" status",
-      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'${facts['networking']['fqdn']}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
-      provider => shell,
-      require  => Exec['grant-cmon-fqdn-create'],
-    }
+    # NOTE: No grant for cmon@<fqdn> - my.cnf has skip-name-resolve which makes
+    # MariaDB reject hostname-based user entries (ERROR 1133). The localhost,
+    # 127.0.0.1, and cc_hostname IP grants cover all connection paths cmon uses.
 
     # ------------------------------------------------------------------------
     # Install ClusterControl dependencies + packages
@@ -691,7 +681,6 @@ class clustercontrol (
         Exec['grant-cmon-localhost'],
         Exec['grant-cmon-127.0.0.1'],
         Exec['grant-cmon-ip-address'],
-        Exec['grant-cmon-fqdn-grant'],
       ],
     }
 
