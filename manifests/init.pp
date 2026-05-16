@@ -279,6 +279,23 @@ class clustercontrol (
     # 127.0.0.1, and cc_hostname IP grants cover all connection paths cmon uses.
 
     # ------------------------------------------------------------------------
+    # Sync cmon DB password
+    # ------------------------------------------------------------------------
+    # If puppet has been run before with a different password, the existing
+    # cmon user will have the old password. ALTER USER ensures the password
+    # always matches what we set in cmon.cnf, preventing 'Access denied' errors.
+    exec { 'sync-cmon-password':
+      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"ALTER USER 'cmon'@'localhost' IDENTIFIED BY '${mysql_cmon_password}'; ALTER USER 'cmon'@'127.0.0.1' IDENTIFIED BY '${mysql_cmon_password}'; ALTER USER 'cmon'@'${cc_hostname}' IDENTIFIED BY '${mysql_cmon_password}'; FLUSH PRIVILEGES;\"",
+      unless   => "mysql -u cmon -p\"${mysql_cmon_password}\" -h127.0.0.1 -e 'SELECT 1' 2>/dev/null | grep -q 1",
+      provider => shell,
+      require  => [
+        Exec['grant-cmon-localhost'],
+        Exec['grant-cmon-127.0.0.1'],
+        Exec['grant-cmon-ip-address'],
+      ],
+    }
+
+    # ------------------------------------------------------------------------
     # Install ClusterControl dependencies + packages
     # ------------------------------------------------------------------------
     package { $clustercontrol::params::cc_dependencies:
@@ -681,6 +698,8 @@ class clustercontrol (
         Exec['grant-cmon-localhost'],
         Exec['grant-cmon-127.0.0.1'],
         Exec['grant-cmon-ip-address'],
+        Exec['sync-cmon-password'],
+        Exec['backup-stale-cmon-cnf'],
       ],
     }
 
@@ -865,19 +884,14 @@ class clustercontrol (
       require => Service['cmon'],
     }
 
-    # ----- CCv2 user setup via ccmgradm (CC 2.4.x) -----
+    # ----- CCv2 user setup -----
+    # CC 2.4.x flow: NO pre-created admin user.
+    # User opens https://<ClusterControl_host>/ and creates the first admin
+    # via the registration page (matches install-cc behaviour).
+    # See: https://docs.severalnines.com/clustercontrol/latest/getting-started/quickstart/
     if ($only_cc_v2) {
-      # Create the initial admin user for cmon-proxy GUI
-      # Default password 'admin' - user is prompted to change on first login
-      exec { 'ccmgradm-add-admin-user':
-        command  => "ccmgradm adduser --email '${ccsetup_email}' admin admin",
-        provider => shell,
-        unless   => "ccmgradm listusers 2>/dev/null | grep -qw admin",
-        require  => [
-          Service['cmon-proxy'],
-          Exec['ccmgradm-init'],
-        ],
-      }
+      # No exec needed - registration is GUI-driven
+      notice('CCv2: Open https://<ClusterControl_host>/ to register the first admin user via the GUI.')
     } else {
       # ----- Legacy CCv1 user setup via s9s -----
       exec { 'create_ccrpc_user':
