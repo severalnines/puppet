@@ -33,16 +33,16 @@ class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
   # Helper: convert major-release string to integer for numeric comparisons
   # ---------------------------------------------------------------------------
   $format          = "%i"
-  $a_version_no    = scanf($operatingsystemmajrelease, $format)
+  $a_version_no    = scanf($facts['os']['release']['major'], $format)
   $os_majrelease   = $a_version_no[0]
-  $lower_operatingsystem = downcase($operatingsystem)
+  $lower_operatingsystem = downcase($facts['os']['name'])
 
-  notice(">>> clustercontrol::params  osfamily=${osfamily}  majrelease=${operatingsystemmajrelease}")
+  notice(">>> clustercontrol::params  osfamily=${facts['os']['family']}  majrelease=${facts['os']['release']['major']}")
 
   # ---------------------------------------------------------------------------
   # OS-family branching
   # ---------------------------------------------------------------------------
-  case $osfamily {
+  case $facts['os']['family'] {
 
     # =========================================================================
     # Red Hat family  (RHEL / CentOS / Rocky / AlmaLinux / Oracle Linux)
@@ -54,22 +54,22 @@ class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
       #   RHEL_7, RHEL_8, RHEL_9, CentOS_7, CentOS_8, CentOS_9, CentOS_9_Stream
       # Rocky Linux, AlmaLinux, OracleLinux are ABI-compatible with RHEL
       # and must use the RHEL_<version> repo path.
-      case $operatingsystem {
-        'RedHat':                         { $s9s_tools_repo_osname = "RHEL_${operatingsystemmajrelease}" }
-        'CentOS':                         { $s9s_tools_repo_osname = "CentOS_${operatingsystemmajrelease}" }
+      case $facts['os']['name'] {
+        'RedHat':                         { $s9s_tools_repo_osname = "RHEL_${facts['os']['release']['major']}" }
+        'CentOS':                         { $s9s_tools_repo_osname = "CentOS_${facts['os']['release']['major']}" }
         'Rocky', 'AlmaLinux', 'OracleLinux', 'Scientific': {
           # No Rocky_9/Alma_9 repo exists — use the RHEL equivalent
-          $s9s_tools_repo_osname = "RHEL_${operatingsystemmajrelease}"
+          $s9s_tools_repo_osname = "RHEL_${facts['os']['release']['major']}"
         }
-        default:                          { $s9s_tools_repo_osname = "RHEL_${operatingsystemmajrelease}" }
+        default:                          { $s9s_tools_repo_osname = "RHEL_${facts['os']['release']['major']}" }
       }
 
       if ($os_majrelease >= 10) {
-        fail("ClusterControl does not yet support ${operatingsystem} ${operatingsystemmajrelease}. Supported: EL 7, 8, 9.")
+        fail("ClusterControl does not yet support ${facts['os']['name']} ${facts['os']['release']['major']}. Supported: EL 7, 8, 9.")
       }
 
       if ($os_majrelease < 7) {
-        fail("ClusterControl requires ${operatingsystem} >= 7. Version ${operatingsystemmajrelease} is not supported.")
+        fail("ClusterControl requires ${facts['os']['name']} >= 7. Version ${facts['os']['release']['major']} is not supported.")
       }
 
       # Mailer package differs between EL versions
@@ -88,7 +88,7 @@ class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
           notice("EL ${os_majrelease}: CCv1 requires PHP 7.4 via Remi repository.")
           exec { 'install-remi-release-el9':
             path    => ['/bin', '/usr/bin'],
-            command => "dnf install -y https://rpms.remirepo.net/enterprise/remi-release-${operatingsystemmajrelease}.rpm",
+            command => "dnf install -y https://rpms.remirepo.net/enterprise/remi-release-${facts['os']['release']['major']}.rpm",
             unless  => 'rpm -qa | grep -qi remi',
           }
           package { 'php-module-disable':
@@ -185,30 +185,30 @@ class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
     'Debian': {
 
       # Version guards
-      if ($operatingsystem == 'Ubuntu') {
+      if ($facts['os']['name'] == 'Ubuntu') {
         if ($os_majrelease < 18) {
-          fail("Ubuntu ${operatingsystemmajrelease} is not supported. Minimum: Ubuntu 18.04 LTS.")
+          fail("Ubuntu ${facts['os']['release']['major']} is not supported. Minimum: Ubuntu 18.04 LTS.")
         }
         if ($os_majrelease >= 26) {
-          fail("Ubuntu ${operatingsystemmajrelease} is not yet validated. Please check for a module update.")
+          fail("Ubuntu ${facts['os']['release']['major']} is not yet validated. Please check for a module update.")
         }
-      } elsif ($operatingsystem == 'Debian') {
+      } elsif ($facts['os']['name'] == 'Debian') {
         if ($os_majrelease < 9) {
-          fail("Debian ${operatingsystemmajrelease} is not supported. Minimum: Debian 9 (Stretch).")
+          fail("Debian ${facts['os']['release']['major']} is not supported. Minimum: Debian 9 (Stretch).")
         }
         if ($os_majrelease >= 14) {
-          fail("Debian ${operatingsystemmajrelease} is not yet validated. Please check for a module update.")
+          fail("Debian ${facts['os']['release']['major']} is not yet validated. Please check for a module update.")
         }
       } else {
-        fail("Unsupported Debian-family OS: ${operatingsystem}.")
+        fail("Unsupported Debian-family OS: ${facts['os']['name']}.")
       }
 
       # PHP for CCv1 only
       if ($only_cc_v2 == false) {
-        if (($operatingsystem == 'Ubuntu' and $os_majrelease >= 22) or
-            ($operatingsystem == 'Debian' and $os_majrelease >= 11)) {
+        if (($facts['os']['name'] == 'Ubuntu' and $os_majrelease >= 22) or
+            ($facts['os']['name'] == 'Debian' and $os_majrelease >= 11)) {
           # Needs ondrej/php PPA for PHP 7.4
-          notice("${operatingsystem} ${operatingsystemmajrelease}: CCv1 needs PHP 7.4 via ondrej/php PPA.")
+          notice("${facts['os']['name']} ${facts['os']['release']['major']}: CCv1 needs PHP 7.4 via ondrej/php PPA.")
           exec { 'apt-update-for-php7-prep':
             path    => ['/bin', '/usr/bin'],
             command => 'apt-get update',
@@ -239,10 +239,10 @@ class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
 
       # MySQL / MariaDB package selection
       # Ubuntu 24 (Noble) + Debian 10+: MariaDB is the preferred choice
-      if ($operatingsystem == 'Debian' and $os_majrelease >= 10) {
+      if ($facts['os']['name'] == 'Debian' and $os_majrelease >= 10) {
         $mysql_packages = ['mariadb-client', 'mariadb-server']
         $mysql_service  = 'mariadb'
-      } elsif ($operatingsystem == 'Ubuntu' and $os_majrelease >= 24) {
+      } elsif ($facts['os']['name'] == 'Ubuntu' and $os_majrelease >= 24) {
         # Ubuntu 24 Noble: mysql-server now ships as a snap; use mariadb instead
         $mysql_packages = ['mariadb-client', 'mariadb-server']
         $mysql_service  = 'mariadb'
@@ -360,14 +360,14 @@ class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
     # =========================================================================
     'Suse': {
 
-      if (Integer($operatingsystemmajrelease) < 15) {
-        fail("ClusterControl requires SUSE >= 15. Version ${operatingsystemmajrelease} is not supported.")
+      if (Integer($facts['os']['release']['major']) < 15) {
+        fail("ClusterControl requires SUSE >= 15. Version ${facts['os']['release']['major']} is not supported.")
       }
 
-      if ($operatingsystemmajrelease == '15') {
+      if ($facts['os']['release']['major'] == '15') {
         $s9s_tools_repo_osname = "${operatingsystemrelease}"
       } else {
-        $s9s_tools_repo_osname = "${operatingsystem}_${operatingsystemrelease}"
+        $s9s_tools_repo_osname = "${facts['os']['name']}_${facts['os']['release']['full']}"
       }
 
       if ($only_cc_v2) {

@@ -105,7 +105,7 @@ class clustercontrol (
   # Controller ID
   # --------------------------------------------------------------------------
   if (empty($controller_id)) {
-    $l_controller_id = $::controller_id
+    $l_controller_id = $facts['controller_id']
   } else {
     $l_controller_id = $controller_id
   }
@@ -113,7 +113,7 @@ class clustercontrol (
   # --------------------------------------------------------------------------
   # Helpers
   # --------------------------------------------------------------------------
-  $l_osfamily = downcase($osfamily)
+  $l_osfamily = downcase($facts['os']['family'])
 
   if empty($mysql_basedir) {
     Exec { path => ['/usr/sbin', '/sbin', '/bin', '/usr/bin', '/usr/local/bin'] }
@@ -274,8 +274,8 @@ class clustercontrol (
       command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER IF NOT EXISTS cmon@\"${cc_hostname}\" IDENTIFIED BY \"${mysql_cmon_password}\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"${cc_hostname}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
     }
     exec { 'grant-cmon-fqdn':
-      unless  => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${fqdn}\" status",
-      command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER IF NOT EXISTS cmon@\"${fqdn}\" IDENTIFIED BY \"${mysql_cmon_password}\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"${fqdn}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+      unless  => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${facts['networking']['fqdn']}\" status",
+      command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER IF NOT EXISTS cmon@\"${facts['networking']['fqdn']}\" IDENTIFIED BY \"${mysql_cmon_password}\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"${facts['networking']['fqdn']}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
     }
 
     # ------------------------------------------------------------------------
