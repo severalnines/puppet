@@ -178,14 +178,12 @@ class clustercontrol (
         }
       }
       if ($disable_firewall) {
+        # Stop firewalld only if it is installed AND active
+        # firewall-cmd --stat returns 252 when firewalld is not running - not an error
         exec { 'check-firewalld-presence':
-          onlyif  => 'which firewall-cmd',
-          command => 'firewall-cmd --stat',
-        }
-        service { 'firewalld':
-          ensure  => stopped,
-          enable  => false,
-          require => Exec['check-firewalld-presence'],
+          onlyif  => 'systemctl is-active firewalld',
+          command => 'systemctl stop firewalld && systemctl disable firewalld',
+          path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
         }
       }
     } elsif ($l_osfamily == 'debian') {
@@ -262,20 +260,24 @@ class clustercontrol (
 
     # cmon DB grants
     exec { 'grant-cmon-localhost':
-      unless  => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -hlocalhost status",
-      command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER IF NOT EXISTS cmon@localhost IDENTIFIED BY \"${mysql_cmon_password}\"; GRANT ALL PRIVILEGES ON *.* TO cmon@localhost WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+      unless   => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -hlocalhost status",
+      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'localhost' IDENTIFIED BY '${mysql_cmon_password}'; GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
+      provider => shell,
     }
     exec { 'grant-cmon-127.0.0.1':
-      unless  => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h127.0.0.1 status",
-      command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER IF NOT EXISTS cmon@\"127.0.0.1\" IDENTIFIED BY \"${mysql_cmon_password}\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"127.0.0.1\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+      unless   => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h127.0.0.1 status",
+      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'127.0.0.1' IDENTIFIED BY '${mysql_cmon_password}'; GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'127.0.0.1' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
+      provider => shell,
     }
     exec { 'grant-cmon-ip-address':
-      unless  => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${cc_hostname}\" status",
-      command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER IF NOT EXISTS cmon@\"${cc_hostname}\" IDENTIFIED BY \"${mysql_cmon_password}\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"${cc_hostname}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+      unless   => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${cc_hostname}\" status",
+      command  => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'${cc_hostname}' IDENTIFIED BY '${mysql_cmon_password}'; GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'${cc_hostname}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
+      provider => shell,
     }
     exec { 'grant-cmon-fqdn':
       unless  => "mysqladmin -u cmon -p\"${mysql_cmon_password}\" -h\"${facts['networking']['fqdn']}\" status",
-      command => "mysql -u root -p\"${mysql_root_password}\" -e 'CREATE USER IF NOT EXISTS cmon@\"${facts['networking']['fqdn']}\" IDENTIFIED BY \"${mysql_cmon_password}\"; GRANT ALL PRIVILEGES ON *.* TO cmon@\"${facts['networking']['fqdn']}\" WITH GRANT OPTION; FLUSH PRIVILEGES;'",
+      command => "mysql -u root -p\"${mysql_root_password}\" -e \"CREATE USER IF NOT EXISTS 'cmon'@'${facts['networking']['fqdn']}' IDENTIFIED BY '${mysql_cmon_password}'; GRANT ALL PRIVILEGES ON *.* TO 'cmon'@'${facts['networking']['fqdn']}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
+      provider => shell,
     }
 
     # ------------------------------------------------------------------------
@@ -856,31 +858,31 @@ class clustercontrol (
     }
 
     exec { 'create_ccrpc_user':
-      command => "S9S_USER_CONFIG=${user_path} s9s user --create --new-password=${api_token} \
-        --generate-key --private-key-file=~/.s9s/ccrpc.key \
-        --group=admins --controller=https://127.0.0.1:9501 ccrpc",
-      require => File["${home_path}/.s9s/"],
+      command  => "S9S_USER_CONFIG=${user_path} s9s user --create --new-password=${api_token} --generate-key --private-key-file=/root/.s9s/ccrpc.key --group=admins --controller=https://127.0.0.1:9501 ccrpc",
+      provider => shell,
+      unless   => "test -f ${user_path}",
+      require  => [Service['cmon'], File["${home_path}/.s9s/"]],
     }
 
     exec { 'create_ccrpc_set_firstname':
-      user    => 'root',
-      command => "S9S_USER_CONFIG=${user_path} s9s user --set --first-name=RPC --last-name=API",
-      require => Exec['create_ccrpc_user'],
+      command  => "S9S_USER_CONFIG=${user_path} s9s user --set --first-name=RPC --last-name=API",
+      provider => shell,
+      unless   => "S9S_USER_CONFIG=${user_path} s9s user --list --long 2>/dev/null | grep -q RPC",
+      require  => Exec['create_ccrpc_user'],
     }
 
     exec { 'ccsetup_unlink':
-      user    => 'root',
-      command => 'rm -f /tmp/ccsetup.conf',
-      require => [Exec['create_ccrpc_set_firstname'], Exec['create_ccrpc_user']],
+      command  => 'rm -f /tmp/ccsetup.conf',
+      provider => shell,
+      require  => [Exec['create_ccrpc_set_firstname'], Exec['create_ccrpc_user']],
     }
 
-    # ccsetup user – triggers the initial admin registration screen on first UI open
+    # ccsetup user - triggers the initial admin registration screen on first UI open
     exec { 'create_ccsetup_user':
-      command => "S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create \
-        --new-password=admin --group=admins \
-        --email-address='${ccsetup_email}' \
-        --controller='https://127.0.0.1:9501' ccsetup",
-      require => [Service['cmon'], File["${home_path}/.s9s/"]],
+      command  => "S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --email-address='${ccsetup_email}' --controller='https://127.0.0.1:9501' ccsetup",
+      provider => shell,
+      unless   => "S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --list 2>/dev/null | grep -q ccsetup",
+      require  => [Service['cmon'], File["${home_path}/.s9s/"]],
     }
 
   # ==========================================================================

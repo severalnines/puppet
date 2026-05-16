@@ -43,7 +43,9 @@
         SSLProxyCheckPeerCN off
         SSLProxyCheckPeerExpire off
         SSLProxyCheckPeerName off
-        SSLProxyCACertificateFile /var/lib/cmon/ca/cmon/rpc_tls.crt
+        # SSLProxyCACertificateFile is set only after cmon generates its TLS cert
+        # It is managed post-install; comment out for initial deployment
+        #SSLProxyCACertificateFile /var/lib/cmon/ca/cmon/rpc_tls.crt
 
         <LocationMatch /cc-license>
             ProxyPass https://severalnines.com/service/lic.php
