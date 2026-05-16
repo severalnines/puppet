@@ -38,7 +38,18 @@ do_read_key()
 
 do_generate_token()
 {
-    token=$(python -c 'import uuid; print uuid.uuid4()' | sha1sum | cut -f1 -d' ')
+    # Support Python 3 (Rocky/Alma/RHEL 9, Ubuntu 22+, Debian 11+)
+    # and fall back to Python 2 or uuidgen for older systems
+    if command -v python3 &>/dev/null; then
+        token=$(python3 -c 'import uuid; print(uuid.uuid4())' | sha1sum | cut -f1 -d' ')
+    elif command -v python &>/dev/null; then
+        token=$(python -c 'import uuid; import sys; sys.stdout.write(str(uuid.uuid4()) + "\n")' | sha1sum | cut -f1 -d' ')
+    elif command -v uuidgen &>/dev/null; then
+        token=$(uuidgen | sha1sum | cut -f1 -d' ')
+    else
+        echo "Error: No suitable tool found to generate token (need python3, python, or uuidgen)" >&2
+        exit 1
+    fi
     echo $token
 }
 
