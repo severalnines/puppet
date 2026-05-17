@@ -1,9 +1,9 @@
 [client]
-port = <%= @cmon_mysql_port %>
+port = 3306
 socket = <%= @mysql_socket %>
 
 [mysqld]
-port = <%= @cmon_mysql_port %>
+port = 3306
 bind-address = 0.0.0.0
 datadir = /var/lib/mysql
 socket = <%= @mysql_socket %>
@@ -25,7 +25,6 @@ read_rnd_buffer_size = 4M
 thread_cache_size = 16
 max_connections = 151
 wait_timeout = 28800
-mysql_native_password = ON
 
 # InnoDB settings.
 innodb_file_per_table = 1
