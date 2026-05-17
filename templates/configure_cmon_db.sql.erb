@@ -1,4 +1,0 @@
-SET SQL_LOG_BIN=0;
-INSERT IGNORE INTO cmon.cmon_configuration (cid, param, value) VALUES (1, 'BACKUPDIR','<%= @backup_dir %>');
-INSERT IGNORE INTO cmon.cmon_configuration (cid, param, value) VALUES (1, 'BACKUP_RETENTION','7');
-INSERT IGNORE INTO cmon.cmon_configuration (cid, param, value) VALUES (1, 'STAGING_DIR','<%= @staging_dir %>');

@@ -1,0 +1,114 @@
+# == Class: clustercontrol::configure_mcc
+#
+# Idempotent CMON + MCC initialization using marker files.
+#
+class clustercontrol::configure_mcc {
+
+  $state_dir   = $clustercontrol::params::cmon_state_dir
+  $cmon_marker = $clustercontrol::params::cmon_init_marker
+  $mcc_marker  = $clustercontrol::params::mcc_init_marker
+  $token_file  = $clustercontrol::params::rpc_token_file
+  $cmon_cnf    = $clustercontrol::params::cmon_config_file
+  $cmon_default = $clustercontrol::params::cmon_default_file
+  $cmon_user   = $clustercontrol::cmon_mysql_user
+  $cmon_pass   = $clustercontrol::cmon_mysql_password
+  $cmon_port   = $clustercontrol::cmon_mysql_port
+  $web_port    = $clustercontrol::mcc_web_port
+  $web_root    = $clustercontrol::mcc_web_root
+  $controller_ip = $clustercontrol::controller_ip
+
+  # ----------------------------------------------------------------------------
+  # Ensure /var/lib/cmon exists for markers and token storage
+  # ----------------------------------------------------------------------------
+  file { $state_dir:
+    ensure => directory,
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0755',
+  }
+
+  # ----------------------------------------------------------------------------
+  # /etc/default/cmon  -  EVENTS_CLIENT + CLOUD_SERVICE
+  # ----------------------------------------------------------------------------
+  file { $cmon_default:
+    ensure  => file,
+    owner   => 'root',
+    group   => 'root',
+    mode    => '0644',
+    content => "EVENTS_CLIENT=\"http://127.0.0.1:9510\"\nCLOUD_SERVICE=\"http://127.0.0.1:9518\"\n",
+  }
+
+  # ----------------------------------------------------------------------------
+  # Generate RPC token once and persist to disk
+  # ----------------------------------------------------------------------------
+  exec { 'generate-rpc-token':
+    command  => "cat /proc/sys/kernel/random/uuid | sha1sum | cut -f1 -d' ' > ${token_file}; chmod 0600 ${token_file}",
+    path     => ['/bin', '/usr/bin'],
+    creates  => $token_file,
+    provider => shell,
+    require  => File[$state_dir],
+  }
+
+  # ----------------------------------------------------------------------------
+  # Remove package-default /etc/cmon.cnf ONLY before first init
+  # (After first init, marker file prevents this from running again)
+  # ----------------------------------------------------------------------------
+  exec { 'remove-default-cmon-cnf':
+    command  => "rm -f ${cmon_cnf}",
+    path     => ['/bin', '/usr/bin'],
+    provider => shell,
+    onlyif   => "test ! -f ${cmon_marker} && test -f ${cmon_cnf}",
+    require  => File[$state_dir],
+  }
+
+  # ----------------------------------------------------------------------------
+  # cmon --init runs ONCE (guarded by marker)
+  # ----------------------------------------------------------------------------
+  exec { 'cmon-init':
+    command  => "cmon --init --mysql-hostname='127.0.0.1' --mysql-port='${cmon_port}' --mysql-username='${cmon_user}' --mysql-password='${cmon_pass}' --mysql-database='cmon' --hostname='${controller_ip}' --rpc-token=\"\$(cat ${token_file})\" --controller-id='clustercontrol'",
+    path     => ['/bin', '/usr/bin', '/usr/sbin'],
+    provider => shell,
+    creates  => $cmon_marker,
+    require  => [
+      Exec['generate-rpc-token'],
+      Exec['remove-default-cmon-cnf'],
+      File[$cmon_default],
+    ],
+  }
+
+  exec { 'create-cmon-init-marker':
+    command  => "touch ${cmon_marker}",
+    path     => ['/bin', '/usr/bin'],
+    creates  => $cmon_marker,
+    require  => Exec['cmon-init'],
+  }
+
+  # ----------------------------------------------------------------------------
+  # Ensure cmon-proxy is started before ccmgradm init
+  # ----------------------------------------------------------------------------
+  service { 'cmon-proxy':
+    ensure  => running,
+    enable  => true,
+    require => Exec['create-cmon-init-marker'],
+  }
+
+  # ----------------------------------------------------------------------------
+  # ccmgradm init runs ONCE (guarded by marker)
+  # ----------------------------------------------------------------------------
+  exec { 'mcc-init':
+    command  => "ccmgradm init --local-cmon -p ${web_port} -f ${web_root}",
+    path     => ['/bin', '/usr/bin', '/usr/sbin'],
+    provider => shell,
+    creates  => $mcc_marker,
+    unless   => "ccmgradm init --local-cmon -p ${web_port} -f ${web_root} 2>&1 | grep -qi 'controller already exists'",
+    require  => Service['cmon-proxy'],
+    notify   => Service['cmon-proxy'],
+  }
+
+  exec { 'create-mcc-init-marker':
+    command  => "touch ${mcc_marker}",
+    path     => ['/bin', '/usr/bin'],
+    creates  => $mcc_marker,
+    require  => Exec['mcc-init'],
+  }
+}

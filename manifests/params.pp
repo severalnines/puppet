@@ -1,431 +1,175 @@
-class clustercontrol::params ($online_install = true, $only_cc_v2 = true) {
+# == Class: clustercontrol::params
+#
+# Default values and OS-specific package/repo definitions for the ClusterControl
+# Puppet module. Mirrors the structure of severalnines/cc deployment's vars/.
+#
+# Supports:
+#   - RHEL/CentOS/Rocky/AlmaLinux 7, 8, 9
+#   - Ubuntu 18.04, 20.04, 22.04, 24.04
+#   - Debian 9, 10, 11, 12
+#
+class clustercontrol::params {
 
-  # ---------------------------------------------------------------------------
-  # Repository & package name constants
-  # ---------------------------------------------------------------------------
+  # ==========================================================================
+  # Common settings
+  # ==========================================================================
   $repo_host = 'repo.severalnines.com'
+  $gpg_key   = "http://${repo_host}/severalnines-repos.asc"
 
-  # Core CC packages (CC 2.4.x names)
-  $cc_controller  = 'clustercontrol-controller'
-  $cc_ui          = 'clustercontrol'             # CCv1 legacy UI (only_cc_v2 = false)
-  $cc_ui2         = 'clustercontrol-mcc'         # CCv2 UI  (was 'clustercontrol2')
-  $cc_cloud       = 'clustercontrol-cloud'
-  $cc_clud        = 'clustercontrol-clud'
-  $cc_ssh         = 'clustercontrol-ssh'
-  $cc_notif       = 'clustercontrol-notifications'
-  $cc_proxy       = 'clustercontrol-proxy'       # NEW in CC 2.x
-  $cc_kuber_proxy = 'clustercontrol-kuber-proxy' # NEW in CC 2.x
-  $libs9s         = 'libs9s'
-  $s9stools       = 's9s-tools'
+  # CC package groups
+  $clustercontrol_ui_packages = [
+    'clustercontrol-mcc',
+    'clustercontrol-notifications',
+    'clustercontrol-ssh',
+    'clustercontrol-cloud',
+    'clustercontrol-clud',
+  ]
 
-  # Paths
-  $cmon_conf         = '/etc/cmon.cnf'
-  $cmon_sql_path     = '/usr/share/cmon'
+  $clustercontrol_controller_packages = [
+    'clustercontrol-controller',
+    'clustercontrol-proxy',
+    'clustercontrol-kuber-proxy',
+  ]
+
+  $clustercontrol_cli_packages = ['s9s-tools']
+
+  # Web / runtime paths
+  $cmon_config_file  = '/etc/cmon.cnf'
   $cmon_default_file = '/etc/default/cmon'
+  $cmon_sql_path     = '/usr/share/cmon'
+  $cmon_state_dir    = '/var/lib/cmon'
+  $cmon_init_marker  = "${cmon_state_dir}/.puppet-cmon-initialized"
+  $mcc_init_marker   = "${cmon_state_dir}/.puppet-mcc-initialized"
+  $rpc_token_file    = "${cmon_state_dir}/cc_rpc_token"
 
-  $apache_httpd_extra_options = 'Require all granted'
+  # MCC defaults
+  $mcc_web_port = 443
+  $mcc_web_root = '/var/www/html/clustercontrol-mcc'
 
-  # CC v2 web root (changed from clustercontrol2 -> clustercontrol-mcc in CC 2.x)
-  $cc_v2_webroot        = '/var/www/html/clustercontrol-mcc'
-  $cc_v2_config_ui_file = "${cc_v2_webroot}/config.js"
-
-  # ---------------------------------------------------------------------------
-  # Helper: convert major-release string to integer for numeric comparisons
-  # ---------------------------------------------------------------------------
-  $format          = "%i"
-  $a_version_no    = scanf($facts['os']['release']['major'], $format)
-  $os_majrelease   = $a_version_no[0]
-  $lower_operatingsystem = downcase($facts['os']['name'])
-
-  notice(">>> clustercontrol::params  osfamily=${facts['os']['family']}  majrelease=${facts['os']['release']['major']}")
-
-  # ---------------------------------------------------------------------------
+  # ==========================================================================
   # OS-family branching
-  # ---------------------------------------------------------------------------
-  case $facts['os']['family'] {
+  # ==========================================================================
+  $os_family   = $facts['os']['family']
+  $os_name     = $facts['os']['name']
+  $os_major    = Integer($facts['os']['release']['major'])
 
-    # =========================================================================
-    # Red Hat family  (RHEL / CentOS / Rocky / AlmaLinux / Oracle Linux)
-    # Supported: EL 7, 8, 9
-    # =========================================================================
+  case $os_family {
+
     'RedHat': {
-
-      # The s9s-tools repo at repo.severalnines.com only has:
-      #   RHEL_7, RHEL_8, RHEL_9, CentOS_7, CentOS_8, CentOS_9, CentOS_9_Stream
-      # Rocky Linux, AlmaLinux, OracleLinux are ABI-compatible with RHEL
-      # and must use the RHEL_<version> repo path.
-      case $facts['os']['name'] {
-        'RedHat':                         { $s9s_tools_repo_osname = "RHEL_${facts['os']['release']['major']}" }
-        'CentOS':                         { $s9s_tools_repo_osname = "CentOS_${facts['os']['release']['major']}" }
-        'Rocky', 'AlmaLinux', 'OracleLinux', 'Scientific': {
-          # No Rocky_9/Alma_9 repo exists — use the RHEL equivalent
-          $s9s_tools_repo_osname = "RHEL_${facts['os']['release']['major']}"
-        }
-        default:                          { $s9s_tools_repo_osname = "RHEL_${facts['os']['release']['major']}" }
+      # Version guard
+      if ($os_major < 7 or $os_major > 9) {
+        fail("ClusterControl on ${os_name} requires major version 7, 8, or 9. Got: ${os_major}")
       }
 
-      if ($os_majrelease >= 10) {
-        fail("ClusterControl does not yet support ${facts['os']['name']} ${facts['os']['release']['major']}. Supported: EL 7, 8, 9.")
-      }
-
-      if ($os_majrelease < 7) {
-        fail("ClusterControl requires ${facts['os']['name']} >= 7. Version ${facts['os']['release']['major']} is not supported.")
-      }
-
-      # Mailer package differs between EL versions
-      if ($os_majrelease >= 9) {
-        $mailer = 's-nail'
-      } else {
-        $mailer = 'mailx'
-      }
-
-      # PHP (only needed for CCv1)
-      if (! $only_cc_v2) {
-        $php_packages_inc = ['php', 'php-gd', 'php-fpm', 'php-xml', 'php-json', 'php-ldap']
-
-        if ($os_majrelease >= 9) {
-          # EL 9 ships PHP 8 – install Remi repo for PHP 7.4
-          notice("EL ${os_majrelease}: CCv1 requires PHP 7.4 via Remi repository.")
-          exec { 'install-remi-release-el9':
-            path    => ['/bin', '/usr/bin'],
-            command => "dnf install -y https://rpms.remirepo.net/enterprise/remi-release-${facts['os']['release']['major']}.rpm",
-            unless  => 'rpm -qa | grep -qi remi',
-          }
-          package { 'php-module-disable':
-            ensure   => disabled,
-            name     => 'php',
-            provider => dnfmodule,
-            require  => Exec['install-remi-release-el9'],
-          }
-          package { 'php-remi-74':
-            ensure      => present,
-            name        => 'php:remi-7.4',
-            provider    => dnfmodule,
-            enable_only => true,
-            require     => Package['php-module-disable'],
-          }
-        }
-
-        if ($os_majrelease == 7) {
-          $php_packages = $php_packages_inc + ['php-mysql']
-        } else {
-          $php_packages = $php_packages_inc + ['php-mysqlnd']
-        }
-      } else {
-        $php_packages = []
-      }
-
-      # Base dependencies
-      # Note: nmap-ncat is in EPEL on EL 8/9. We ensure epel-release is present first.
-      if ($os_majrelease >= 8) {
-        exec { 'install-epel-release':
-          path    => ['/bin', '/usr/bin'],
-          command => 'dnf install -y epel-release',
-          unless  => 'rpm -qa | grep -qi epel-release',
-        }
-      }
-
-      $loc_dependencies = [
-        'httpd', 'wget', $mailer, 'curl', 'cronie',
-        'bind-utils', 'mod_ssl', 'openssl', 'nmap-ncat',
-        'dmidecode', 'hostname',
+      # MySQL 8.4 Community packages (NOT MariaDB - matches cc deployment exactly)
+      $mysql_packages = [
+        'mysql-community-server',
+        'mysql-community-client',
+        'mysql-community-common',
+        'mysql-community-libs',
       ]
+      $mysql_daemon = 'mysqld'
+      $mysql_config_file       = '/etc/my.cnf'
+      $mysql_config_include_dir = '/etc/my.cnf.d'
+      $mysql_socket            = '/var/lib/mysql/mysql.sock'
 
-      $cc_service_packages = [
-        'clustercontrol-notifications', 'clustercontrol-ssh',
-        'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools',
+      # Python MySQL client
+      $python_mysql = $os_major ? {
+        7       => 'MySQL-python',
+        default => 'python3-PyMySQL',
+      }
+
+      # Repository paths
+      $repo_config_dir       = '/etc/yum.repos.d'
+      $repo_config_path      = '/etc/yum.repos.d/s9s-repo.repo'
+      $repo_cli_config_path  = '/etc/yum.repos.d/s9s-tools.repo'
+      $repo_config_url       = "http://www.severalnines.com/downloads/cmon/s9s-repo.repo"
+
+      # s9s-tools CLI repo - all RHEL-clones use RHEL_<major>
+      # (Rocky, AlmaLinux, OracleLinux all map to RHEL_<major>)
+      $clustercontrol_cli_repository = "https://${repo_host}/s9s-tools/RHEL_${os_major}/s9s-tools.repo"
+
+      # MySQL official RPM repo for v8.4 LTS
+      $mysql_apt_config_deb = undef  # not used on RedHat
+      $mysql_community_rpm  = "https://repo.mysql.com/mysql84-community-release-el${os_major}-1.noarch.rpm"
+      $mysql_gpg_key        = 'https://repo.mysql.com/RPM-GPG-KEY-mysql-2023'
+
+      # Apache/firewall things (legacy mode only)
+      $apache_service = 'httpd'
+      $apache_user    = 'apache'
+
+      $base_packages = [
+        'dnf-plugins-core',
+        'gnuplot',
+        'wget',
+        'epel-release',
       ]
-
-      if ($only_cc_v2) {
-        $cc_dependencies = $loc_dependencies + $cc_service_packages
-      } else {
-        $cc_dependencies = $loc_dependencies + $php_packages + $cc_service_packages
-      }
-
-      # Apache / filesystem paths
-      $apache_conf_file                 = '/etc/httpd/conf/httpd.conf'
-      $apache_security_conf_file        = '/etc/httpd/conf.d/security.conf'
-      $apache_log_dir                   = '/var/log/httpd/'
-      $apache_s9s_conf_file             = '/etc/httpd/conf.d/s9s.conf'
-      $apache_s9s_ssl_conf_file         = '/etc/httpd/conf.d/ssl.conf'
-      $apache_s9s_cc_frontend_conf_file = '/etc/httpd/conf.d/cc-frontend.conf'
-      $apache_s9s_cc_proxy_conf_file    = '/etc/httpd/conf.d/cc-proxy.conf'
-      $cert_file                        = '/etc/pki/tls/certs/s9server.crt'
-      $key_file                         = '/etc/pki/tls/private/s9server.key'
-      $apache_user                      = 'apache'
-      $apache_service                   = 'httpd'
-      $wwwroot                          = '/var/www/html'
-      $mysql_cnf                        = '/etc/my.cnf'
-      $mysql_service                    = 'mariadb'
-      $mysql_packages                   = ['mariadb', 'mariadb-server']
-
-      if ($online_install) {
-        yumrepo { 's9s-repo':
-          descr    => 'Severalnines Repository',
-          baseurl  => "http://${repo_host}/rpm/os/x86_64",
-          enabled  => 1,
-          gpgkey   => "http://${repo_host}/severalnines-repos.asc",
-          gpgcheck => 1,
-        }
-        yumrepo { 's9s-tools-repo':
-          descr    => "s9s-tools ${s9s_tools_repo_osname}",
-          baseurl  => "http://${repo_host}/s9s-tools/${s9s_tools_repo_osname}",
-          enabled  => 1,
-          gpgkey   => "http://${repo_host}/s9s-tools/${s9s_tools_repo_osname}/repodata/repomd.xml.key",
-          gpgcheck => 1,
-        }
-        $severalnines_repo = Yumrepo[['s9s-repo', 's9s-tools-repo']]
-      }
     }
 
-    # =========================================================================
-    # Debian family  (Debian 9-13 / Ubuntu 18-25)
-    # Adds:  Ubuntu 24.04 (Noble),  Debian 12 (Bookworm)
-    # =========================================================================
     'Debian': {
-
-      # Version guards
-      if ($facts['os']['name'] == 'Ubuntu') {
-        if ($os_majrelease < 18) {
-          fail("Ubuntu ${facts['os']['release']['major']} is not supported. Minimum: Ubuntu 18.04 LTS.")
+      # Version guard
+      if ($os_name == 'Ubuntu') {
+        if ($os_major < 18 or $os_major > 24) {
+          fail("ClusterControl on Ubuntu requires version 18/20/22/24. Got: ${os_major}")
         }
-        if ($os_majrelease >= 26) {
-          fail("Ubuntu ${facts['os']['release']['major']} is not yet validated. Please check for a module update.")
-        }
-      } elsif ($facts['os']['name'] == 'Debian') {
-        if ($os_majrelease < 9) {
-          fail("Debian ${facts['os']['release']['major']} is not supported. Minimum: Debian 9 (Stretch).")
-        }
-        if ($os_majrelease >= 14) {
-          fail("Debian ${facts['os']['release']['major']} is not yet validated. Please check for a module update.")
+      } elsif ($os_name == 'Debian') {
+        if ($os_major < 9 or $os_major > 12) {
+          fail("ClusterControl on Debian requires version 9/10/11/12. Got: ${os_major}")
         }
       } else {
-        fail("Unsupported Debian-family OS: ${facts['os']['name']}.")
+        fail("Unsupported Debian-family OS: ${os_name}")
       }
 
-      # PHP for CCv1 only
-      if ($only_cc_v2 == false) {
-        if (($facts['os']['name'] == 'Ubuntu' and $os_majrelease >= 22) or
-            ($facts['os']['name'] == 'Debian' and $os_majrelease >= 11)) {
-          # Needs ondrej/php PPA for PHP 7.4
-          notice("${facts['os']['name']} ${facts['os']['release']['major']}: CCv1 needs PHP 7.4 via ondrej/php PPA.")
-          exec { 'apt-update-for-php7-prep':
-            path    => ['/bin', '/usr/bin'],
-            command => 'apt-get update',
-          }
-          package { 'software-properties-common': ensure => installed }
-          package { 'apt-transport-https':         ensure => installed }
-          exec { 'add-apt-php7-repo':
-            path    => ['/bin', '/usr/bin'],
-            command => 'add-apt-repository -y ppa:ondrej/php',
-            require => [
-              Package['software-properties-common'],
-              Package['apt-transport-https'],
-            ],
-          }
-          $php_packages = [
-            'php7.4-mysql', 'php7.4-gd', 'libapache2-mod-php7.4',
-            'php7.4-curl', 'php7.4-ldap', 'php7.4-xml', 'php7.4-json',
-          ]
-        } else {
-          $php_packages = [
-            'php-mysql', 'php-gd', 'libapache2-mod-php',
-            'php-curl', 'php-ldap', 'php-xml', 'php-json',
-          ]
-        }
-      } else {
-        $php_packages = []
-      }
-
-      # MySQL / MariaDB package selection
-      # Ubuntu 24 (Noble) + Debian 10+: MariaDB is the preferred choice
-      if ($facts['os']['name'] == 'Debian' and $os_majrelease >= 10) {
-        $mysql_packages = ['mariadb-client', 'mariadb-server']
-        $mysql_service  = 'mariadb'
-      } elsif ($facts['os']['name'] == 'Ubuntu' and $os_majrelease >= 24) {
-        # Ubuntu 24 Noble: mysql-server now ships as a snap; use mariadb instead
-        $mysql_packages = ['mariadb-client', 'mariadb-server']
-        $mysql_service  = 'mariadb'
-      } else {
-        $mysql_packages = ['mysql-client', 'mysql-server']
-        $mysql_service  = 'mysql'
-      }
-
-      $cc_service_packages = [
-        'clustercontrol-notifications', 'clustercontrol-ssh',
-        'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools',
+      # MySQL 8 from MySQL official APT repo (NOT MariaDB - matches cc deployment)
+      $mysql_packages = [
+        'mysql-common',
+        'mysql-server',
+        'mysql-client',
       ]
+      $mysql_daemon = 'mysql'
+      $mysql_config_file        = '/etc/mysql/my.cnf'
+      $mysql_config_include_dir = '/etc/mysql/conf.d'
+      $mysql_socket             = '/var/run/mysqld/mysqld.sock'
 
-      if ($online_install) {
-        $cc_dependencies = [
-          'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'dmidecode',
-        ] + $php_packages + $cc_service_packages
-      } else {
-        $cc_dependencies = [
-          'apache2', 'wget', 'mailutils', 'curl', 'dnsutils', 'dmidecode',
-        ] + $php_packages
+      # Python MySQL client
+      $python_mysql = $os_major ? {
+        18      => 'python-mysqldb',
+        default => 'python3-mysqldb',
       }
 
-      # Apache / filesystem paths
-      $apache_log_dir                     = '/var/log/apache2/'
-      $wwwroot                            = '/var/www/html'
-      $apache_conf_file                   = '/etc/apache2/apache2.conf'
-      $apache_s9s_conf_file               = '/etc/apache2/sites-available/s9s.conf'
-      $apache_s9s_target_file             = '/etc/apache2/sites-enabled/001-s9s.conf'
-      $apache_s9s_ssl_conf_file           = '/etc/apache2/sites-available/s9s-ssl.conf'
-      $apache_s9s_ssl_target_file         = '/etc/apache2/sites-enabled/001-s9s-ssl.conf'
-      $apache_s9s_cc_frontend_conf_file   = '/etc/apache2/sites-available/cc-frontend.conf'
-      $apache_s9s_cc_frontend_target_file = '/etc/apache2/sites-enabled/cc-frontend.conf'
-      $apache_s9s_cc_proxy_conf_file      = '/etc/apache2/sites-available/cc-proxy.conf'
-      $apache_s9s_cc_proxy_target_file    = '/etc/apache2/sites-enabled/cc-proxy.conf'
-      $apache_security_conf_file          = '/etc/apache2/conf-available/security.conf'
-      $apache_security_target_conf_file   = '/etc/apache2/conf-enabled/security.conf'
-      $apache_mods_header_file            = '/etc/apache2/mods-available/headers.load'
-      $apache_mods_header_target_file     = '/etc/apache2/mods-enabled/headers.load'
-      $cert_file                          = '/etc/ssl/certs/s9server.crt'
-      $key_file                           = '/etc/ssl/private/s9server.key'
-      $apache_user                        = 'www-data'
-      $apache_service                     = 'apache2'
-      $mysql_cnf                          = '/etc/mysql/my.cnf'
-      $repo_source                        = '/etc/apt/sources.list.d/s9s-repo.list'
-      $repo_tools_src                     = '/etc/apt/sources.list.d/s9s-tools.list'
+      # Repository paths
+      $repo_config_dir       = '/etc/apt/sources.list.d'
+      $repo_config_path      = '/etc/apt/sources.list.d/s9s-repo.list'
+      $repo_cli_config_path  = '/etc/apt/sources.list.d/s9s-tools.list'
+      $repo_config_url       = "http://www.severalnines.com/downloads/cmon/s9s-repo.list"
 
-      # Modern APT keyring path (replaces deprecated apt-key on Ubuntu 22+ / Debian 12+)
+      # CLI repo uses distribution codename
+      $distro_codename = $facts['os']['distro']['codename']
+      $clustercontrol_cli_repository = "deb [signed-by=/etc/apt/keyrings/severalnines-tools.asc] https://${repo_host}/s9s-tools/${distro_codename}/ ./"
+      $clustercontrol_cli_key        = "http://${repo_host}/s9s-tools/${distro_codename}/Release.key"
+
+      # MySQL community APT repo
+      $mysql_apt_config_deb = 'https://repo.mysql.com/mysql-apt-config.deb'
+      $mysql_community_rpm  = undef
+      $mysql_gpg_key        = '0xB7B3B788A8D3785C'
+
+      # Apache/firewall things (legacy mode only)
+      $apache_service = 'apache2'
+      $apache_user    = 'www-data'
+
+      # Modern keyrings path
       $apt_keyrings_dir = '/etc/apt/keyrings'
 
-      # Remove stale default Apache vhosts
-      file {
-        [
-          '/etc/apache2/sites-enabled/000-default.conf',
-          '/etc/apache2/sites-enabled/default-ssl.conf',
-          '/etc/apache2/sites-enabled/001-default-ssl.conf',
-        ]:
-          ensure  => absent,
-          require => Package[$cc_dependencies],
-      }
-
-      if ($online_install) {
-
-        # Ensure /etc/apt/keyrings exists (Ubuntu 22+ / Debian 12+ requirement)
-        exec { 'create-apt-keyrings-dir':
-          path    => ['/bin', '/usr/bin'],
-          command => "mkdir -p ${apt_keyrings_dir}",
-          unless  => "test -d ${apt_keyrings_dir}",
-        }
-
-        package { 'gpg': ensure => installed }
-
-        # Import Severalnines repo signing key (modern method: file in keyrings/)
-        exec { 'import-severalnines-key':
-          path    => ['/bin', '/usr/bin'],
-          command => "wget -qO ${apt_keyrings_dir}/severalnines-repos.asc http://${repo_host}/severalnines-repos.asc",
-          unless  => "test -f ${apt_keyrings_dir}/severalnines-repos.asc",
-          require => [Package['gpg'], Exec['create-apt-keyrings-dir']],
-        }
-
-        # Import s9s-tools repo signing key
-        exec { 'import-severalnines-tools-key':
-          path    => ['/bin', '/usr/bin'],
-          command => "wget -qO ${apt_keyrings_dir}/severalnines-tools.asc http://${repo_host}/s9s-tools/${facts['os']['distro']['codename']}/Release.key",
-          unless  => "test -f ${apt_keyrings_dir}/severalnines-tools.asc",
-          require => [Package['gpg'], Exec['create-apt-keyrings-dir']],
-        }
-
-        exec { 'apt-update-severalnines':
-          path        => ['/bin', '/usr/bin'],
-          command     => 'apt-get update',
-          require     => [File[$repo_source], File[$repo_tools_src]],
-          refreshonly => true,
-        }
-
-        file { $repo_source:
-          content => template('clustercontrol/s9s-repo.list.erb'),
-          require => Exec['import-severalnines-key'],
-          notify  => Exec['apt-update-severalnines'],
-        }
-
-        file { $repo_tools_src:
-          content => template('clustercontrol/s9s-tools.list.erb'),
-          require => Exec['import-severalnines-tools-key'],
-          notify  => Exec['apt-update-severalnines'],
-        }
-
-        $severalnines_repo = Exec['apt-update-severalnines']
-      }
-    }
-
-    # =========================================================================
-    # SUSE family  (SLES / OpenSUSE >= 15)
-    # Requires the puppet-zypprepo module on the Puppet master
-    # =========================================================================
-    'Suse': {
-
-      if (Integer($facts['os']['release']['major']) < 15) {
-        fail("ClusterControl requires SUSE >= 15. Version ${facts['os']['release']['major']} is not supported.")
-      }
-
-      if ($facts['os']['release']['major'] == '15') {
-        $s9s_tools_repo_osname = "${operatingsystemrelease}"
-      } else {
-        $s9s_tools_repo_osname = "${facts['os']['name']}_${facts['os']['release']['full']}"
-      }
-
-      if ($only_cc_v2) {
-        $php_packages = []
-      } else {
-        $php_packages = [
-          'php7', 'php7-mysql', 'apache2-mod_php7', 'php7-gd',
-          'php7-curl', 'php7-ldap', 'php7-xmlreader', 'php7-ctype', 'php7-json',
-        ]
-      }
-
-      $cc_service_packages = [
-        'clustercontrol-notifications', 'clustercontrol-ssh',
-        'clustercontrol-cloud', 'clustercontrol-clud', 's9s-tools',
+      $base_packages = [
+        'gnupg',
+        'ca-certificates',
+        'wget',
+        'curl',
       ]
-
-      $loc_dependencies = [
-        'apache2', 'wget', 'mailx', 'curl', 'cronie', 'bind-utils',
-        'insserv-compat', 'sysvinit-tools', 'openssl', 'ca-certificates',
-        'gnuplot', 'expect', 'perl-XML-XPath', 'psmisc', 'dmidecode',
-      ]
-
-      $cc_dependencies = $loc_dependencies + $php_packages + $cc_service_packages
-
-      $apache_s9s_conf_file             = '/etc/apache2/vhosts.d/s9s.conf'
-      $apache_s9s_ssl_conf_file         = '/etc/apache2/vhosts.d/ssl.conf'
-      $apache_s9s_cc_frontend_conf_file = '/etc/apache2/vhosts.d/cc-frontend.conf'
-      $apache_s9s_cc_proxy_conf_file    = '/etc/apache2/vhosts.d/cc-proxy.conf'
-      $cert_file                        = '/etc/ssl/certs/s9server.crt'
-      $key_file                         = '/etc/ssl/private/s9server.key'
-      $apache_user                      = 'wwwrun'
-      $apache_service                   = 'apache2'
-      $apache_log_dir                   = '/var/log/apache2/'
-      $wwwroot                          = '/var/www/html'
-      $mysql_cnf                        = '/etc/my.cnf'
-      $mysql_service                    = 'mariadb'
-      $mysql_packages                   = ['mariadb', 'mariadb-client']
-
-      if ($online_install) {
-        zypprepo { 's9s-repo':
-          descr    => 'Severalnines Repository',
-          baseurl  => "http://${repo_host}/rpm/os/x86_64",
-          enabled  => 1,
-          gpgkey   => "http://${repo_host}/severalnines-repos.asc",
-          gpgcheck => 1,
-        }
-        zypprepo { 's9s-tools-repo':
-          descr    => "s9s-tools - ${s9s_tools_repo_osname}",
-          baseurl  => "http://${repo_host}/s9s-tools/${s9s_tools_repo_osname}",
-          enabled  => 1,
-          gpgkey   => "http://${repo_host}/s9s-tools/${s9s_tools_repo_osname}/repodata/repomd.xml.key",
-          gpgcheck => 1,
-        }
-      }
     }
 
     default: {
-      fail("Unsupported OS family '${osfamily}'. Supported: RedHat (EL 7-9), Debian/Ubuntu, Suse (15+).")
+      fail("Unsupported OS family: ${os_family}. Supported: RedHat, Debian.")
     }
   }
 }

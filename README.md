@@ -1,330 +1,115 @@
-# clustercontrol #
+# Puppet Module: ClusterControl
 
-## Table of Contents
+Installs and configures Severalnines ClusterControl on RHEL/CentOS/Rocky/AlmaLinux or Debian/Ubuntu servers. This module is **idempotent** and **upgrade-safe**.
 
-1. [Overview](#overview)
-2. [Module Description](#module-description)
-3. [Setup](#setup)
-    * [Requirements](#requirements)
-    * [Pre-installation](#pre-installation)
-    * [Installation](#installation)
-4. [Usage](#usage)
-5. [Limitations](#limitations)
-6. [Development](#development)
+The following packages are installed:
+
+- `clustercontrol-controller`
+- `clustercontrol-mcc`
+- `clustercontrol-proxy`
+- `clustercontrol-ssh`
+- `clustercontrol-cloud`
+- `clustercontrol-notifications`
+- `clustercontrol-clud`
+- `clustercontrol-kuber-proxy`
+- `s9s-tools`
 
 ## Overview
 
-Installs ClusterControl for your new database node/cluster deployment or on top of your existing database node/cluster. ClusterControl is a management and automation software for database clusters. It helps deploy, monitor, manage and scale your database cluster. This module will install ClusterControl and configure it to manage and monitor an existing database cluster. 
+Installs ClusterControl 2.4.x using **MCC mode** (`cmon-proxy` as the web server, no Apache required).
 
-Supported database clusters:
-* MySQL Replication (Percona/MariaDB/Oracle MySQL)
-* MySQL Galera (Percona XtraDB/MariaDB)
-* MySQL Cluster (NDB)
-* TimesaleDB
-* PostgreSQL (supports Single or Streaming Replication), Supports also pgvector extension support, and EntperiseDB
-* MongoDB ReplicaSet (Percona/Mongodb) and also for MongoDB Enterprise
-* MongoDB Shards (Percona/Mongodb) and also for MongoDB Enterprise
-* MS SQL Server 2022
-* Redis Sentinel
-* Elasticsearch
-More details at [Severalnines ClusterControl](http://www.severalnines.com/clustercontrol) website.
+Supported database clusters managed by ClusterControl:
 
+- MySQL/MariaDB Replication
+- Percona XtraDB Cluster
+- MariaDB Cluster (Galera)
+- MySQL Cluster
+- MongoDB Replica Set / Sharded Cluster
+- PostgreSQL Streaming Replication
+- TimescaleDB Streaming Replication
 
-## Module Description
+## Supported Operating Systems
 
-The Puppet module for ClusterControl automates the following actions based on the scope of this module:
-* Setup ClusterControl required repositories
-* Download and installs dependencies. These dependencies are required by its compontents such as Apache, PHP, OpenSSL, MySQL/MariaDB are among its basic packages required.
-* Install ClusterControl components such as the controller, front-end, CMON cloud, CMON SSH, and CMON Clud (upload/download cloud link)
-* Automates configuration for Apache
-	* configures the *<VirtualHost>* for port 80 and port 443 (for SSL/TLS). This includes its designated rewrite rules needed
-	* ensures port 443 is enabled
-	* enables header module setting *X-Frame-Options: sameorigin*
-	* check permission for ClusterControl UI and install SSL.
-* Automates MySQL/MariaDB installation. 
-	* create CMON DB, grant cmon user and configure DB for ClusterControl UI.
+| OS | Versions |
+|---|---|
+| RHEL / CentOS / Rocky / AlmaLinux / OracleLinux | 7, 8, 9 |
+| Ubuntu | 18.04, 20.04, 22.04, 24.04 |
+| Debian | 9, 10, 11, 12 |
 
-[//]: <> (Copy the generated SSH key to all nodes.)
+## Requirements
 
-If you have any questions, feel free to raise issues via https://github.com/severalnines/puppet/issues or hit your question via our [Community Forums](https://support.severalnines.com/hc/en-us/community/topics) or via [Slack](https://join.slack.com/t/clustercontrol/shared_invite/zt-b15k9477-jLllD6qJOUm3bGnOWynVig)
+- ClusterControl server must run on a **clean dedicated host** with internet access.
+- Root access.
+- Puppet 7 or 8.
 
-## Setup
+## Installation
 
-### What ClusterControl affects
-* Severalnines yum/apt repository
-* ClusterControl controller, frontend, cmon-cloud and cmon-clud, and cmon-ssh packages
-* Disables SELinux/AppArmor. *You can enable once setup correctly*.
-* MySQL server and client
-* Apache web server with PHP 5
-* SSH key (authorized_keys)
+Clone the module into your Puppet modules directory:
 
-### Requirements
-
-Make sure you meet following criteria prior to the deployment:
-* ClusterControl node must run on a clean dedicated host with internet connection.
-* If you are running as non-root user, make sure the user is able to escalate to root with sudo command.
-* For SUSE(SLES) or OpenSUSE Linux, make sure you install tye zypprepo module (Checkout Zypprepo [here](https://forge.puppet.com/modules/puppet/zypprepo/readme)). You can do that by installing it to your puppet master as follows,
 ```bash
-$ /opt/puppetlabs/bin/puppet module install puppet-zypprepo
+cd /etc/puppetlabs/code/environments/production/modules
+git clone https://github.com/severalnines/puppet.git clustercontrol
 ```
 
-### Installation
+## Example Manifest
 
-Our ClusterControl module for Puppet is available either on [Puppet Forge](https://forge.puppet.com/severalnines/clustercontrol) or using this [Severalnines Puppet](https://github.com/severalnines/puppet) by cloning or downloading it as a zip. Then place it under puppetlabs modulepath directory and make sure to name your module directory as *clustercontrol*, i.e. */etc/puppetlabs/code/environments/production/modules/clustercontrol* for example.
-
-First you need to generate an API Token. To do this, go to $modulepath/clustercontrol/files, then run the following. For example,
-```bash
-root@master:/etc/puppetlabs/code/environments/production/modules/clustercontrol# files/s9s_helper.sh --generate-token
-efc6ac7fbea2da1b056b901541697ec7a9be6a77
-```
-Reserve that toke which you will use that as an input parameter for your manifests file.
-
-Given the example scenario, let say you have the following hosts:
-```
-clustercontrol.local 	192.168.1.10
-galera1.local 		    192.168.1.11
-galera2.local 		    192.168.1.12
-galera3.local 		    192.168.1.13
-```
-
-Then, create a manifests file, let say we named it *clustercontrol.pp*
-```bash
-root@master:/etc/puppetlabs/code/environments/production# ls -alth manifests/clustercontrol.pp
--rw-r--r-- 1 root root 1.4K Oct 23 15:00 manifests/clustercontrol.pp
-```
-Then have the following example puppet agent node below where the hostname of the target to install CC using puppet is 192.168.40.90. Below is the definition for ClusterControl as follows:
 ```puppet
-node 'clustercontrol.puppet.local' { # Applies only to mentioned node. If nothing mentioned, applies to all.
-        class { 'clustercontrol':
-            is_controller => true,
-            cc_hostname => '192.168.40.90',
-            mysql_cmon_password => 'R00tP@55',
-            api_token => 'efc6ac7fbea2da1b056b901541697ec7a9be6a77',
-            ssh_user => 'vagrant',
-	    ssh_user_group => 'vagrant',
-            only_cc_v2 => true
-        }
+node 'your-cc-host' {
+  class { 'clustercontrol':
+    mysql_root_password => 'MySQLRootPassw0rd!',
+    cmon_mysql_password => 'MySQLCmonPassw0rd!',
+    cc_install_mode     => 'mcc',
+    cc_package_state    => 'latest',
+    mcc_web_port        => 443,
+    mcc_web_root        => '/var/www/html/clustercontrol-mcc',
+  }
 }
 ```
 
-Then run the command,
+Apply on the target host:
+
 ```bash
 puppet agent -t
 ```
-on the target clustercontrol, which is the host *clustercontrol.puppet.local* for this example installation.
 
-Once deployment is complete, open the ClusterControl web UI at https://[ClusterControl IP address]/clustercontrol and create a default admin login. You can now start to add existing database node/cluster, or deploy a new one. Ensure that passwordless SSH is configured properly from ClusterControl node to all DB nodes beforehand. 
-
-## Usage
-
-### General Options
-
-#### `is_controller`
-Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.  
-**Default: (Boolean) true**
-
-#### `only_cc_v2`
-This parameter will allow you to specify if there is a need to enable CC v1 installation. CC v2 is not enforce in this tool so you can either
-have CC v2 (or CC v1 and CC v2) installation setup. Setting to true means you will have both versions of UI, while setting to false will only install CC v2.
-**Default: (Boolean) true**
-
-#### `clustercontrol_host`
-Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.  
-**Example: (String) '192.168.0.10'**
-
-#### `email_address`
-Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.  
-**Default: (String) 'admin@domain.com'**
-
-#### `ssh_user`
-Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
-**Default: (String) 'root'**
-
-#### `ssh_user_group`
-Specify the SSH user system group that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
-**Default: (String) 'root'**
-
-#### `ssh_key`
-#####`is_controller`
-Define whether the node is ClusterControl controller host. All database nodes that you want ClusterControl to manage should be set to false.  
-**Default: (Boolean) true**
-
-##### `clustercontrol_host`
-Specify the IP address of the ClusterControl node. You can specify ClusterControl's FQDN only if the monitored MySQL servers are configured to perform host name resolution (skip-name-resolve is disabled) or MongoDB servers. Only specify this option on nodes that you want to be managed by ClusterControl.  
-**Example: (String) '192.168.0.10'**
-
-##### `email_address`
-Specify an email as root user for ClusterControl UI. You will login using this email with default password 'admin'.  
-**Default: (String) 'admin@domain.com'**
-
-##### `ssh_user`
-Specify the SSH user that ClusterControl will use to manage the database nodes. Unless root, make sure this user is in sudoers list.  
-**Default: (String) 'root'**
-
-##### `ssh_key`
-Specify the SSH key used by ``ssh_user`` to perform passwordless SSH to the database nodes.  
-**Default: (String) '/home/$USER/.ssh/id_rsa' (non-root,sudoer)**  
-**Default: (String) '/root/.ssh/id_rsa' (root)**
-
-#### `ssh_port`
-Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.  
-**Default: (Integer) 22**
-
-#### `sudo_password`
-If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.  
-**Example: (String) 'mysud0p4ssword'**
-
-#### `api_token`
-Specify the 40-character ClusterControl token generated from s9s_helper script.  
-**Example: (String) 'b7e515255db703c659677a66c4a17952515dbaf5'**
-
-#### `mysql_cmon_root_password`
-Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.  
-**Default: (String) 'password'**
-
-#### `mysql_cmon_password`
-Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.  
-**Default: (String) 'cmon'**
-
-#### `mysql_cmon_port`
-MySQL server port that holds CMON database.  
-**Default: (Integer) 3306**
-
-#### `datadir`
-MySQL datadir on ClusterControl node.  
-**Default: (String) '/var/lib/mysql'**
-
-#### `modulepath`
-The modulepath of your Puppet Server setup, equivalent to what's defined in your environment.conf with the clustercontrol module name.  
-**Default:  (String) '/etc/puppetlabs/code/environments/production/modules/clustercontrol/'**
-
-
-##### `ssh_port`
-Specify the SSH port used by ClusterControl to SSH into database hosts. All nodes in the cluster must use the same SSH port.  
-**Default (Integer) 22**
-
-##### `sudo_password`
-If sudo user has password, specify it here. ClusterControl requires this to automate database recovery or perform other management procedures. If `ssh_user` is root, this will be ignored.  
-**Example: (String) 'mysud0p4ssword'**
-
-##### `api_token`
-Specify the 40-character ClusterControl token generated from s9s_helper script.  
-**Example: (String) 'b7e515255db703c659677a66c4a17952515dbaf5'**
-
-##### `mysql_cmon_root_password`
-Specify the MySQL root password for ClusterControl host. This module will install a MySQL server and use this as root password.  
-**Default: (String) 'password'**
-
-##### `mysql_cmon_password`
-Specify the MySQL password for user cmon. The module will grant this user with specified password, and is needed by ClusterControl.  
-**Default: (String) 'cmon'**
-
-##### `mysql_cmon_port`
-MySQL server port that holds CMON database.  
-**Default: (Integer) 3306**
-
-##### `datadir`
-MySQL datadir on ClusterControl node.  
-**Default: (String) '/var/lib/mysql'**
-
-##### `disable_firewall`
-Disables the firewall by default which is set to true. When disable_firewall is true, it means that flushing the iptables, then stops the ufw/firewalld. If `disable_firewall` is set to false, the module will just do nothing and let your current firewall configuration untouched.  
-**Default: (Boolean) true**
-
-##### `disable_os_sec_module`
-Disables the OS security module i.e. Apparmor or SELinux, which is by default. It's not the ideal setup for security. Since ClusterControl is a complex software, it's ideal to disable it as its known to have issues when running the cmon daemon, for example with SELinux enabled. You can later enable your security module anyway once you have setup required levels all sorted out. Once you have that, do not forget to change the security module as well so Puppet will not update your current CC setup.  If `disable_os_sec_module` is set to false, the module will just do nothing and let your current Apparmor/SELinux configuration untouched.  
-**Default: (Boolean) true**
-
-##### `controller_id`
-The `controller_id` is an arbitrary string which ClusterControl requires to work properly. By default, it uses a UUID random string which references the `uuidgen` Linux command which is part of the `libuuid` or util-linux package, so this shall be present in all recent Linux systems we support. Checkout the documentation for the components under the [CMON section](https://severalnines.com/docs/components.html#cmon) for more details.  
-**Default: (UUID) string**
-
-##### `is_online_install`
-The `is_online_install` option is used to flag whether the type of setup for installation is online (default) or offline. By default, the option `is_online_install` is set to true and it will always rely on the repository to access the internet to download and install OS packages. For more private and encapsulated type of environment, then offline installation is for you. You just have to set the `is_online_install` to false or `is_online_install=false`.  
-**Default: (Boolean) true**
-
-##### `cc_packages_path`
-The `cc_packages_path` option is a Hash data type which uses key-value. This option defines the following key-value as shown below:
+Once installation is complete, access the ClusterControl UI at:
 
 ```
-## For Debian/Ubuntu
-  $cc_packages_path				= {
-  	'clustercontrol-controller' => '',
-	'clustercontrol' => '',
-	'clustercontrol-cloud' => '',
-	'clustercontrol-clud' => '',
-	'clustercontrol-ssh' => '',
-	'clustercontrol-notifications' => '',
-	'libs9s' => '',
-	's9s-tools' => ''
-  },
-## For RHEL/CentOS
-  $cc_packages_path				= {
-  	'clustercontrol-controller' => '',
-	'clustercontrol' => '',
-	'clustercontrol-cloud' => '',
-	'clustercontrol-clud' => '',
-	'clustercontrol-ssh' => '',
-	'clustercontrol-notifications' => '',
-	's9s-tools' => ''
-  },
+https://<clustercontrol-host>/
 ```
-The keys has to be exactly as shown above, and its values is the exact full path where the packages are located and it has to be coming from the target host/node where CC is to be installed. To grab the ClusterControl packages, click this page https://severalnines.com/downloads/cmon/?C=M;O=D. For the s9s CLI tools, click check out http://repo.severalnines.com/s9s-tools/. For example, my target hostname called `pupnode2.puppet.local` where ClusterControl will be installed is a Debian 10 (Buster). Then in my manifests file `/etc/puppetlabs/code/environments/production/manifests/clustercontrol.pp`, here's the following:
-```
-node 'pupnode2.puppet.local' { # Applies only to mentioned node. If nothing mentioned, applies to all.
 
-        class { 'clustercontrol':
-                        is_controller => true,
-                        cc_hostname => '192.168.40.20',
-                        mysql_root_password => 'R00tP@55',
-                        mysql_cmon_root_password => 'R00tP@55',
-                        mysql_cmon_password => 'R00tP@55',
-                        api_token => '6df80ef0cf75be2537f9bd07f00fd35813e5a59b',
-                        ssh_user => 'vagrant',
-                        is_online_install => false,
-                        cc_packages_path => {
-                                'clustercontrol-controller' => '/opt/clustercontrol/binaries/clustercontrol-controller-1.8.2-4478-x86_64.deb',
-                                'clustercontrol' => '/opt/clustercontrol/binaries/clustercontrol_1.8.2-7804_x86_64.deb',
-                                'clustercontrol-cloud' => '/opt/clustercontrol/binaries/clustercontrol-cloud_1.8.2-280_x86_64.deb',
-                                'clustercontrol-clud' => '/opt/clustercontrol/binaries/clustercontrol-clud_1.8.2-280_x86_64.deb',
-                                'clustercontrol-ssh' => '/opt/clustercontrol/binaries/clustercontrol-ssh_1.8.2-105_x86_64.deb',
-                                'clustercontrol-notifications' => '/opt/clustercontrol/binaries/clustercontrol-notifications_1.8.2-267_x86_64.deb',
-                                'libs9s' => '/opt/clustercontrol/binaries/s9s_debian_buster/libs9s0_1.8.20210126-release1_amd64.deb',
-                                's9s-tools' => '/opt/clustercontrol/binaries/s9s_debian_buster/s9s-tools_1.8.20210126-release1_amd64.deb'
-                        }/*
-                        cc_packages_path => {
-                                'clustercontrol-controller' => '/opt/clustercontrol/binaries/clustercontrol-controller-1.8.2-4478-x86_64.rpm',
-                                'clustercontrol' => '/opt/clustercontrol/binaries/clustercontrol-1.8.2-7836-x86_64.rpm',
-                                'clustercontrol-cloud' => '/opt/clustercontrol/binaries/clustercontrol-cloud-1.8.2-286-x86_64.rpm',
-                                'clustercontrol-clud' => '/opt/clustercontrol/binaries/clustercontrol-clud-1.8.2-286-x86_64.rpm',
-                                'clustercontrol-ssh' => '/opt/clustercontrol/binaries/clustercontrol-ssh-1.8.2-105-x86_64.rpm',
-                                'clustercontrol-notifications' => '/opt/clustercontrol/binaries/clustercontrol-notifications-1.8.2-267-x86_64.rpm',
-                                's9s-tools' => '/opt/clustercontrol/binaries/s9s_el8/s9s-tools-1.8-11.1.x86_64.rpm'
-                        }*/
-        }
-}
-``` 
-**Default: (Hash) key-value**  
+**Note:** On first access, you'll be redirected to a registration page where you create your admin user. The username `admin` is reserved — pick a different one.
 
-## Limitations
+## Parameters
 
-ClusterControl Module for Puppet supports only Debian/Ubuntu, RHEL/CentOS/Alma/Oracle/Rocky Linux of Linux-based operating systems. From these supported distros, all versions that had passed its EOL or almost reaching its EOL are no longer supported. Below are the supported versions:
-* Debian 9.x (stretch)
-* Debian 10.x (buster)
-* Debian 11.x (bullseye)
-* Ubuntu 18.x LTS(Bionic Beaver)
-* Ubuntu 20.04.x LTS (Focal Fossa)
-* Ubuntu 22.04 LTS (Jammy Jellyfish)
-* AlmaLinux/Oracle Linux/Rocky/RHEL/CentOS 7.x/8.x/9.x
-* SLES version >= 15.x
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `mysql_root_password` | String | (required) | MySQL root password |
+| `cmon_mysql_password` | String | (required) | Password for the `cmon` database user |
+| `cmon_mysql_user` | String | `cmon` | DB username for cmon |
+| `cmon_mysql_port` | Integer | `3306` | MySQL port |
+| `cc_install_mode` | Enum | `mcc` | Only `mcc` is implemented |
+| `cc_package_state` | Enum | `latest` | `latest` or `present` |
+| `mcc_web_port` | Integer | `443` | Port for the web GUI |
+| `mcc_web_root` | String | `/var/www/html/clustercontrol-mcc` | Web root |
+| `disable_selinux` | Boolean | `true` | Disable SELinux on RHEL-family |
+| `disable_firewall` | Boolean | `true` | Disable firewalld on RHEL-family |
 
+## Architecture
 
-ClusterControl UI version 1 (CCv1) does not support PHP. 8.x. The tool will automatically setup PHP7.x version for you so no need to do something here. This is very common for distros such as RHEL/Oracle Linux/CentOS 9.x or Ubuntu versions >= 22.0 (Jammy) versions. If you only install ClusterControl UI version 2 (CCv2), this does not depend anymore with PHP. If you want to intend to only install CCv2, make sure that you set `only_cc_v2` to true (default). If you want both CCv1 and CCv2 installed, set `only_cc_v2` to false. For more details, make sure you read the [Installation](#installation) section.
+The module is split into focused classes that handle each phase of the install:
 
-This module only supports bootstrapping MySQL servers with IP address only (it expects skip-name-resolve is enabled on all MySQL nodes). 
+| Puppet class | Responsibility |
+|---|---|
+| `clustercontrol::params` | OS detection, package/repo definitions |
+| `clustercontrol::install::redhat` | RHEL-family package + repo setup |
+| `clustercontrol::install::debian` | Debian/Ubuntu package + repo setup |
+| `clustercontrol::configure_mysql` | MySQL config + cmon user grants |
+| `clustercontrol::configure_mcc` | `cmon --init` + `ccmgradm init` (idempotent via markers) |
+| `clustercontrol::mcc` | Service management + ccsetup user |
 
-[ClusterControl known issues and limitations](http://www.severalnines.com/docs/troubleshooting.html#known-issues-and-limitations).
+State markers (`/var/lib/cmon/.puppet-cmon-initialized` and `.puppet-mcc-initialized`) ensure `cmon --init` and `ccmgradm init` each run exactly once.
 
-## Development
+## License
 
-Please report bugs or suggestions via our support channel: [https://support.severalnines.com](https://support.severalnines.com)
+Apache-2.0

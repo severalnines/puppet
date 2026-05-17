@@ -2,56 +2,23 @@
   "name": "severalnines-clustercontrol",
   "version": "3.0.0",
   "author": "Severalnines AB",
-  "summary": "Installs and configures ClusterControl 2.4.x (online and offline) for new or existing database clusters.",
+  "summary": "Installs and configures ClusterControl 2.4.x (MCC mode).",
   "license": "Apache-2.0",
   "source": "https://github.com/severalnines/puppet",
   "project_page": "https://forge.puppetlabs.com/severalnines/clustercontrol",
   "issues_url": "https://github.com/severalnines/puppet/issues",
   "dependencies": [],
   "operatingsystem_support": [
-    {
-      "operatingsystem": "RedHat",
-      "operatingsystemrelease": ["7", "8", "9"]
-    },
-    {
-      "operatingsystem": "CentOS",
-      "operatingsystemrelease": ["7", "8"]
-    },
-    {
-      "operatingsystem": "AlmaLinux",
-      "operatingsystemrelease": ["8", "9"]
-    },
-    {
-      "operatingsystem": "Rocky",
-      "operatingsystemrelease": ["8", "9"]
-    },
-    {
-      "operatingsystem": "OracleLinux",
-      "operatingsystemrelease": ["7", "8", "9"]
-    },
-    {
-      "operatingsystem": "Debian",
-      "operatingsystemrelease": ["9", "10", "11", "12"]
-    },
-    {
-      "operatingsystem": "Ubuntu",
-      "operatingsystemrelease": [
-        "18.04 LTS",
-        "20.04 LTS",
-        "22.04 LTS",
-        "24.04 LTS"
-      ]
-    },
-    {
-      "operatingsystem": "SLES",
-      "operatingsystemrelease": ["15"]
-    }
+    { "operatingsystem": "RedHat",      "operatingsystemrelease": ["7", "8", "9"] },
+    { "operatingsystem": "CentOS",      "operatingsystemrelease": ["7", "8"] },
+    { "operatingsystem": "Rocky",       "operatingsystemrelease": ["8", "9"] },
+    { "operatingsystem": "AlmaLinux",   "operatingsystemrelease": ["8", "9"] },
+    { "operatingsystem": "OracleLinux", "operatingsystemrelease": ["7", "8", "9"] },
+    { "operatingsystem": "Debian",      "operatingsystemrelease": ["9", "10", "11", "12"] },
+    { "operatingsystem": "Ubuntu",      "operatingsystemrelease": ["18.04", "20.04", "22.04", "24.04"] }
   ],
   "requirements": [
-    {
-      "name": "puppet",
-      "version_requirement": ">= 5.5 <= 8.x"
-    }
+    { "name": "puppet", "version_requirement": ">= 7.0 < 9.0" }
   ],
-  "description": "ClusterControl is a management and automation software for database clusters. Supports MySQL/MariaDB Replication, Galera Cluster, PostgreSQL, MongoDB, Redis, Elasticsearch, MS SQL Server and more. This module installs ClusterControl 2.4.x and all required components."
+  "description": "Installs and configures ClusterControl 2.4.x using MCC (cmon-proxy) as the web server. Supports MySQL 8.4 Community Server on RHEL-family and Debian/Ubuntu."
 }
