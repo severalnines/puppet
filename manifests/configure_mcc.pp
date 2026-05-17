@@ -102,7 +102,6 @@ class clustercontrol::configure_mcc {
     creates  => $mcc_marker,
     unless   => "ccmgradm init --local-cmon -p ${web_port} -f ${web_root} 2>&1 | grep -qi 'controller already exists'",
     require  => Service['cmon-proxy'],
-    notify   => Service['cmon-proxy'],
   }
 
   exec { 'create-mcc-init-marker':
@@ -110,5 +109,15 @@ class clustercontrol::configure_mcc {
     path     => ['/bin', '/usr/bin'],
     creates  => $mcc_marker,
     require  => Exec['mcc-init'],
+  }
+
+  # Restart cmon-proxy after init using a one-shot exec instead of a service notify
+  # (a service notify back to cmon-proxy would create a dependency cycle)
+  exec { 'restart-cmon-proxy-after-mcc-init':
+    command     => 'systemctl restart cmon-proxy',
+    path        => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+    refreshonly => true,
+    subscribe   => Exec['mcc-init'],
+    require     => Exec['create-mcc-init-marker'],
   }
 }
