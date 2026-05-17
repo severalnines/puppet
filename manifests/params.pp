@@ -61,14 +61,13 @@ class clustercontrol::params {
         fail("ClusterControl on ${os_name} requires major version 7, 8, or 9. Got: ${os_major}")
       }
 
-      # MySQL 8.4 Community packages (NOT MariaDB - matches cc deployment exactly)
+      # MariaDB (officially supported by ClusterControl on EL systems)
+      # Per https://docs.severalnines.com/clustercontrol/latest/getting-started/installation/manual-installation/
       $mysql_packages = [
-        'mysql-community-server',
-        'mysql-community-client',
-        'mysql-community-common',
-        'mysql-community-libs',
+        'mariadb-server',
+        'mariadb',
       ]
-      $mysql_daemon = 'mysqld'
+      $mysql_daemon            = 'mariadb'
       $mysql_config_file       = '/etc/my.cnf'
       $mysql_config_include_dir = '/etc/my.cnf.d'
       $mysql_socket            = '/var/lib/mysql/mysql.sock'
@@ -89,10 +88,7 @@ class clustercontrol::params {
       # (Rocky, AlmaLinux, OracleLinux all map to RHEL_<major>)
       $clustercontrol_cli_repository = "https://${repo_host}/s9s-tools/RHEL_${os_major}/s9s-tools.repo"
 
-      # MySQL official RPM repo for v8.4 LTS
-      $mysql_apt_config_deb = undef  # not used on RedHat
-      $mysql_community_rpm  = "https://repo.mysql.com/mysql84-community-release-el${os_major}-1.noarch.rpm"
-      $mysql_gpg_key        = 'https://repo.mysql.com/RPM-GPG-KEY-mysql-2023'
+      # ClusterControl uses MariaDB on EL (no external MySQL repo needed)
 
       # Apache/firewall things (legacy mode only)
       $apache_service = 'httpd'

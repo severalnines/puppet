@@ -1,13 +1,14 @@
 # == Class: clustercontrol::install::redhat
 #
-# Installs MySQL 8.4 Community + ClusterControl packages on RHEL/CentOS/Rocky/Alma 7-9.
+# Installs MariaDB + ClusterControl packages on RHEL/CentOS/Rocky/AlmaLinux 7-9.
+# MariaDB is the officially supported database for ClusterControl on EL systems.
 #
 class clustercontrol::install::redhat {
 
   $os_major = $clustercontrol::params::os_major
 
   # ----------------------------------------------------------------------------
-  # EPEL + base packages 
+  # EPEL + base packages
   # ----------------------------------------------------------------------------
   package { 'epel-release':
     ensure => present,
@@ -29,65 +30,21 @@ class clustercontrol::install::redhat {
   }
 
   # ----------------------------------------------------------------------------
-  # MySQL 8.4 Community Server setup 
+  # MariaDB Server setup
   # ----------------------------------------------------------------------------
-
-  # Disable RHEL AppStream MySQL module
-  exec { 'disable-rhel-mysql-module':
-    command => 'dnf -y module disable mysql',
-    path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
-    unless  => 'dnf module list mysql 2>/dev/null | grep -q "\[d\]"',
+  package { $clustercontrol::params::mysql_packages:
+    ensure  => present,
     require => Package[$clustercontrol::params::base_packages],
   }
 
-  # Import MySQL GPG key
-  exec { 'import-mysql-gpg-key':
-    command => "rpm --import ${clustercontrol::params::mysql_gpg_key}",
-    path    => ['/bin', '/usr/bin'],
-    unless  => 'rpm -q gpg-pubkey | xargs -I{} rpm -qi {} 2>/dev/null | grep -q "MySQL Release Engineering"',
-    require => Exec['disable-rhel-mysql-module'],
-  }
-
-  # Install MySQL 8.4 community repo RPM
-  package { 'mysql84-community-release':
-    ensure   => present,
-    provider => rpm,
-    source   => $clustercontrol::params::mysql_community_rpm,
-    require  => Exec['import-mysql-gpg-key'],
-  }
-
-  # Enable MySQL 8.4 LTS repo, disable older repos
-  exec { 'enable-mysql84-repo':
-    command => 'dnf -y config-manager --disable mysql57-community mysql80-community 2>/dev/null; dnf -y config-manager --enable mysql-8.4-lts-community',
-    path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
-    provider => shell,
-    unless  => 'dnf repolist enabled 2>/dev/null | grep -q mysql-8.4-lts-community',
-    require => Package['mysql84-community-release'],
-  }
-
-  # Remove conflicting MariaDB packages
-  package { ['mariadb-libs', 'mariadb', 'mariadb-server']:
-    ensure  => absent,
-    require => Exec['enable-mysql84-repo'],
-  }
-
-  # Install MySQL 8.4 server packages
-  package { $clustercontrol::params::mysql_packages:
-    ensure  => present,
-    require => [
-      Exec['enable-mysql84-repo'],
-      Package['mariadb-libs'],
-    ],
-  }
-
-  # Python MySQL client library
+  # Python MySQL client library (for any dependent tooling)
   package { $clustercontrol::params::python_mysql:
     ensure  => present,
     require => Package[$clustercontrol::params::mysql_packages],
   }
 
   # ----------------------------------------------------------------------------
-  # Disable SELinux + firewalld 
+  # Disable SELinux + firewalld
   # ----------------------------------------------------------------------------
   if ($clustercontrol::disable_selinux) {
     exec { 'disable-selinux-runtime':
@@ -104,22 +61,11 @@ class clustercontrol::install::redhat {
 
   if ($clustercontrol::disable_firewall) {
     exec { 'stop-disable-firewalld':
-      command => 'systemctl stop firewalld; systemctl disable firewalld',
-      path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
-      onlyif  => 'systemctl is-active firewalld 2>/dev/null || systemctl is-enabled firewalld 2>/dev/null',
+      command  => 'systemctl stop firewalld; systemctl disable firewalld',
+      path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+      onlyif   => 'systemctl is-active firewalld 2>/dev/null || systemctl is-enabled firewalld 2>/dev/null',
       provider => shell,
     }
-  }
-
-  # ----------------------------------------------------------------------------
-  # MySQL 8 insecure init for ClusterControl compatibility
-  # ----------------------------------------------------------------------------
-  exec { 'mysql8-initialize-insecure':
-    command => "mysqld --initialize-insecure --user=mysql --basedir=/usr --datadir=/var/lib/mysql",
-    path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
-    creates => '/var/lib/mysql/mysql',
-    require => Package[$clustercontrol::params::mysql_packages],
-    before  => Service[$clustercontrol::params::mysql_daemon],
   }
 
   # ----------------------------------------------------------------------------
@@ -158,6 +104,7 @@ class clustercontrol::install::redhat {
     require => [
       Exec['download-severalnines-repo'],
       Exec['download-severalnines-cli-repo'],
+      Package[$clustercontrol::params::mysql_packages],
     ],
   }
 

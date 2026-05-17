@@ -34,9 +34,10 @@ class clustercontrol::configure_mysql {
 
   # ----------------------------------------------------------------------------
   # Bootstrap root password (only if root can login without password)
+  # Uses simple ALTER USER ... IDENTIFIED BY which works on both MySQL and MariaDB.
   # ----------------------------------------------------------------------------
   exec { 'set-mysql-root-password':
-    command  => "mysql -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${mysql_root_pass}';\"",
+    command  => "mysql -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED BY '${mysql_root_pass}';\"",
     path     => ['/bin', '/usr/bin', '/usr/local/bin'],
     onlyif   => 'mysql --no-defaults -u root -NBe "SELECT 1;" >/dev/null 2>&1',
     provider => shell,
@@ -64,7 +65,7 @@ class clustercontrol::configure_mysql {
 
   $cmon_hosts.each |$host| {
     exec { "create-cmon-user-${host}":
-      command  => "mysql -u root -p\"${mysql_root_pass}\" -NBe \"CREATE USER IF NOT EXISTS '${cmon_user}'@'${host}' IDENTIFIED WITH mysql_native_password BY '${cmon_pass}'; ALTER USER '${cmon_user}'@'${host}' IDENTIFIED WITH mysql_native_password BY '${cmon_pass}'; GRANT ALL PRIVILEGES ON *.* TO '${cmon_user}'@'${host}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
+      command  => "mysql -u root -p\"${mysql_root_pass}\" -NBe \"CREATE USER IF NOT EXISTS '${cmon_user}'@'${host}' IDENTIFIED BY '${cmon_pass}'; ALTER USER '${cmon_user}'@'${host}' IDENTIFIED BY '${cmon_pass}'; GRANT ALL PRIVILEGES ON *.* TO '${cmon_user}'@'${host}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
       path     => ['/bin', '/usr/bin', '/usr/local/bin'],
       provider => shell,
       unless   => "mysql -u ${cmon_user} -p\"${cmon_pass}\" -h${host} -NBe 'SELECT 1;' >/dev/null 2>&1",
