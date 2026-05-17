@@ -1,14 +1,26 @@
 # == Class: clustercontrol::mcc
 #
 # Enables and starts all ClusterControl services in correct order,
-# then creates the ccsetup user for first-run GUI registration.
+# syncs the admin user password with /etc/s9s.conf, then creates the
+# ccsetup user for first-run GUI registration.
 #
 class clustercontrol::mcc {
 
   $mysql_root_pass = $clustercontrol::mysql_root_password
 
   # ----------------------------------------------------------------------------
-  # Step 1: Enable all CC services on boot
+  # Ship the admin password sync helper script
+  # ----------------------------------------------------------------------------
+  file { '/usr/local/sbin/sync_cmon_admin.sh':
+    ensure => file,
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0750',
+    source => 'puppet:///modules/clustercontrol/sync_cmon_admin.sh',
+  }
+
+  # ----------------------------------------------------------------------------
+  # Step 1: Enable and start all CC services on boot
   # ----------------------------------------------------------------------------
   service { 'cmon':
     ensure  => running,
@@ -42,10 +54,6 @@ class clustercontrol::mcc {
 
   # ----------------------------------------------------------------------------
   # Step 2: Restart all CC services to clear in-memory state from initialization
-  # This is critical — cmon must be restarted after cmon --init writes its config,
-  # and cmon-proxy must be restarted to pick up the controller registration from
-  # ccmgradm init. Without these restarts, s9s commands silently fail because the
-  # admin user state in memory doesn't match what's in the DB.
   # ----------------------------------------------------------------------------
   exec { 'restart-all-cc-services':
     command  => 'systemctl restart cmon cmon-ssh cmon-events cmon-cloud cmon-proxy kuber-proxy',
@@ -69,7 +77,7 @@ class clustercontrol::mcc {
   }
 
   # ----------------------------------------------------------------------------
-  # Step 3: Wait for services to be fully ready before creating ccsetup user
+  # Step 3: Wait for cmon RPC to be ready
   # ----------------------------------------------------------------------------
   exec { 'wait-for-cmon-rpc':
     command  => 'for i in $(seq 1 30); do curl -k -s -o /dev/null https://127.0.0.1:9501 && exit 0; sleep 2; done; exit 1',
@@ -79,44 +87,53 @@ class clustercontrol::mcc {
   }
 
   # ----------------------------------------------------------------------------
-  # Step 4: Unsuspend the cmon-init-created 'admin' user
-  # The cmon controller may have suspended admin during init/restart cycles.
-  # This MUST happen after the service restart so the change is picked up.
+  # Step 4: Sync admin password with /etc/s9s.conf (using helper script)
+  # Only runs if s9s currently CAN'T authenticate (i.e. there's a mismatch).
+  # If everything's already in sync, this is skipped.
   # ----------------------------------------------------------------------------
-  exec { 'unsuspend-admin-user':
-    command  => "mysql -u root -p\"${mysql_root_pass}\" cmon -NBe \"UPDATE users SET properties = JSON_SET(properties, '\$.suspended', false, '\$.n_failed_logins', 0) WHERE username = 'admin';\"",
-    path     => ['/bin', '/usr/bin'],
-    provider => shell,
-    require  => Exec['wait-for-cmon-rpc'],
+  exec { 'sync-admin-password':
+    command  => "/usr/local/sbin/sync_cmon_admin.sh '${mysql_root_pass}'",
+    path     => ['/bin', '/usr/bin', '/usr/local/sbin'],
+    onlyif   => 's9s user --list >/dev/null 2>&1; test $? -ne 0',
+    require  => [
+      File['/usr/local/sbin/sync_cmon_admin.sh'],
+      Exec['wait-for-cmon-rpc'],
+    ],
   }
 
   # ----------------------------------------------------------------------------
-  # Step 5: Restart cmon ONE more time so it picks up the unsuspended admin
+  # Step 5: Restart cmon so it loads the synced admin password
   # ----------------------------------------------------------------------------
-  exec { 'restart-cmon-after-unsuspend':
-    command  => 'systemctl restart cmon && sleep 5',
+  exec { 'restart-cmon-after-password-sync':
+    command  => 'systemctl restart cmon && sleep 8',
     path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
     provider => shell,
-    onlyif   => 'test ! -f /var/lib/cmon/.puppet-cmon-restarted',
-    require  => Exec['unsuspend-admin-user'],
-  }
-
-  exec { 'mark-cmon-restarted':
-    command  => 'touch /var/lib/cmon/.puppet-cmon-restarted',
-    path     => ['/bin', '/usr/bin'],
-    creates  => '/var/lib/cmon/.puppet-cmon-restarted',
-    require  => Exec['restart-cmon-after-unsuspend'],
+    refreshonly => true,
+    subscribe   => Exec['sync-admin-password'],
   }
 
   # ----------------------------------------------------------------------------
-  # Step 6: Create ccsetup user for first-run GUI registration
-  # NO --email-address flag so the GUI email field stays editable on registration.
+  # Step 6: Wait for s9s to authenticate successfully
+  # ----------------------------------------------------------------------------
+  exec { 'wait-for-s9s-auth':
+    command  => 'for i in $(seq 1 30); do s9s user --list >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1',
+    path     => ['/bin', '/usr/bin'],
+    provider => shell,
+    require  => [
+      Exec['sync-admin-password'],
+      Exec['restart-cmon-after-password-sync'],
+    ],
+  }
+
+  # ----------------------------------------------------------------------------
+  # Step 7: Create ccsetup user for first-run GUI registration
+  # NO --email-address flag so the GUI email field stays editable.
   # ----------------------------------------------------------------------------
   exec { 'create-ccsetup-user':
-    command  => 'export S9S_USER_CONFIG=/tmp/ccsetup.conf; rm -f /tmp/ccsetup.conf; s9s user --create --new-password=admin --group=admins --controller="https://localhost:9501" ccsetup || true; unset S9S_USER_CONFIG',
+    command  => 'rm -f /tmp/ccsetup.conf; S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --controller="https://localhost:9501" ccsetup',
     path     => ['/bin', '/usr/bin', '/usr/sbin'],
     provider => shell,
     unless   => "mysql -u root -p\"${mysql_root_pass}\" -NBe \"SELECT 1 FROM cmon.users WHERE username='ccsetup';\" 2>/dev/null | grep -q 1",
-    require  => Exec['mark-cmon-restarted'],
+    require  => Exec['wait-for-s9s-auth'],
   }
 }
