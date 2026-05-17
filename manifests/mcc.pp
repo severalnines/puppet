@@ -94,7 +94,8 @@ class clustercontrol::mcc {
   exec { 'sync-admin-password':
     command  => "/usr/local/sbin/sync_cmon_admin.sh '${mysql_root_pass}'",
     path     => ['/bin', '/usr/bin', '/usr/local/sbin'],
-    onlyif   => 's9s user --list >/dev/null 2>&1; test $? -ne 0',
+    onlyif   => 'command -v s9s >/dev/null 2>&1 && ! s9s user --list >/dev/null 2>&1',
+    provider => shell,
     require  => [
       File['/usr/local/sbin/sync_cmon_admin.sh'],
       Exec['wait-for-cmon-rpc'],
