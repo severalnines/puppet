@@ -4,7 +4,6 @@
 #
 class clustercontrol::install::redhat {
 
-  $params = $clustercontrol::params::params
   $os_major = $clustercontrol::params::os_major
 
   # ----------------------------------------------------------------------------
