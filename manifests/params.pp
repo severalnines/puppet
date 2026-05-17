@@ -102,7 +102,6 @@ class clustercontrol::params {
         'dnf-plugins-core',
         'gnuplot',
         'wget',
-        'epel-release',
       ]
     }
 
