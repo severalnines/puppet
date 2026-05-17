@@ -89,12 +89,21 @@ class clustercontrol (
 
   # ==========================================================================
   # Dependency ordering (high-level)
+  # Only declare the relationship for the OS family that was actually included.
   # ==========================================================================
-  Class['clustercontrol::install::redhat'] -> Class['clustercontrol::configure_mysql']
-    -> Class['clustercontrol::configure_mcc']
-    -> Class['clustercontrol::mcc']
-
-  Class['clustercontrol::install::debian'] -> Class['clustercontrol::configure_mysql']
-    -> Class['clustercontrol::configure_mcc']
-    -> Class['clustercontrol::mcc']
+  case $clustercontrol::params::os_family {
+    'RedHat': {
+      Class['clustercontrol::install::redhat']
+        -> Class['clustercontrol::configure_mysql']
+        -> Class['clustercontrol::configure_mcc']
+        -> Class['clustercontrol::mcc']
+    }
+    'Debian': {
+      Class['clustercontrol::install::debian']
+        -> Class['clustercontrol::configure_mysql']
+        -> Class['clustercontrol::configure_mcc']
+        -> Class['clustercontrol::mcc']
+    }
+    default: {}
+  }
 }
