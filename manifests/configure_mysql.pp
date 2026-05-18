@@ -34,12 +34,14 @@ class clustercontrol::configure_mysql {
 
   # ----------------------------------------------------------------------------
   # Bootstrap root password (only if root can login without password)
-  # Uses simple ALTER USER ... IDENTIFIED BY which works on both MySQL and MariaDB.
+  # Uses ALTER USER which works on both MySQL and MariaDB.
+  # The onlyif first checks mysql command exists (safe in noop before packages
+  # are installed), then checks if root can login without a password.
   # ----------------------------------------------------------------------------
   exec { 'set-mysql-root-password':
     command  => "mysql -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED BY '${mysql_root_pass}';\"",
     path     => ['/bin', '/usr/bin', '/usr/local/bin'],
-    onlyif   => 'mysql --no-defaults -u root -NBe "SELECT 1;" >/dev/null 2>&1',
+    onlyif   => 'command -v mysql >/dev/null 2>&1 && mysql --no-defaults -u root -NBe \"SELECT 1;\" >/dev/null 2>&1',
     provider => shell,
     require  => Service[$mysql_daemon],
   }
