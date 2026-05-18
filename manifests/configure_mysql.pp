@@ -38,23 +38,12 @@ class clustercontrol::configure_mysql {
   # The onlyif first checks mysql command exists (safe in noop before packages
   # are installed), then checks if root can login without a password.
   # ----------------------------------------------------------------------------
-  # Write a helper script to check if root password needs setting
-  # This avoids complex shell escaping inside Puppet strings
-  file { '/usr/local/sbin/check_mysql_root.sh':
-    ensure  => file,
-    mode    => '0750',
-    content => "#!/bin/bash\ncommand -v mysql >/dev/null 2>&1 || exit 1\nmysql --no-defaults -u root -e 'SELECT 1;' >/dev/null 2>&1\n",
-  }
-
   exec { 'set-mysql-root-password':
     command  => "mysql -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED BY '${mysql_root_pass}';\"",
     path     => ['/bin', '/usr/bin', '/usr/local/bin'],
-    onlyif   => '/usr/local/sbin/check_mysql_root.sh',
+    unless   => "mysql -u root -p\"${mysql_root_pass}\" -NBe 'SELECT 1;' >/dev/null 2>&1",
     provider => shell,
-    require  => [
-      Service[$mysql_daemon],
-      File['/usr/local/sbin/check_mysql_root.sh'],
-    ],
+    require  => Service[$mysql_daemon],
   }
 
   # ----------------------------------------------------------------------------
