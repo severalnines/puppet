@@ -94,13 +94,15 @@ class clustercontrol::configure_mcc {
 
   # ----------------------------------------------------------------------------
   # ccmgradm init runs ONCE (guarded by marker)
+  # Uses 'command -v' for portable path detection: ccmgradm lives at
+  # /usr/sbin/ccmgradm on RHEL and /usr/bin/ccmgradm on Debian/Ubuntu.
   # ----------------------------------------------------------------------------
   exec { 'mcc-init':
     command  => "ccmgradm init --local-cmon -p ${web_port} -f ${web_root}",
     path     => ['/bin', '/usr/bin', '/usr/sbin'],
     provider => shell,
     creates  => $mcc_marker,
-    unless   => "[ ! -x /usr/sbin/ccmgradm ] || ccmgradm init --local-cmon -p ${web_port} -f ${web_root} 2>&1 | grep -qi 'controller already exists'",
+    unless   => "! command -v ccmgradm >/dev/null 2>&1 || ccmgradm init --local-cmon -p ${web_port} -f ${web_root} 2>&1 | grep -qi 'controller already exists'",
     require  => Service['cmon-proxy'],
   }
 
