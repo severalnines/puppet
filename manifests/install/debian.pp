@@ -1,6 +1,8 @@
 # == Class: clustercontrol::install::debian
 #
-# Installs MySQL 8.x from MySQL APT repo + ClusterControl on Ubuntu 18-24 / Debian 9-12.
+# Installs MariaDB + ClusterControl packages on Ubuntu 18-24 / Debian 9-12.
+# MariaDB is the officially supported database for ClusterControl and is
+# available in the default OS repositories (no external MySQL repo needed).
 #
 class clustercontrol::install::debian {
 
@@ -12,10 +14,10 @@ class clustercontrol::install::debian {
   # Base prerequisites
   # ----------------------------------------------------------------------------
   exec { 'apt-update-initial':
-    command => 'apt-get update',
-    path    => ['/bin', '/usr/bin'],
+    command  => 'apt-get update',
+    path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
     refreshonly => false,
-    onlyif  => 'test ! -f /var/cache/apt/pkgcache.bin -o $(find /var/cache/apt/pkgcache.bin -mmin -60 2>/dev/null | wc -l) -eq 0',
+    onlyif   => 'test ! -f /var/cache/apt/pkgcache.bin -o $(find /var/cache/apt/pkgcache.bin -mmin -60 2>/dev/null | wc -l) -eq 0',
     provider => shell,
   }
 
@@ -31,79 +33,17 @@ class clustercontrol::install::debian {
   }
 
   # ----------------------------------------------------------------------------
-  # MySQL Official APT Repository
+  # MariaDB Server setup (from default OS repos - no external repo needed)
   # ----------------------------------------------------------------------------
-
-  # Download mysql-apt-config.deb
-  exec { 'download-mysql-apt-config':
-    command => "wget -qO /tmp/mysql-apt-config.deb ${clustercontrol::params::mysql_apt_config_deb}",
-    path    => ['/bin', '/usr/bin'],
-    creates => '/tmp/mysql-apt-config.deb',
+  package { $clustercontrol::params::mysql_packages:
+    ensure  => present,
     require => Package[$clustercontrol::params::base_packages],
   }
 
-  # Install mysql-apt-config (non-interactive)
-  exec { 'install-mysql-apt-config':
-    command  => 'DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/mysql-apt-config.deb',
-    path     => ['/bin', '/usr/bin'],
-    creates  => '/etc/apt/sources.list.d/mysql.list',
-    provider => shell,
-    require  => Exec['download-mysql-apt-config'],
-  }
-
-  # Workaround: refresh MySQL signing key from Ubuntu keyserver 
-  exec { 'refresh-mysql-signing-key':
-    command  => 'curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB7B3B788A8D3785C" -o /tmp/mysql-keyserver.asc && gpg --import /tmp/mysql-keyserver.asc 2>/dev/null && gpg --yes --output /usr/share/keyrings/mysql-apt-config.gpg --export BCA43417C3B485DD128EC6D4B7B3B788A8D3785C && rm -f /tmp/mysql-keyserver.asc',
-    path     => ['/bin', '/usr/bin'],
-    provider => shell,
-    unless   => 'test -f /usr/share/keyrings/mysql-apt-config.gpg',
-    require  => Exec['install-mysql-apt-config'],
-  }
-
-  exec { 'apt-update-after-mysql':
-    command     => 'apt-get update',
-    path        => ['/bin', '/usr/bin'],
-    refreshonly => true,
-    subscribe   => Exec['refresh-mysql-signing-key'],
-  }
-
-  # Pin MySQL packages to MySQL repo
-  file { '/etc/apt/preferences.d/mysql':
-    ensure  => file,
-    mode    => '0644',
-    content => "Package: mysql-*\nPin: origin \"repo.mysql.com\"\nPin-Priority: 1001\n",
-    require => Exec['install-mysql-apt-config'],
-    notify  => Exec['apt-update-after-mysql'],
-  }
-
-  # Fix any broken dpkg state
-  exec { 'fix-dpkg-state':
-    command  => 'dpkg --configure -a || true; apt-get -f install -y || true',
-    path     => ['/bin', '/usr/bin'],
-    provider => shell,
-    onlyif   => 'dpkg --audit 2>&1 | grep -q .',
-    require  => File['/etc/apt/preferences.d/mysql'],
-  }
-
-  # Install mysql-common from MySQL repo first
-  package { 'mysql-common':
-    ensure  => latest,
-    require => [
-      File['/etc/apt/preferences.d/mysql'],
-      Exec['apt-update-after-mysql'],
-    ],
-  }
-
-  # Install remaining MySQL packages
-  package { ['mysql-server', 'mysql-client']:
-    ensure  => present,
-    require => Package['mysql-common'],
-  }
-
-  # Python MySQL client library
+  # Python MySQL client library (for any dependent tooling)
   package { $clustercontrol::params::python_mysql:
     ensure  => present,
-    require => Package[['mysql-server', 'mysql-client']],
+    require => Package[$clustercontrol::params::mysql_packages],
   }
 
   # ----------------------------------------------------------------------------
@@ -165,7 +105,7 @@ class clustercontrol::install::debian {
     require => [
       File[$clustercontrol::params::repo_config_path],
       Exec['apt-update-after-cc-repos'],
-      Package['mysql-server'],
+      Package[$clustercontrol::params::mysql_packages],
     ],
   }
 
