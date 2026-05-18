@@ -70,7 +70,7 @@ class clustercontrol::configure_mysql {
       command  => "mysql -u root -p\"${mysql_root_pass}\" -NBe \"CREATE USER IF NOT EXISTS '${cmon_user}'@'${host}' IDENTIFIED BY '${cmon_pass}'; ALTER USER '${cmon_user}'@'${host}' IDENTIFIED BY '${cmon_pass}'; GRANT ALL PRIVILEGES ON *.* TO '${cmon_user}'@'${host}' WITH GRANT OPTION; FLUSH PRIVILEGES;\"",
       path     => ['/bin', '/usr/bin', '/usr/local/bin'],
       provider => shell,
-      unless   => "mysql -u ${cmon_user} -p\"${cmon_pass}\" -h${host} -NBe 'SELECT 1;' >/dev/null 2>&1",
+      unless   => "[ ! -x /usr/bin/mysql ] || mysql -u ${cmon_user} -p\"${cmon_pass}\" -h${host} -NBe 'SELECT 1;' >/dev/null 2>&1",
       require  => [
         Service[$mysql_daemon],
         File['/root/.my.cnf'],

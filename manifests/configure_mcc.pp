@@ -100,7 +100,7 @@ class clustercontrol::configure_mcc {
     path     => ['/bin', '/usr/bin', '/usr/sbin'],
     provider => shell,
     creates  => $mcc_marker,
-    unless   => "ccmgradm init --local-cmon -p ${web_port} -f ${web_root} 2>&1 | grep -qi 'controller already exists'",
+    unless   => "[ ! -x /usr/sbin/ccmgradm ] || ccmgradm init --local-cmon -p ${web_port} -f ${web_root} 2>&1 | grep -qi 'controller already exists'",
     require  => Service['cmon-proxy'],
   }
 

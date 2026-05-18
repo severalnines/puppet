@@ -134,7 +134,7 @@ class clustercontrol::mcc {
     command  => 'rm -f /tmp/ccsetup.conf; S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --controller="https://localhost:9501" ccsetup',
     path     => ['/bin', '/usr/bin', '/usr/sbin'],
     provider => shell,
-    unless   => "mysql -u root -p\"${mysql_root_pass}\" -NBe \"SELECT 1 FROM cmon.users WHERE username='ccsetup';\" 2>/dev/null | grep -q 1",
+    unless   => "[ ! -x /usr/bin/mysql ] || mysql -u root -p\"${mysql_root_pass}\" -NBe \"SELECT 1 FROM cmon.users WHERE username='ccsetup';\" 2>/dev/null | grep -q 1",
     require  => Exec['wait-for-s9s-auth'],
   }
 }
