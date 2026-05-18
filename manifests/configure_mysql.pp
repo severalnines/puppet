@@ -41,7 +41,7 @@ class clustercontrol::configure_mysql {
   exec { 'set-mysql-root-password':
     command  => "mysql -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED BY '${mysql_root_pass}';\"",
     path     => ['/bin', '/usr/bin', '/usr/local/bin'],
-    unless   => "mysql -u root -p\"${mysql_root_pass}\" -NBe 'SELECT 1;' >/dev/null 2>&1",
+    unless   => "[ ! -x /usr/bin/mysql ] || mysql -u root -p\"${mysql_root_pass}\" -NBe 'SELECT 1;' >/dev/null 2>&1",
     provider => shell,
     require  => Service[$mysql_daemon],
   }
