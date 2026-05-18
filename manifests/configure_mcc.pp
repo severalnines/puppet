@@ -93,17 +93,32 @@ class clustercontrol::configure_mcc {
   }
 
   # ----------------------------------------------------------------------------
+  # Deploy ccmgradm init wrapper script
+  # The wrapper treats "Controller already exists" as success since that means
+  # the controller IS in the desired registered state from a previous attempt.
+  # ----------------------------------------------------------------------------
+  file { '/usr/local/sbin/ccmgradm_init_wrapper.sh':
+    ensure => file,
+    mode   => '0755',
+    owner  => 'root',
+    group  => 'root',
+    source => 'puppet:///modules/clustercontrol/ccmgradm_init_wrapper.sh',
+  }
+
+  # ----------------------------------------------------------------------------
   # ccmgradm init runs ONCE (guarded by marker)
-  # Uses 'command -v' for portable path detection: ccmgradm lives at
-  # /usr/sbin/ccmgradm on RHEL and /usr/bin/ccmgradm on Debian/Ubuntu.
+  # The wrapper handles both fresh registration and re-registration cases.
   # ----------------------------------------------------------------------------
   exec { 'mcc-init':
-    command  => "ccmgradm init --local-cmon -p ${web_port} -f ${web_root}",
+    command  => "/usr/local/sbin/ccmgradm_init_wrapper.sh ${web_port} ${web_root}",
     path     => ['/bin', '/usr/bin', '/usr/sbin'],
     provider => shell,
     creates  => $mcc_marker,
-    unless   => "! command -v ccmgradm >/dev/null 2>&1 || ccmgradm init --local-cmon -p ${web_port} -f ${web_root} 2>&1 | grep -qi 'controller already exists'",
-    require  => Service['cmon-proxy'],
+    onlyif   => 'command -v ccmgradm >/dev/null 2>&1',
+    require  => [
+      Service['cmon-proxy'],
+      File['/usr/local/sbin/ccmgradm_init_wrapper.sh'],
+    ],
   }
 
   exec { 'create-mcc-init-marker':
