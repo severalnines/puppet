@@ -1,0 +1,47 @@
+# .github/workflows/ci.yml
+# Auto-runs on every push and PR.
+# Tests catalog compilation for ALL supported OS.
+# If Rocky 9 (or any previously working OS) breaks, this catches it.
+
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    name: "Puppet ${{ matrix.puppet }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        puppet: ['~> 7.0', '~> 8.0']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+
+      - name: Set Puppet version
+        run: echo "PUPPET_VERSION=${{ matrix.puppet }}" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: bundle install
+
+      - name: Validate manifest syntax
+        run: |
+          for f in $(find manifests -name '*.pp'); do
+            bundle exec puppet parser validate $f && echo "OK: $f"
+          done
+
+      - name: Run rspec tests (Rocky9, AlmaLinux9, RHEL9, Ubuntu22/24, Debian12)
+        run: bundle exec rspec spec/ --format documentation
+
+      - name: All tests passed
+        run: echo "All catalog compilation tests passed for all supported OS"
