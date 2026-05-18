@@ -51,7 +51,9 @@ class clustercontrol::params {
   # ==========================================================================
   $os_family   = $facts['os']['family']
   $os_name     = $facts['os']['name']
-  $os_major    = Integer($facts['os']['release']['major'])
+  # Ubuntu returns '22.04' for release.major, RHEL returns '9'
+  # Use release.full and split on '.' to reliably get just the major number
+  $os_major    = Integer(split($facts['os']['release']['full'], '[.]')[0])
 
   case $os_family {
 
@@ -115,13 +117,12 @@ class clustercontrol::params {
         fail("Unsupported Debian-family OS: ${os_name}")
       }
 
-      # MySQL 8 from MySQL official APT repo (NOT MariaDB - matches cc deployment)
+      # MariaDB (officially supported by ClusterControl; available in default OS repos)
       $mysql_packages = [
-        'mysql-common',
-        'mysql-server',
-        'mysql-client',
+        'mariadb-server',
+        'mariadb-client',
       ]
-      $mysql_daemon = 'mysql'
+      $mysql_daemon = 'mariadb'
       $mysql_config_file        = '/etc/mysql/my.cnf'
       $mysql_config_include_dir = '/etc/mysql/conf.d'
       $mysql_socket             = '/var/run/mysqld/mysqld.sock'
