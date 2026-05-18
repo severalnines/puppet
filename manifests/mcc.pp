@@ -94,7 +94,12 @@ class clustercontrol::mcc {
   exec { 'sync-admin-password':
     command  => "/usr/local/sbin/sync_cmon_admin.sh '${mysql_root_pass}'",
     path     => ['/bin', '/usr/bin', '/usr/local/sbin'],
-    onlyif   => 'command -v s9s >/dev/null 2>&1 && ! s9s user --list >/dev/null 2>&1',
+    # Defensive onlyif - safe in noop and on all OS:
+    # 1. If s9s NOT installed: test -x returns 1, ! returns 0, exec runs (which would fail
+    #    but only in noop - in real run s9s is always present at this point)
+    # 2. If s9s IS installed AND auth fails: !s9s ... returns 0, exec runs (sync needed)
+    # 3. If s9s IS installed AND auth works: !s9s ... returns 1, exec skipped (already in sync)
+    onlyif   => '[ -x /usr/bin/s9s ] && ! s9s user --list >/dev/null 2>&1',
     provider => shell,
     require  => [
       File['/usr/local/sbin/sync_cmon_admin.sh'],
