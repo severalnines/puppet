@@ -120,4 +120,22 @@ class clustercontrol::configure_mcc {
     subscribe   => Exec['mcc-init'],
     require     => Exec['create-mcc-init-marker'],
   }
+
+  # ----------------------------------------------------------------------------
+  # Fix web root directory permissions (per official ClusterControl docs)
+  # On systems with a strict default umask (typically Ubuntu/Debian), the
+  # /var/www/html/clustercontrol-mcc directory tree may be created without
+  # read+execute permissions for group/others, causing a "Not Found" page
+  # when accessing the GUI. Set 755 on the full path to allow cmon-proxy
+  # to serve the static frontend files.
+  # ----------------------------------------------------------------------------
+  exec { 'fix-web-root-permissions':
+    command  => 'chmod 755 /var /var/www /var/www/html /var/www/html/clustercontrol-mcc',
+    path     => ['/bin', '/usr/bin'],
+    onlyif   => 'test -d /var/www/html/clustercontrol-mcc',
+    unless   => "test $(stat -c '%a' /var/www/html/clustercontrol-mcc) = '755' && test $(stat -c '%a' /var/www/html) = '755'",
+    provider => shell,
+    require  => Exec['create-mcc-init-marker'],
+    notify   => Exec['restart-cmon-proxy-after-mcc-init'],
+  }
 }
