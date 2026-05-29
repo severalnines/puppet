@@ -296,13 +296,13 @@ describe 'clustercontrol' do
   end
 
   # =========================================================================
-  # VERSION PINNING TESTS
-  # Verifies the clustercontrol_version parameter behaves correctly:
-  #   - undef (default)        → uses cc_package_state ('latest' or 'present')
-  #   - '2.4.0' (any string)   → all CC packages pinned to that version
+  # PACKAGE STATE TESTS
+  # Verifies cc_package_state behavior:
+  #   - 'latest' (default)  → ensure => 'latest' (auto-upgrade)
+  #   - 'present'           → ensure => 'present' (install if missing only)
   # =========================================================================
 
-  context 'with clustercontrol_version not set (default behavior)' do
+  context 'with default cc_package_state (latest)' do
     let(:params) do
       {
         'mysql_root_password' => 'R',
@@ -326,65 +326,7 @@ describe 'clustercontrol' do
     it { is_expected.to contain_package('clustercontrol-mcc').with_ensure('latest') }
   end
 
-  context 'with clustercontrol_version pinned to specific version' do
-    let(:params) do
-      {
-        'mysql_root_password'    => 'R',
-        'cmon_mysql_password'    => 'C',
-        'clustercontrol_version' => '2.4.0',
-      }
-    end
-    let(:facts) do
-      {
-        'os' => {
-          'family'  => 'RedHat',
-          'name'    => 'Rocky',
-          'release' => { 'major' => '9', 'full' => '9.4' },
-        },
-        'networking' => { 'ip' => '10.10.16.13' },
-        'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
-      }
-    end
-    # When version is pinned, all CC packages should have that version ensure
-    it { is_expected.to compile.with_all_deps }
-    it { is_expected.to contain_package('clustercontrol-controller').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-mcc').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-proxy').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-kuber-proxy').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-notifications').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-ssh').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-cloud').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-clud').with_ensure('2.4.0') }
-    # s9s-tools is always 'latest' by design (CLI moves independently)
-    it { is_expected.to contain_package('s9s-tools').with_ensure('latest') }
-  end
-
-  context 'with clustercontrol_version pinned on Ubuntu' do
-    let(:params) do
-      {
-        'mysql_root_password'    => 'R',
-        'cmon_mysql_password'    => 'C',
-        'clustercontrol_version' => '2.4.0',
-      }
-    end
-    let(:facts) do
-      {
-        'os' => {
-          'family'  => 'Debian',
-          'name'    => 'Ubuntu',
-          'release' => { 'major' => '22.04', 'full' => '22.04' },
-          'distro'  => { 'codename' => 'jammy' },
-        },
-        'networking' => { 'ip' => '10.10.16.10' },
-        'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
-      }
-    end
-    it { is_expected.to compile.with_all_deps }
-    it { is_expected.to contain_package('clustercontrol-controller').with_ensure('2.4.0') }
-    it { is_expected.to contain_package('clustercontrol-mcc').with_ensure('2.4.0') }
-  end
-
-  context 'with cc_package_state present (no version pin)' do
+  context 'with cc_package_state => present' do
     let(:params) do
       {
         'mysql_root_password' => 'R',
