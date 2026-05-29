@@ -93,10 +93,19 @@ class clustercontrol::install::redhat {
 
   # ----------------------------------------------------------------------------
   # Install ClusterControl packages
+  #
+  # Package ensure value follows this precedence:
+  #   1. If clustercontrol_version is set: ensure => <that version> (idempotent
+  #      upgrade pattern - matches cc-ansible's clustercontrol_version model)
+  #   2. Else if cc_package_state == 'latest': ensure => 'latest' (auto-upgrade)
+  #   3. Else: ensure => 'present' (install if missing, don't upgrade)
   # ----------------------------------------------------------------------------
-  $pkg_ensure = $clustercontrol::cc_package_state ? {
-    'latest' => 'latest',
-    default  => 'present',
+  $pkg_ensure = $clustercontrol::clustercontrol_version ? {
+    undef   => $clustercontrol::cc_package_state ? {
+      'latest' => 'latest',
+      default  => 'present',
+    },
+    default => $clustercontrol::clustercontrol_version,
   }
 
   package { $clustercontrol::params::clustercontrol_controller_packages:

@@ -26,7 +26,25 @@
 #   'legacy' for old Apache + PHP CCv1 (not implemented).
 #
 # [*cc_package_state*]
-#   'latest' (default) or 'present'.
+#   'latest' (default) or 'present'. Used when 'clustercontrol_version' is undef.
+#   - 'latest': always upgrade packages to newest available in repo.
+#   - 'present': install if missing; don't upgrade if already installed.
+#
+# [*clustercontrol_version*]
+#   Optional. Pin ClusterControl packages to a specific version (e.g. '2.4.0').
+#   When set, OVERRIDES 'cc_package_state' for ClusterControl packages.
+#   Re-runs are idempotent; upgrades happen when you change this value.
+#   Default: undef (use cc_package_state setting instead).
+#
+#   Example - upgrade flow:
+#     1) Initial install with version pinned:
+#        class { 'clustercontrol':
+#          mysql_root_password    => '...',
+#          cmon_mysql_password    => '...',
+#          clustercontrol_version => '2.4.0',
+#        }
+#     2) Later, upgrade to 2.4.1 - just change the value and re-run:
+#        clustercontrol_version => '2.4.1',
 #
 # [*mcc_web_port*]
 #   Port for the web UI. Default: 443.
@@ -49,6 +67,7 @@ class clustercontrol (
   Integer $cmon_mysql_port     = 3306,
   Enum['mcc', 'legacy']   $cc_install_mode  = 'mcc',
   Enum['latest', 'present'] $cc_package_state = 'latest',
+  Optional[String]        $clustercontrol_version = undef,
   Integer $mcc_web_port  = 443,
   String  $mcc_web_root  = '/var/www/html/clustercontrol-mcc',
   Boolean $disable_selinux  = true,

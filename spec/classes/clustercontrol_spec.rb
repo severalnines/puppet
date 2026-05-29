@@ -21,12 +21,12 @@
 #   OS                  | Catalog | Real VM |
 #   --------------------|---------|---------|
 #   Rocky Linux 9       |   ✅    |   ✅    |
-#   AlmaLinux 9         |   ✅    |   ⏳    | (pending)
+#   AlmaLinux 9         |   ✅    |   ✅    |
+#   Ubuntu 22.04        |   ✅    |   ✅    |
 #   RHEL 9              |   ✅    |   ⏳    | (pending)
 #   Rocky Linux 8       |   ✅    |   ⏳    | (pending)
-#   Ubuntu 24.04        |   ✅    |   ⏳    | (pending)
-#   Ubuntu 22.04        |   ✅    |   ⏳    | (in progress)
 #   Debian 12           |   ✅    |   ⏳    | (pending)
+#   Ubuntu 24.04        |   ✅    |   —     | (removed from testing scope)
 #
 # RULE: Once an OS is Real VM Validated, mark it below and NEVER remove its test.
 #
@@ -139,7 +139,7 @@ describe 'clustercontrol' do
   # Update status above when real VM testing is complete.
   # =========================================================================
 
-  context 'on AlmaLinux 9 [CATALOG ONLY - pending real VM]' do
+  context 'on AlmaLinux 9 [REAL VM VALIDATED]' do
     let(:facts) do
       {
         'os' => {
@@ -151,11 +151,36 @@ describe 'clustercontrol' do
         'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
       }
     end
+
+    # Catalog compiles
     it { is_expected.to compile.with_all_deps }
+
+    # Uses RedHat install path
     it { is_expected.to contain_class('clustercontrol::install::redhat') }
+    it { is_expected.not_to contain_class('clustercontrol::install::debian') }
+
+    # MariaDB used
     it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
+
+    # All 9 CC packages installed
     it { is_expected.to contain_package('clustercontrol-controller') }
+    it { is_expected.to contain_package('clustercontrol-mcc') }
+    it { is_expected.to contain_package('clustercontrol-proxy') }
+    it { is_expected.to contain_package('clustercontrol-kuber-proxy') }
+    it { is_expected.to contain_package('clustercontrol-notifications') }
+    it { is_expected.to contain_package('clustercontrol-ssh') }
+    it { is_expected.to contain_package('clustercontrol-cloud') }
+    it { is_expected.to contain_package('clustercontrol-clud') }
+    it { is_expected.to contain_package('s9s-tools') }
+
+    # Critical services
+    it { is_expected.to contain_service('mariadb').with_ensure('running') }
     it { is_expected.to contain_service('cmon').with_ensure('running') }
+    it { is_expected.to contain_service('cmon-proxy').with_ensure('running') }
+
+    # ccmgradm wrapper script deployed
+    it { is_expected.to contain_file('/usr/local/sbin/ccmgradm_init_wrapper.sh') }
+    it { is_expected.to contain_file('/usr/local/sbin/sync_cmon_admin.sh') }
   end
 
   context 'on RHEL 9 [CATALOG ONLY - pending real VM]' do
@@ -192,7 +217,7 @@ describe 'clustercontrol' do
     it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
   end
 
-  context 'on Ubuntu 22.04 [CATALOG ONLY - real VM in progress]' do
+  context 'on Ubuntu 22.04 [REAL VM VALIDATED]' do
     let(:facts) do
       {
         'os' => {
@@ -201,16 +226,37 @@ describe 'clustercontrol' do
           'release' => { 'major' => '22.04', 'full' => '22.04' },
           'distro'  => { 'codename' => 'jammy' },
         },
-        'networking' => { 'ip' => '10.10.16.13' },
+        'networking' => { 'ip' => '10.10.16.10' },
         'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
       }
     end
+
+    # Catalog compiles
     it { is_expected.to compile.with_all_deps }
+
+    # Uses Debian install path (not RedHat)
     it { is_expected.to contain_class('clustercontrol::install::debian') }
     it { is_expected.not_to contain_class('clustercontrol::install::redhat') }
+
+    # MariaDB used (not MySQL.com)
     it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
+    it { is_expected.to contain_package('mariadb-client').with_ensure('present') }
+
+    # All 9 CC packages installed
     it { is_expected.to contain_package('clustercontrol-controller') }
+    it { is_expected.to contain_package('clustercontrol-mcc') }
+    it { is_expected.to contain_package('clustercontrol-proxy') }
+    it { is_expected.to contain_package('clustercontrol-kuber-proxy') }
+    it { is_expected.to contain_package('s9s-tools') }
+
+    # Critical services
+    it { is_expected.to contain_service('mariadb').with_ensure('running') }
     it { is_expected.to contain_service('cmon').with_ensure('running') }
+    it { is_expected.to contain_service('cmon-proxy').with_ensure('running') }
+
+    # ccmgradm wrapper script deployed (critical for Ubuntu/Debian)
+    it { is_expected.to contain_file('/usr/local/sbin/ccmgradm_init_wrapper.sh') }
+    it { is_expected.to contain_file('/usr/local/sbin/sync_cmon_admin.sh') }
   end
 
   context 'on Ubuntu 24.04 [CATALOG ONLY - pending real VM]' do
@@ -247,6 +293,120 @@ describe 'clustercontrol' do
     it { is_expected.to compile.with_all_deps }
     it { is_expected.to contain_class('clustercontrol::install::debian') }
     it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
+  end
+
+  # =========================================================================
+  # VERSION PINNING TESTS
+  # Verifies the clustercontrol_version parameter behaves correctly:
+  #   - undef (default)        → uses cc_package_state ('latest' or 'present')
+  #   - '2.4.0' (any string)   → all CC packages pinned to that version
+  # =========================================================================
+
+  context 'with clustercontrol_version not set (default behavior)' do
+    let(:params) do
+      {
+        'mysql_root_password' => 'R',
+        'cmon_mysql_password' => 'C',
+      }
+    end
+    let(:facts) do
+      {
+        'os' => {
+          'family'  => 'RedHat',
+          'name'    => 'Rocky',
+          'release' => { 'major' => '9', 'full' => '9.4' },
+        },
+        'networking' => { 'ip' => '10.10.16.13' },
+        'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
+      }
+    end
+    # Default cc_package_state is 'latest' - packages should be 'latest'
+    it { is_expected.to compile.with_all_deps }
+    it { is_expected.to contain_package('clustercontrol-controller').with_ensure('latest') }
+    it { is_expected.to contain_package('clustercontrol-mcc').with_ensure('latest') }
+  end
+
+  context 'with clustercontrol_version pinned to specific version' do
+    let(:params) do
+      {
+        'mysql_root_password'    => 'R',
+        'cmon_mysql_password'    => 'C',
+        'clustercontrol_version' => '2.4.0',
+      }
+    end
+    let(:facts) do
+      {
+        'os' => {
+          'family'  => 'RedHat',
+          'name'    => 'Rocky',
+          'release' => { 'major' => '9', 'full' => '9.4' },
+        },
+        'networking' => { 'ip' => '10.10.16.13' },
+        'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
+      }
+    end
+    # When version is pinned, all CC packages should have that version ensure
+    it { is_expected.to compile.with_all_deps }
+    it { is_expected.to contain_package('clustercontrol-controller').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-mcc').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-proxy').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-kuber-proxy').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-notifications').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-ssh').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-cloud').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-clud').with_ensure('2.4.0') }
+    # s9s-tools is always 'latest' by design (CLI moves independently)
+    it { is_expected.to contain_package('s9s-tools').with_ensure('latest') }
+  end
+
+  context 'with clustercontrol_version pinned on Ubuntu' do
+    let(:params) do
+      {
+        'mysql_root_password'    => 'R',
+        'cmon_mysql_password'    => 'C',
+        'clustercontrol_version' => '2.4.0',
+      }
+    end
+    let(:facts) do
+      {
+        'os' => {
+          'family'  => 'Debian',
+          'name'    => 'Ubuntu',
+          'release' => { 'major' => '22.04', 'full' => '22.04' },
+          'distro'  => { 'codename' => 'jammy' },
+        },
+        'networking' => { 'ip' => '10.10.16.10' },
+        'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
+      }
+    end
+    it { is_expected.to compile.with_all_deps }
+    it { is_expected.to contain_package('clustercontrol-controller').with_ensure('2.4.0') }
+    it { is_expected.to contain_package('clustercontrol-mcc').with_ensure('2.4.0') }
+  end
+
+  context 'with cc_package_state present (no version pin)' do
+    let(:params) do
+      {
+        'mysql_root_password' => 'R',
+        'cmon_mysql_password' => 'C',
+        'cc_package_state'    => 'present',
+      }
+    end
+    let(:facts) do
+      {
+        'os' => {
+          'family'  => 'RedHat',
+          'name'    => 'Rocky',
+          'release' => { 'major' => '9', 'full' => '9.4' },
+        },
+        'networking' => { 'ip' => '10.10.16.13' },
+        'memory'     => { 'system' => { 'total_bytes' => 4294967296 } },
+      }
+    end
+    # With 'present', packages should be 'present' (don't upgrade)
+    it { is_expected.to compile.with_all_deps }
+    it { is_expected.to contain_package('clustercontrol-controller').with_ensure('present') }
+    it { is_expected.to contain_package('clustercontrol-mcc').with_ensure('present') }
   end
 
   # =========================================================================
