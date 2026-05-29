@@ -83,6 +83,7 @@ class clustercontrol::mcc {
     command  => 'for i in $(seq 1 30); do curl -k -s -o /dev/null https://127.0.0.1:9501 && exit 0; sleep 2; done; exit 1',
     path     => ['/bin', '/usr/bin'],
     provider => shell,
+    unless   => 'curl -k -s -o /dev/null -m 2 https://127.0.0.1:9501',
     require  => Exec['mark-services-restarted'],
   }
 
@@ -125,6 +126,7 @@ class clustercontrol::mcc {
     command  => 'for i in $(seq 1 30); do s9s user --list >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1',
     path     => ['/bin', '/usr/bin'],
     provider => shell,
+    unless   => '[ ! -x /usr/bin/s9s ] || s9s user --list >/dev/null 2>&1',
     require  => [
       Exec['sync-admin-password'],
       Exec['restart-cmon-after-password-sync'],

@@ -19,7 +19,8 @@ class clustercontrol::install::redhat {
     exec { 'enable-crb-repo':
       command => 'dnf config-manager --set-enabled crb',
       path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
-      onlyif  => 'dnf repolist --disabled 2>/dev/null | grep -q crb',
+      onlyif  => 'dnf repolist --disabled 2>/dev/null | grep -q "^crb "',
+      unless  => 'dnf repolist --enabled 2>/dev/null | grep -q "^crb "',
       require => Package['epel-release'],
     }
   }
