@@ -9,10 +9,11 @@
    * [Pre-installation](#pre-installation)
    * [Installation](#installation)
 4. [Usage](#usage)
-5. [Installation & Upgrade Behavior](#installation--upgrade-behavior)
-6. [Idempotency & Upgrades](#idempotency--upgrades)
-7. [Limitations](#limitations)
-8. [Development](#development)
+5. [Multi-Node Deployment](#multi-node-deployment)
+6. [Installation & Upgrade Behavior](#installation--upgrade-behavior)
+7. [Idempotency & Upgrades](#idempotency--upgrades)
+8. [Limitations](#limitations)
+9. [Development](#development)
 
 ## Overview
 
@@ -197,6 +198,29 @@ If you used the previous version (v2.0.0, for ClusterControl 1.9.x), the followi
 | `disable_firewall` | ✅ Kept | Same behavior |
 | `disable_os_sec_module` | 🔄 Renamed → `disable_selinux` | More explicit |
 
+## Multi-Node Deployment
+
+The same manifest can be applied to many ClusterControl hosts. Each agent compiles its own catalog from the master and applies the configuration locally — so deploying 5 or more hosts uses the same code.
+
+### Manifest for Multiple Identical Nodes
+
+If you have several CC hosts using the same configuration, list them comma-separated in a single `node` block:
+
+```
+node 'clustercontrol1.local',
+     'clustercontrol2.local',
+     'clustercontrol3.local',
+     'clustercontrol4.local',
+     'clustercontrol5.local' {
+    class { 'clustercontrol':
+        mysql_root_password => 'R00tP@55',
+        cmon_mysql_password => 'R00tP@55',
+    }
+}
+```
+
+Each host receives an independent ClusterControl installation. Their own MariaDB, their own `cmon-proxy` on port 443, their own GUI.
+
 ## Installation & Upgrade Behavior
 
 The module installs the **latest** version of ClusterControl available in the Severalnines repository and handles in-place upgrades automatically when newer versions are released.
@@ -278,14 +302,10 @@ State markers stored in `/var/lib/cmon`:
 
 ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS/Alma/Oracle/Rocky Linux. From these supported distros, all versions that have passed their EOL or are nearly EOL are no longer supported. Below are the supported versions:
 
-- Debian 9.x (Stretch)
-- Debian 10.x (Buster)
 - Debian 11.x (Bullseye)
 - Debian 12.x (Bookworm)
-- Ubuntu 18.04 LTS (Bionic Beaver)
 - Ubuntu 20.04 LTS (Focal Fossa)
 - Ubuntu 22.04 LTS (Jammy Jellyfish)
-- Ubuntu 24.04 LTS (Noble Numbat)
 - AlmaLinux / Oracle Linux / Rocky Linux / RHEL / CentOS 7.x / 8.x / 9.x
 
 **Real-VM validation status (as of this release):**
@@ -298,7 +318,6 @@ ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS/Alm
 | RHEL 9 | ✅ | ⏳ Pending |
 | Rocky Linux 8 | ✅ | ⏳ Pending |
 | Debian 12 | ✅ | ⏳ Pending |
-| Ubuntu 24.04 | ✅ | — Removed from active testing (upstream Puppet 8 packaging gap on `noble`) |
 
 **SLES support:** v3.0.0 does not yet support SUSE/SLES. If you need it, please open an issue.
 
