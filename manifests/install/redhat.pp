@@ -94,13 +94,44 @@ class clustercontrol::install::redhat {
 
   # ----------------------------------------------------------------------------
   # Install ClusterControl packages
+  #
+  # Package ensure value follows this precedence:
+  #   1. clustercontrol_version == 'latest' (default) → ensure => 'latest'
+  #   2. clustercontrol_version == '2.3.3' (or any version) → that version
+  #   3. cc_package_state == 'present' → 'present' (only when version is latest)
+  #
+  # Special cases:
+  #   - clustercontrol-kuber-proxy: always 'latest'. Its RPM build separator
+  #     (underscore between version and build, e.g. 2.4.0_638-1) does not
+  #     match the user-facing version string, so version pinning is unreliable.
+  #     Installing latest is safe and matches the package's intent (the
+  #     Kubernetes integration is an add-on that tracks the controller).
+  #   - s9s-tools: always 'latest'. The CLI follows an independent version
+  #     stream from the main ClusterControl release.
   # ----------------------------------------------------------------------------
-  $pkg_ensure = $clustercontrol::cc_package_state ? {
-    'latest' => 'latest',
-    default  => 'present',
+  $pkg_ensure = $clustercontrol::clustercontrol_version ? {
+    'latest' => $clustercontrol::cc_package_state ? {
+      'latest' => 'latest',
+      default  => 'present',
+    },
+    default  => $clustercontrol::clustercontrol_version,
   }
 
-  package { $clustercontrol::params::clustercontrol_controller_packages:
+  # Versioned packages — pinnable by user
+  $versioned_controller_packages = [
+    'clustercontrol-controller',
+    'clustercontrol-proxy',
+  ]
+
+  $versioned_ui_packages = [
+    'clustercontrol-mcc',
+    'clustercontrol-notifications',
+    'clustercontrol-ssh',
+    'clustercontrol-cloud',
+    'clustercontrol-clud',
+  ]
+
+  package { $versioned_controller_packages:
     ensure  => $pkg_ensure,
     require => [
       Exec['download-severalnines-repo'],
@@ -109,13 +140,20 @@ class clustercontrol::install::redhat {
     ],
   }
 
-  package { $clustercontrol::params::clustercontrol_ui_packages:
-    ensure  => $pkg_ensure,
-    require => Package[$clustercontrol::params::clustercontrol_controller_packages],
+  # clustercontrol-kuber-proxy: always latest (see comment above)
+  package { 'clustercontrol-kuber-proxy':
+    ensure  => 'latest',
+    require => Package[$versioned_controller_packages],
   }
 
+  package { $versioned_ui_packages:
+    ensure  => $pkg_ensure,
+    require => Package['clustercontrol-kuber-proxy'],
+  }
+
+  # s9s-tools: always latest (independent version stream)
   package { $clustercontrol::params::clustercontrol_cli_packages:
-    ensure  => latest,
-    require => Package[$clustercontrol::params::clustercontrol_ui_packages],
+    ensure  => 'latest',
+    require => Package[$versioned_ui_packages],
   }
 }

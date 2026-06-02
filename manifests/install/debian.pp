@@ -94,13 +94,41 @@ class clustercontrol::install::debian {
 
   # ----------------------------------------------------------------------------
   # Install ClusterControl packages
+  #
+  # Package ensure value follows this precedence:
+  #   1. clustercontrol_version == 'latest' (default) → ensure => 'latest'
+  #   2. clustercontrol_version == '2.3.3' (or any version) → that version
+  #   3. cc_package_state == 'present' → 'present' (only when version is latest)
+  #
+  # Special cases:
+  #   - clustercontrol-kuber-proxy: always 'latest'. Tracks the controller as
+  #     an add-on; safer to always install the matching/latest build.
+  #   - s9s-tools: always 'latest'. The CLI follows an independent version
+  #     stream from the main ClusterControl release.
   # ----------------------------------------------------------------------------
-  $pkg_ensure = $clustercontrol::cc_package_state ? {
-    'latest' => 'latest',
-    default  => 'present',
+  $pkg_ensure = $clustercontrol::clustercontrol_version ? {
+    'latest' => $clustercontrol::cc_package_state ? {
+      'latest' => 'latest',
+      default  => 'present',
+    },
+    default  => $clustercontrol::clustercontrol_version,
   }
 
-  package { $clustercontrol::params::clustercontrol_controller_packages:
+  # Versioned packages — pinnable by user
+  $versioned_controller_packages = [
+    'clustercontrol-controller',
+    'clustercontrol-proxy',
+  ]
+
+  $versioned_ui_packages = [
+    'clustercontrol-mcc',
+    'clustercontrol-notifications',
+    'clustercontrol-ssh',
+    'clustercontrol-cloud',
+    'clustercontrol-clud',
+  ]
+
+  package { $versioned_controller_packages:
     ensure  => $pkg_ensure,
     require => [
       File[$clustercontrol::params::repo_config_path],
@@ -109,14 +137,21 @@ class clustercontrol::install::debian {
     ],
   }
 
-  package { $clustercontrol::params::clustercontrol_ui_packages:
-    ensure  => $pkg_ensure,
-    require => Package[$clustercontrol::params::clustercontrol_controller_packages],
+  # clustercontrol-kuber-proxy: always latest (see comment above)
+  package { 'clustercontrol-kuber-proxy':
+    ensure  => 'latest',
+    require => Package[$versioned_controller_packages],
   }
 
+  package { $versioned_ui_packages:
+    ensure  => $pkg_ensure,
+    require => Package['clustercontrol-kuber-proxy'],
+  }
+
+  # s9s-tools: always latest (independent version stream)
   package { $clustercontrol::params::clustercontrol_cli_packages:
-    ensure  => latest,
-    require => Package[$clustercontrol::params::clustercontrol_ui_packages],
+    ensure  => 'latest',
+    require => Package[$versioned_ui_packages],
   }
 
   # Remove default Apache vhosts (in case apache2 got pulled in)

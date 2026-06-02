@@ -30,6 +30,17 @@
 #   - 'latest': always upgrade packages to newest available in repo (default).
 #   - 'present': install if missing; don't upgrade if already installed.
 #
+# [*clustercontrol_version*]
+#   Which version of ClusterControl packages to install. Use 'latest' for
+#   the newest available version in the Severalnines repository, or pin to
+#   a specific version like '2.3.3'. Re-runs are idempotent. Upgrades
+#   happen when you change this value and re-apply the manifest.
+#   Default: 'latest'.
+#
+#   Note: clustercontrol-kuber-proxy and s9s-tools are always installed at
+#   the latest available version regardless of this setting, because they
+#   follow independent version streams.
+#
 # [*mcc_web_port*]
 #   Port for the web UI. Default: 443.
 #
@@ -39,8 +50,9 @@
 # === Example
 #
 # class { 'clustercontrol':
-#   mysql_root_password => 'StrongRootPassword',
-#   cmon_mysql_password => 'StrongCmonPassword',
+#   mysql_root_password    => 'StrongRootPassword',
+#   cmon_mysql_password    => 'StrongCmonPassword',
+#   clustercontrol_version => 'latest',
 # }
 #
 class clustercontrol (
@@ -51,6 +63,7 @@ class clustercontrol (
   Integer $cmon_mysql_port     = 3306,
   Enum['mcc', 'legacy']   $cc_install_mode  = 'mcc',
   Enum['latest', 'present'] $cc_package_state = 'latest',
+  String  $clustercontrol_version = 'latest',
   Integer $mcc_web_port  = 443,
   String  $mcc_web_root  = '/var/www/html/clustercontrol-mcc',
   Boolean $disable_selinux  = true,

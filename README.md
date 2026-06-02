@@ -157,6 +157,14 @@ How to manage ClusterControl package versions:
 
 **Default: (Enum) `'latest'`**
 
+#### `clustercontrol_version`
+
+Which version of ClusterControl packages to install. Use `'latest'` for the newest available version in the Severalnines repository, or pin to a specific version like `'2.3.3'`. Re-runs are idempotent. Upgrades happen when you change this value and re-apply the manifest.
+
+When set to a specific version, `clustercontrol-controller`, `clustercontrol-proxy`, `clustercontrol-mcc`, `clustercontrol-notifications`, `clustercontrol-ssh`, `clustercontrol-cloud`, and `clustercontrol-clud` are pinned to that version. The `clustercontrol-kuber-proxy` and `s9s-tools` packages are always installed at the latest available version regardless of this setting, because they follow independent version streams.
+
+**Default: (String) `'latest'`**
+
 #### `mcc_web_port`
 
 HTTPS port for the ClusterControl GUI served by `cmon-proxy`.
@@ -273,11 +281,26 @@ With `'present'`:
 - Subsequent Puppet runs do **not** upgrade packages, even if newer versions are in the repo.
 - To trigger an upgrade later, temporarily set back to `'latest'`, run Puppet once, then return to `'present'`. Or use the OS-level package manager (`dnf upgrade clustercontrol-*` / `apt upgrade 'clustercontrol-*'`).
 
-### Why No Specific-Version Pinning?
+### Pinning To A Specific Version
 
-We intentionally do not expose a `clustercontrol_version` parameter. Severalnines uses **independent build counters per package** (e.g., `clustercontrol-controller-2.4.0-19927`, `clustercontrol-mcc-2.4.0-857`) and **inconsistent version-separator formatting across packagers** (the RPM `clustercontrol-kuber-proxy` uses an underscore between version and build, while the equivalent DEB uses a dash). Exposing a single "pin to version X" parameter cannot honestly model this and leads to broken downgrades in some scenarios. The supported workflow is **always install/upgrade to latest**.
+To install a specific version of ClusterControl (rather than always tracking the latest), set the `clustercontrol_version` parameter to the version string:
 
-If you need to lock to a specific version in a controlled environment, do it at the OS level: use `dnf versionlock` (RHEL family) or `apt-mark hold` / `/etc/apt/preferences.d/` (Debian family). Those tools handle the per-package build/format quirks correctly.
+```
+class { 'clustercontrol':
+    mysql_root_password    => 'R00tP@55',
+    cmon_mysql_password    => 'R00tP@55',
+    clustercontrol_version => '2.3.3',
+}
+```
+
+This installs `clustercontrol-controller`, `clustercontrol-proxy`, `clustercontrol-mcc`, `clustercontrol-notifications`, `clustercontrol-ssh`, `clustercontrol-cloud`, and `clustercontrol-clud` at version `2.3.3`. To upgrade later, change the value and re-apply the manifest.
+
+**Always-latest exceptions:** The following two packages are always installed at the latest available version, regardless of `clustercontrol_version`:
+
+- `clustercontrol-kuber-proxy` — the Kubernetes integration add-on. Its RPM build separator (an underscore between version and build, e.g. `2.4.0_638`) does not match the user-facing version string, so version pinning is unreliable. Installing the latest available build is safe; it tracks the controller.
+- `s9s-tools` — the CLI client follows an independent version stream from the main ClusterControl release.
+
+If you need to lock these to a specific build for compliance reasons, do it at the OS level: use `dnf versionlock` (RHEL family) or `apt-mark hold` / `/etc/apt/preferences.d/` (Debian family).
 
 ## Idempotency & Upgrades
 
@@ -287,7 +310,8 @@ This module is fully idempotent and supports controlled ClusterControl upgrades.
 - **CMON initialization is marker-guarded.** `cmon --init` runs exactly once, tracked by `/var/lib/cmon/.puppet-cmon-initialized`.
 - **MCC initialization is marker-guarded.** `ccmgradm init` runs exactly once, tracked by `/var/lib/cmon/.puppet-mcc-initialized`. A wrapper script treats "Controller already exists" as success for re-run safety.
 - **Safe to re-run the manifest.** Repeated `puppet agent -t` runs are no-ops after a successful deployment (typical re-run time: under 2 seconds).
-- **Safe to upgrade automatically.** With `cc_package_state => 'latest'` (the default), the next Puppet run after Severalnines publishes a newer version performs an in-place upgrade of all ClusterControl packages and restarts the affected services. See [Installation & Upgrade Behavior](#installation--upgrade-behavior) above.
+- **Safe to upgrade automatically.** With `clustercontrol_version => 'latest'` (the default), the next Puppet run after Severalnines publishes a newer version performs an in-place upgrade of all ClusterControl packages and restarts the affected services.
+- **Safe to upgrade by changing `clustercontrol_version`.** When pinned to a specific version, change the value and re-apply the manifest to perform a controlled upgrade. See [Installation & Upgrade Behavior](#installation--upgrade-behavior) above.
 
 State markers stored in `/var/lib/cmon`:
 
