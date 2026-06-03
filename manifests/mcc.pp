@@ -144,4 +144,50 @@ class clustercontrol::mcc {
     unless   => '[ ! -x /usr/bin/s9s ] || s9s user --list 2>/dev/null | grep -qw ccsetup',
     require  => Exec['wait-for-s9s-auth'],
   }
+
+  # ============================================================================
+  # Deferred restart chain (fires only on /etc/my.cnf changes)
+  #
+  # On initial deploy, /etc/my.cnf is written by Class[configure_mysql]. Many
+  # of those settings (innodb_buffer_pool_size, bind-address, key_buffer_size,
+  # etc.) require a MariaDB restart to take effect. We deferred the restart
+  # out of Class[configure_mysql] to avoid the first-install systemd race
+  # window. By the time we reach this point in the catalog, MariaDB has been
+  # running stably for the full deployment (minutes), so a restart is safe.
+  #
+  # The restart sequence (mysql -> cmon -> cmon-proxy) mirrors the order used
+  # by Severalnines' Ansible deployment so dependent services reconnect
+  # cleanly to the newly-restarted MariaDB.
+  #
+  # All three exec resources are refreshonly + subscribe to File[/etc/my.cnf],
+  # so they fire only when that file actually changes - i.e. on first deploy
+  # and on subsequent runs where the my.cnf template content has changed.
+  # On idempotent re-runs they do nothing.
+  # ============================================================================
+  exec { 'restart-mariadb-deferred':
+    command     => "systemctl restart ${clustercontrol::params::mysql_daemon}",
+    path        => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+    provider    => shell,
+    refreshonly => true,
+    subscribe   => File[$clustercontrol::params::mysql_config_file],
+    require     => Exec['create-ccsetup-user'],
+  }
+
+  exec { 'restart-cmon-deferred':
+    command     => 'systemctl restart cmon',
+    path        => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+    provider    => shell,
+    refreshonly => true,
+    subscribe   => File[$clustercontrol::params::mysql_config_file],
+    require     => Exec['restart-mariadb-deferred'],
+  }
+
+  exec { 'restart-cmon-proxy-deferred':
+    command     => 'systemctl restart cmon-proxy',
+    path        => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+    provider    => shell,
+    refreshonly => true,
+    subscribe   => File[$clustercontrol::params::mysql_config_file],
+    require     => Exec['restart-cmon-deferred'],
+  }
 }
