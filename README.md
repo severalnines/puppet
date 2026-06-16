@@ -6,7 +6,6 @@
 2. [Module Description](#module-description)
 3. [Setup](#setup)
    * [Requirements](#requirements)
-   * [Pre-installation](#pre-installation)
    * [Installation](#installation)
 4. [Usage](#usage)
 5. [Multi-Node Deployment](#multi-node-deployment)
@@ -70,10 +69,6 @@ Make sure you meet the following criteria prior to deployment:
 - If you are running as a non-root user, make sure the user can escalate to root via `sudo`.
 - **Puppet 7 or 8** is required on master and agent.
 
-### Pre-installation
-
-No API token generation is required (CC 2.4.x removed the API token concept — the `ccsetup` bootstrap user replaces it). On first GUI access, you authenticate with `ccsetup` / `admin` and are redirected to a registration page where you create your real admin user.
-
 ### Installation
 
 This ClusterControl module for Puppet is available either on [Puppet Forge](https://forge.puppet.com/severalnines/clustercontrol) or by cloning this repository directly. Place it under your Puppet master's modulepath directory and make sure the directory is named `clustercontrol`, e.g. `/etc/puppetlabs/code/environments/production/modules/clustercontrol`.
@@ -96,7 +91,7 @@ root@master:/etc/puppetlabs/code/environments/production# ls -alth manifests/clu
 -rw-r--r-- 1 root root 1.4K Oct 23 15:00 manifests/clustercontrol.pp
 ```
 
-With the following minimal node definition (only two required parameters — see [Parameter Migration from v2.x](#parameter-migration-from-v2x) below if you're upgrading from an older module):
+With the following minimal node definition (only two required parameters):
 
 ```
 node 'clustercontrol.local' { # Applies only to the mentioned node. If nothing mentioned, applies to all.
@@ -184,27 +179,6 @@ Disables SELinux on RHEL-family systems. ClusterControl is a complex piece of so
 
 Disables `firewalld` on RHEL-family systems. If set to `false`, the module will leave your current firewall configuration untouched.
 **Default: (Boolean) `true`**
-
-### Parameter Migration from v2.x
-
-If you used the previous version (v2.0.0, for ClusterControl 1.9.x), the following parameters have changed in v3.0.0. The required parameter count dropped from **7 to 2**.
-
-| Old (v2.0.0) | Status in v3.0.0 | Notes |
-|---|---|---|
-| `is_controller` | ❌ Removed | Module always installs the controller; no separate agent mode |
-| `cc_hostname` | ❌ Removed | Auto-detected from `$facts['networking']['ip']` |
-| `mysql_cmon_password` | 🔄 Renamed → `cmon_mysql_password` | Naming-convention consistency |
-| `mysql_cmon_root_password` | 🔄 Renamed → `mysql_root_password` | Cleaner name |
-| `mysql_cmon_port` | 🔄 Renamed → `cmon_mysql_port` | Naming-convention consistency |
-| `api_token` | ❌ Removed | Obsolete in CC 2.4.x — `ccsetup` user replaces it |
-| `ssh_user` / `ssh_user_group` / `ssh_key` / `ssh_port` / `sudo_password` | ❌ Removed | No more SSH-based remote deployment from the module |
-| `only_cc_v2` | ❌ Removed | v3.0.0 only supports CC 2.4.x (MCC) — flag is implicit |
-| `email_address` | ❌ Removed | GUI registration handles this |
-| `is_online_install` / `cc_packages_path` | ❌ Removed | Offline install no longer supported — use online repos |
-| `controller_id` | ❌ Removed | Auto-generated |
-| `modulepath` / `datadir` | ❌ Removed | Use Puppet defaults |
-| `disable_firewall` | ✅ Kept | Same behavior |
-| `disable_os_sec_module` | 🔄 Renamed → `disable_selinux` | More explicit |
 
 ## Multi-Node Deployment
 
@@ -331,17 +305,6 @@ ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS/Alm
 - Ubuntu 20.04 LTS (Focal Fossa)
 - Ubuntu 22.04 LTS (Jammy Jellyfish)
 - AlmaLinux / Oracle Linux / Rocky Linux / RHEL / CentOS 7.x / 8.x / 9.x
-
-**Real-VM validation status (as of this release):**
-
-| OS | Catalog Compile | Real-VM End-to-End |
-|---|---|---|
-| Rocky Linux 9 | ✅ | ✅ |
-| AlmaLinux 9 | ✅ | ✅ |
-| Ubuntu 22.04 | ✅ | ✅ |
-| RHEL 9 | ✅ | ⏳ Pending |
-| Rocky Linux 8 | ✅ | ⏳ Pending |
-| Debian 12 | ✅ | ⏳ Pending |
 
 **SLES support:** v3.0.0 does not yet support SUSE/SLES. If you need it, please open an issue.
 
