@@ -3,26 +3,22 @@
 # Configures MySQL Community Server 8.4, sets root password, creates cmon user
 # with proper grants using mysql_native_password authentication.
 #
-# Why MySQL 8.4 (not MariaDB)?
-#   This module uses MySQL Community 8.4 LTS to match Severalnines' cc-ansible
-#   reference implementation. The previous MariaDB-based approach hit a known
-#   EL9 systemd cgroup tracking issue producing:
-#     "mariadb.service: Will not start ... while processes exist"
-#     "Failed to run 'start-pre' task: Device or resource busy"
-#   MySQL Community uses Type=notify with proper systemd integration.
+# Critical for MySQL 8.4:
+#   In MySQL 8.4 LTS, mysql_native_password is DEPRECATED and DISABLED BY
+#   DEFAULT. It must be explicitly enabled in my.cnf BEFORE mysqld loads,
+#   otherwise ALTER USER ... IDENTIFIED WITH mysql_native_password fails:
+#     ERROR 1524 (HY000): Plugin 'mysql_native_password' is not loaded
 #
-# Initialization flow:
-#   1. install/redhat.pp or install/debian.pp installs MySQL community packages
-#      and runs mysqld --initialize-insecure (RHEL) on first install,
-#      leaving root with no password.
-#   2. Service[mysqld] ensures the daemon is enabled and running.
-#   3. Exec[wait-for-mysql-ready] polls mysqladmin ping for up to 60s.
-#   4. /etc/my.cnf is written with mysql_native_password=ON (required for
-#      MySQL 8 to enable legacy auth plugin used by ClusterControl).
-#   5. Root password is set via ALTER USER ... IDENTIFIED WITH mysql_native_password.
-#   6. /root/.my.cnf gets written so subsequent mysql commands authenticate.
-#   7. cmon user is created with mysql_native_password on localhost, 127.0.0.1,
-#      and the controller IP.
+# Order of operations:
+#   1. Write /etc/my.cnf with `mysql_native_password = ON`
+#   2. Start mysqld (Service requires File[my.cnf] so config is in place)
+#   3. One-shot restart on first install to guarantee plugin is loaded
+#      (covers the case where mysqld was already started by the package
+#      before our my.cnf was written). Guarded by a marker file so this
+#      only runs once.
+#   4. Wait for mysqld to be ready
+#   5. Set root password (now possible because plugin is loaded)
+#   6. Create cmon user with mysql_native_password auth
 #
 class clustercontrol::configure_mysql {
 
@@ -30,35 +26,18 @@ class clustercontrol::configure_mysql {
   $mysql_config_file  = $clustercontrol::params::mysql_config_file
   $mysql_socket       = $clustercontrol::params::mysql_socket
   $mysql_pid_file     = $clustercontrol::params::mysql_pid_file
+  $mysql_init_marker  = $clustercontrol::params::mysql_init_marker
+  $cmon_state_dir     = $clustercontrol::params::cmon_state_dir
   $mysql_root_pass    = $clustercontrol::mysql_root_password
   $cmon_user          = $clustercontrol::cmon_mysql_user
   $cmon_pass          = $clustercontrol::cmon_mysql_password
   $controller_ip      = $clustercontrol::controller_ip
 
   # ----------------------------------------------------------------------------
-  # Ensure MySQL is running and enabled at boot
-  # ----------------------------------------------------------------------------
-  service { $mysql_daemon:
-    ensure => running,
-    enable => true,
-  }
-
-  # ----------------------------------------------------------------------------
-  # Wait for MySQL to be fully ready
-  # ----------------------------------------------------------------------------
-  exec { 'wait-for-mysql-ready':
-    command  => 'for i in $(seq 1 60); do mysqladmin ping >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1',
-    path     => ['/bin', '/usr/bin', '/usr/local/bin'],
-    provider => shell,
-    unless   => '[ ! -x /usr/bin/mysqladmin ] || mysqladmin ping >/dev/null 2>&1',
-    require  => Service[$mysql_daemon],
-  }
-
-  # ----------------------------------------------------------------------------
-  # /etc/my.cnf (RHEL) or /etc/mysql/my.cnf (Debian)
+  # Step 1: Write /etc/my.cnf
   #
-  # No `notify => Service[mysqld]` - settings take effect on next natural restart.
-  # mysql_native_password=ON is critical for MySQL 8 ClusterControl compatibility.
+  # Notifies a restart so a config change picked up at any point reloads the
+  # daemon and updates the plugin set.
   # ----------------------------------------------------------------------------
   file { $mysql_config_file:
     ensure  => file,
@@ -66,30 +45,87 @@ class clustercontrol::configure_mysql {
     group   => 'root',
     mode    => '0644',
     content => template('clustercontrol/my.cnf.erb'),
-    require => Exec['wait-for-mysql-ready'],
+    notify  => Exec['restart-mysqld-after-mycnf-change'],
   }
 
   # ----------------------------------------------------------------------------
-  # Bootstrap root password
+  # Step 2: Ensure mysqld is running and enabled at boot
+  # ----------------------------------------------------------------------------
+  service { $mysql_daemon:
+    ensure  => running,
+    enable  => true,
+    require => File[$mysql_config_file],
+  }
+
+  # ----------------------------------------------------------------------------
+  # Step 3a: Restart mysqld when my.cnf is changed at any time
+  # (refreshonly - only runs when notified)
+  # ----------------------------------------------------------------------------
+  exec { 'restart-mysqld-after-mycnf-change':
+    command     => "systemctl restart ${mysql_daemon} && sleep 3",
+    path        => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+    provider    => shell,
+    refreshonly => true,
+    require     => Service[$mysql_daemon],
+  }
+
+  # ----------------------------------------------------------------------------
+  # Step 3b: Ensure cmon_state_dir exists so we can write marker files
+  # ----------------------------------------------------------------------------
+  file { $cmon_state_dir:
+    ensure => directory,
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0755',
+  }
+
+  # ----------------------------------------------------------------------------
+  # Step 3c: First-run-only restart to guarantee my.cnf is loaded
+  #
+  # The package may have started mysqld with stock config before our my.cnf
+  # was written. This restart guarantees the plugin is loaded on first run.
+  # Idempotent via $mysql_init_marker - runs exactly once.
+  # ----------------------------------------------------------------------------
+  exec { 'first-run-restart-mysqld':
+    command  => "systemctl restart ${mysql_daemon} && sleep 3 && touch ${mysql_init_marker}",
+    path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+    provider => shell,
+    creates  => $mysql_init_marker,
+    require  => [
+      Service[$mysql_daemon],
+      File[$cmon_state_dir],
+    ],
+  }
+
+  # ----------------------------------------------------------------------------
+  # Step 4: Wait for MySQL to be fully ready
+  # ----------------------------------------------------------------------------
+  exec { 'wait-for-mysql-ready':
+    command  => 'for i in $(seq 1 60); do mysqladmin ping >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1',
+    path     => ['/bin', '/usr/bin', '/usr/local/bin'],
+    provider => shell,
+    unless   => '[ ! -x /usr/bin/mysqladmin ] || mysqladmin ping >/dev/null 2>&1',
+    require  => Exec['first-run-restart-mysqld'],
+  }
+
+  # ----------------------------------------------------------------------------
+  # Step 5: Bootstrap root password
   #
   # MySQL 8 init-insecure creates a passwordless root@localhost. Set the real
-  # password using IDENTIFIED WITH mysql_native_password for ClusterControl
-  # compatibility. The unless check tries logging in with the target password;
-  # if that succeeds, root password is already set.
+  # password using IDENTIFIED WITH mysql_native_password.
+  # The unless check first tries logging in with the target password; if that
+  # succeeds, root password is already set.
   # ----------------------------------------------------------------------------
   exec { 'set-mysql-root-password':
     command  => "mysql --no-defaults -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${mysql_root_pass}';\"",
     path     => ['/bin', '/usr/bin', '/usr/local/bin'],
     unless   => "[ ! -x /usr/bin/mysql ] || mysql -u root -p\"${mysql_root_pass}\" -NBe 'SELECT 1;' >/dev/null 2>&1",
     provider => shell,
-    require  => [
-      Service[$mysql_daemon],
-      Exec['wait-for-mysql-ready'],
-    ],
+    require  => Exec['wait-for-mysql-ready'],
   }
 
   # ----------------------------------------------------------------------------
-  # Write /root/.my.cnf so subsequent mysql commands authenticate automatically
+  # Step 6: Write /root/.my.cnf so subsequent mysql commands authenticate
   # ----------------------------------------------------------------------------
   file { '/root/.my.cnf':
     ensure  => file,
@@ -101,7 +137,7 @@ class clustercontrol::configure_mysql {
   }
 
   # ----------------------------------------------------------------------------
-  # Create cmon user with mysql_native_password authentication on each host
+  # Step 7: Create cmon user with mysql_native_password on each host
   # ----------------------------------------------------------------------------
   $cmon_hosts = ['localhost', '127.0.0.1', $controller_ip]
 
@@ -111,10 +147,7 @@ class clustercontrol::configure_mysql {
       path     => ['/bin', '/usr/bin', '/usr/local/bin'],
       provider => shell,
       unless   => "[ ! -x /usr/bin/mysql ] || mysql -u root -p\"${mysql_root_pass}\" -NBe \"SELECT 1 FROM mysql.user WHERE User='${cmon_user}' AND Host='${host}' AND plugin='mysql_native_password';\" 2>/dev/null | grep -q 1",
-      require  => [
-        Service[$mysql_daemon],
-        File['/root/.my.cnf'],
-      ],
+      require  => File['/root/.my.cnf'],
     }
   }
 }

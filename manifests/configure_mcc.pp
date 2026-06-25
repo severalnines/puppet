@@ -17,15 +17,8 @@ class clustercontrol::configure_mcc {
   $web_root    = $clustercontrol::mcc_web_root
   $controller_ip = $clustercontrol::controller_ip
 
-  # ----------------------------------------------------------------------------
-  # Ensure /var/lib/cmon exists for markers and token storage
-  # ----------------------------------------------------------------------------
-  file { $state_dir:
-    ensure => directory,
-    owner  => 'root',
-    group  => 'root',
-    mode   => '0755',
-  }
+  # /var/lib/cmon directory is created by clustercontrol::configure_mysql
+  # (runs first in the dependency chain). We just use it here.
 
   # ----------------------------------------------------------------------------
   # /etc/default/cmon  -  EVENTS_CLIENT + CLOUD_SERVICE
