@@ -41,22 +41,30 @@ class clustercontrol::install::redhat {
 
   # ----------------------------------------------------------------------------
   # Step 1: Disable RHEL AppStream mysql module (to avoid conflict)
+  #
+  # After 'dnf module disable mysql', dnf writes state=disabled to
+  # /etc/dnf/modules.d/mysql.module - we use that as the idempotency check.
   # ----------------------------------------------------------------------------
   exec { 'disable-rhel-mysql-module':
     command  => 'dnf -y module disable mysql 2>&1 || true',
     path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
     provider => shell,
-    unless   => 'dnf module list mysql 2>&1 | grep -q "Disabled profiles"',
+    unless   => 'grep -q "^state=disabled" /etc/dnf/modules.d/mysql.module 2>/dev/null',
     require  => Package[$clustercontrol::params::base_packages],
   }
 
   # ----------------------------------------------------------------------------
   # Step 2: Import MySQL GPG key
+  #
+  # 'rpm -qa gpg-pubkey' returns names like 'gpg-pubkey-3a79bd29-...' which are
+  # just hashes, so grep-by-name doesn't work. Instead query the SUMMARY field
+  # of each gpg-pubkey package - the MySQL key has 'MySQL' in its description.
   # ----------------------------------------------------------------------------
   exec { 'import-mysql-gpg-key':
     command  => "rpm --import ${clustercontrol::params::mysql_gpg_key_url}",
     path     => ['/bin', '/usr/bin'],
-    unless   => 'rpm -q gpg-pubkey 2>/dev/null | grep -qi mysql',
+    provider => shell,
+    unless   => "rpm -qa gpg-pubkey --qf '%{SUMMARY}\\n' 2>/dev/null | grep -qi mysql",
     require  => Exec['disable-rhel-mysql-module'],
   }
 
