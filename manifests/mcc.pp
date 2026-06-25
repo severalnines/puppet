@@ -136,12 +136,20 @@ class clustercontrol::mcc {
   # ----------------------------------------------------------------------------
   # Step 7: Create ccsetup user for first-run GUI registration
   # NO --email-address flag so the GUI email field stays editable.
+  #
+  # Idempotency: uses a marker file via 'creates' rather than 's9s user --list'
+  # in 'unless'. The s9s CLI auth state may be transiently unstable in the
+  # window right after sync-admin-password + service restart, causing false
+  # negatives on the unless check. The marker file is set-once on successful
+  # creation and prevents re-runs reliably.
   # ----------------------------------------------------------------------------
+  $ccsetup_marker = "${clustercontrol::params::cmon_state_dir}/.puppet-ccsetup-user-created"
+
   exec { 'create-ccsetup-user':
-    command  => 'rm -f /tmp/ccsetup.conf; S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --controller="https://localhost:9501" ccsetup',
+    command  => "rm -f /tmp/ccsetup.conf; if s9s user --list 2>/dev/null | grep -qw ccsetup; then touch ${ccsetup_marker}; else S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --controller='https://localhost:9501' ccsetup && touch ${ccsetup_marker}; fi",
     path     => ['/bin', '/usr/bin', '/usr/sbin'],
     provider => shell,
-    unless   => '[ ! -x /usr/bin/s9s ] || s9s user --list 2>/dev/null | grep -qw ccsetup',
+    creates  => $ccsetup_marker,
     require  => Exec['wait-for-s9s-auth'],
   }
 }
