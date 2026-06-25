@@ -7,7 +7,7 @@ port = 3306
 bind-address = 0.0.0.0
 datadir = /var/lib/mysql
 socket = <%= @mysql_socket %>
-pid-file = /var/lib/mysql/mysql.pid
+pid-file = <%= @mysql_pid_file %>
 log-error = error.log
 
 symbolic-links = 0
@@ -25,6 +25,10 @@ read_rnd_buffer_size = 4M
 thread_cache_size = 16
 max_connections = 151
 wait_timeout = 28800
+
+# MySQL 8.4 LTS: enable legacy mysql_native_password plugin
+# Required by ClusterControl's cmon user authentication
+mysql_native_password = ON
 
 # InnoDB settings.
 innodb_file_per_table = 1
@@ -48,5 +52,5 @@ quick
 max_allowed_packet = 64M
 
 [mysqld_safe]
-pid-file = /var/lib/mysql/mysql.pid
+pid-file = <%= @mysql_pid_file %>
 log-error = error.log

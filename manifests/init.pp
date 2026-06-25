@@ -1,11 +1,13 @@
 # == Class: clustercontrol
 #
-# Installs and configures Severalnines ClusterControl (MCC mode).
+# Installs and configures Severalnines ClusterControl (MCC mode) with
+# MySQL Community Server 8.4 LTS, matching Severalnines' cc-ansible
+# reference implementation.
 #
 # Supports:
-#   - RHEL/CentOS/Rocky/AlmaLinux/OracleLinux 7, 8, 9
-#   - Ubuntu 18.04, 20.04, 22.04, 24.04
-#   - Debian 9, 10, 11, 12
+#   - RHEL/Rocky/AlmaLinux/Oracle Linux 8, 9
+#   - Ubuntu 20.04 LTS, 22.04 LTS
+#   - Debian 11 (Bullseye), 12 (Bookworm)
 #
 # === Parameters
 #
