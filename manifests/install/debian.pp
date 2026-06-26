@@ -42,11 +42,20 @@ class clustercontrol::install::debian {
   # ----------------------------------------------------------------------------
   # Step 1: Remove MariaDB packages if present (avoid conflicts)
   # ----------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # Step 1: Remove MariaDB server if present (avoid conflicts with MySQL)
+  #
+  # Only checks for mariadb-server as the trigger - NOT mariadb-common.
+  # mariadb-common is a shared-files package present on Debian 12 as a
+  # dependency of other packages (e.g. libdbd-mysql-perl) even when
+  # mariadb-server is not installed. Checking it would cause this exec
+  # to fire on every Puppet run as a false corrective.
+  # ----------------------------------------------------------------------------
   exec { 'remove-mariadb-packages':
     command  => 'DEBIAN_FRONTEND=noninteractive apt-get -y purge mariadb-server mariadb-client mariadb-common 2>&1 || true; apt-get -y autoremove 2>&1 || true',
     path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
     provider => shell,
-    onlyif   => 'dpkg -l mariadb-server mariadb-client mariadb-common 2>/dev/null | grep -q "^ii"',
+    onlyif   => 'dpkg -l mariadb-server 2>/dev/null | grep -q "^ii"',
     require  => Package[$clustercontrol::params::base_packages],
   }
 
