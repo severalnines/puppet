@@ -66,6 +66,7 @@ class clustercontrol::install::debian {
   exec { 'install-mysql-apt-config':
     command  => 'DEBIAN_FRONTEND=noninteractive dpkg -i /tmp/mysql-apt-config.deb',
     path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+    provider => shell,
     creates  => '/etc/apt/sources.list.d/mysql.list',
     require  => Exec['download-mysql-apt-config'],
   }
@@ -111,6 +112,7 @@ class clustercontrol::install::debian {
   exec { 'install-mysql-common-first':
     command  => 'DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-common',
     path     => ['/bin', '/usr/bin'],
+    provider => shell,
     unless   => 'dpkg -l mysql-common 2>/dev/null | grep -q "^ii"',
     require  => [
       File['/etc/apt/preferences.d/mysql'],
