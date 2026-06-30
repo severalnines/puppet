@@ -71,7 +71,7 @@ describe 'clustercontrol' do
     it { is_expected.to contain_class('clustercontrol::configure_mcc') }
     it { is_expected.to contain_class('clustercontrol::mcc') }
 
-    # MariaDB must be used (not MySQL)
+    # MySQL Community Server must be used (not MariaDB)
     it { is_expected.to contain_package('mysql-community-server').with_ensure('present') }
     it { is_expected.to contain_package('mysql-community-client').with_ensure('present') }
     it { is_expected.not_to contain_package('mariadb-server') }
@@ -87,7 +87,7 @@ describe 'clustercontrol' do
     it { is_expected.to contain_package('clustercontrol-clud') }
     it { is_expected.to contain_package('s9s-tools') }
 
-    # MariaDB service must be managed
+    # MySQL service must be managed
     it { is_expected.to contain_service('mysqld').with_ensure('running') }
     it { is_expected.to contain_service('mysqld').with_enable(true) }
 
@@ -133,9 +133,9 @@ describe 'clustercontrol' do
   end
 
   # =========================================================================
-  # CATALOG ONLY - Not yet validated on real VM
-  # These tests ensure catalog compilation but real VM testing is pending.
-  # Update status above when real VM testing is complete.
+  # ADDITIONAL OS TESTS
+  # Some OS below are Real VM Validated; others are catalog-only (pending VM).
+  # Update labels as real VM validation is completed.
   # =========================================================================
 
   context 'on AlmaLinux 9 [REAL VM VALIDATED]' do
