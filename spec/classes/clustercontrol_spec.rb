@@ -173,7 +173,7 @@ describe 'clustercontrol' do
     it { is_expected.to contain_package('s9s-tools') }
 
     # Critical services
-    it { is_expected.to contain_service('mariadb').with_ensure('running') }
+    it { is_expected.to contain_service('mysqld').with_ensure('running') }
     it { is_expected.to contain_service('cmon').with_ensure('running') }
     it { is_expected.to contain_service('cmon-proxy').with_ensure('running') }
 
