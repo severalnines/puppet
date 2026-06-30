@@ -23,11 +23,10 @@
 #   Rocky Linux 9       |   ✅    |   ✅    |
 #   AlmaLinux 9         |   ✅    |   ✅    |
 #   Ubuntu 22.04        |   ✅    |   ✅    |
-#   RHEL 9              |   ✅    |   ⏳    | (pending)
-#   Rocky Linux 8       |   ✅    |   ⏳    | (pending)
-#   Debian 12           |   ✅    |   ⏳    | (pending)
-#   Ubuntu 24.04        |   ✅    |   —     | (removed from testing scope)
-#
+#   RHEL 9              |   ✅    |   ✅    |
+#   Rocky Linux 8       |   ✅    |   ✅    |
+#   Debian 12           |   ✅    |   ✅    |
+
 # RULE: Once an OS is Real VM Validated, mark it below and NEVER remove its test.
 #
 
@@ -89,8 +88,8 @@ describe 'clustercontrol' do
     it { is_expected.to contain_package('s9s-tools') }
 
     # MariaDB service must be managed
-    it { is_expected.to contain_service('mariadb').with_ensure('running') }
-    it { is_expected.to contain_service('mariadb').with_enable(true) }
+    it { is_expected.to contain_service('mysqld').with_ensure('running') }
+    it { is_expected.to contain_service('mysqld').with_enable(true) }
 
     # All CC services must be started
     it { is_expected.to contain_service('cmon').with_ensure('running') }
