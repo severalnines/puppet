@@ -304,7 +304,7 @@ ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS/Alm
 - Debian 12.x (Bookworm)
 - Ubuntu 20.04 LTS (Focal Fossa)
 - Ubuntu 22.04 LTS (Jammy Jellyfish)
-- AlmaLinux / Oracle Linux / Rocky Linux / RHEL / CentOS 7.x / 8.x / 9.x
+- Ubuntu 24.04 LTS (Noble Numbat) (catalog-only / pending real VM validation)
 
 **SLES support:** v3.0.0 does not yet support SUSE/SLES. If you need it, please open an issue.
 
