@@ -15,7 +15,7 @@ class clustercontrol::params {
   # Common settings
   # ==========================================================================
   $repo_host = 'repo.severalnines.com'
-  $gpg_key   = "http://${repo_host}/severalnines-repos.asc"
+  $gpg_key   = "https://${repo_host}/severalnines-repos.asc"
 
   # CC package groups
   $clustercontrol_ui_packages = [
@@ -99,7 +99,7 @@ class clustercontrol::params {
       $repo_config_dir       = '/etc/yum.repos.d'
       $repo_config_path      = '/etc/yum.repos.d/s9s-repo.repo'
       $repo_cli_config_path  = '/etc/yum.repos.d/s9s-tools.repo'
-      $repo_config_url       = 'http://www.severalnines.com/downloads/cmon/s9s-repo.repo'
+      $repo_config_url       = 'https://www.severalnines.com/downloads/cmon/s9s-repo.repo'
 
       # s9s-tools CLI repo
       $clustercontrol_cli_repository = "https://${repo_host}/s9s-tools/RHEL_${os_major}/s9s-tools.repo"
@@ -160,11 +160,11 @@ class clustercontrol::params {
       $repo_config_dir       = '/etc/apt/sources.list.d'
       $repo_config_path      = '/etc/apt/sources.list.d/s9s-repo.list'
       $repo_cli_config_path  = '/etc/apt/sources.list.d/s9s-tools.list'
-      $repo_config_url       = 'http://www.severalnines.com/downloads/cmon/s9s-repo.list'
+      $repo_config_url       = 'https://www.severalnines.com/downloads/cmon/s9s-repo.list'
 
       $distro_codename = $facts['os']['distro']['codename']
       $clustercontrol_cli_repository = "deb [signed-by=/etc/apt/keyrings/severalnines-tools.asc] https://${repo_host}/s9s-tools/${distro_codename}/ ./"
-      $clustercontrol_cli_key        = "http://${repo_host}/s9s-tools/${distro_codename}/Release.key"
+      $clustercontrol_cli_key        = "https://${repo_host}/s9s-tools/${distro_codename}/Release.key"
 
       $apache_service = 'apache2'
       $apache_user    = 'www-data'
