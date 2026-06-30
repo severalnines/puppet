@@ -6,7 +6,7 @@
 #
 # Supports:
 #   - RHEL/Rocky/AlmaLinux/Oracle Linux 8, 9
-#   - Ubuntu 20.04 LTS, 22.04 LTS
+#   - Ubuntu 20.04 LTS, 22.04 LTS, 24.04 LTS
 #   - Debian 11 (Bullseye), 12 (Bookworm)
 #
 # === Parameters
