@@ -237,10 +237,11 @@ describe 'clustercontrol' do
     it { is_expected.to contain_class('clustercontrol::install::debian') }
     it { is_expected.not_to contain_class('clustercontrol::install::redhat') }
 
-    # MariaDB used (not MySQL.com)
-    it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
-    it { is_expected.to contain_package('mariadb-client').with_ensure('present') }
-
+    # MySQL Community Server used (not MariaDB)
+    it { is_expected.to contain_package('mysql-server').with_ensure('present') }
+    it { is_expected.to contain_package('mysql-client').with_ensure('present') }
+    it { is_expected.not_to contain_package('mariadb-server') }
+    
     # All 9 CC packages installed
     it { is_expected.to contain_package('clustercontrol-controller') }
     it { is_expected.to contain_package('clustercontrol-mcc') }
