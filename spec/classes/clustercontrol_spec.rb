@@ -73,10 +73,10 @@ describe 'clustercontrol' do
     it { is_expected.to contain_class('clustercontrol::mcc') }
 
     # MariaDB must be used (not MySQL)
-    it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
-    it { is_expected.to contain_package('mariadb').with_ensure('present') }
-    it { is_expected.not_to contain_package('mysql-community-server') }
-
+    it { is_expected.to contain_package('mysql-community-server').with_ensure('present') }
+    it { is_expected.to contain_package('mysql-community-client').with_ensure('present') }
+    it { is_expected.not_to contain_package('mariadb-server') }
+    
     # All 9 CC packages must be installed
     it { is_expected.to contain_package('clustercontrol-controller') }
     it { is_expected.to contain_package('clustercontrol-mcc') }
