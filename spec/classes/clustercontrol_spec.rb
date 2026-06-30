@@ -158,8 +158,8 @@ describe 'clustercontrol' do
     it { is_expected.to contain_class('clustercontrol::install::redhat') }
     it { is_expected.not_to contain_class('clustercontrol::install::debian') }
 
-    # MariaDB used
-    it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
+    # MySQL Community Server used
+    it { is_expected.to contain_package('mysql-community-server').with_ensure('present') }
 
     # All 9 CC packages installed
     it { is_expected.to contain_package('clustercontrol-controller') }
