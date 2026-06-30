@@ -13,9 +13,11 @@ set -e
 PORT="${1:?Usage: $0 <port> <web_root>}"
 WEB_ROOT="${2:?Usage: $0 <port> <web_root>}"
 
-# Run ccmgradm init and capture output
-OUTPUT="$(ccmgradm init --local-cmon -p "$PORT" -f "$WEB_ROOT" 2>&1 || true)"
+# Run ccmgradm init and capture output + real exit code (don't lose RC in || true)
+set +e
+OUTPUT="$(ccmgradm init --local-cmon -p "$PORT" -f "$WEB_ROOT" 2>&1)"
 RC=$?
+set -e
 
 # Always show the output for transparency
 echo "$OUTPUT"
