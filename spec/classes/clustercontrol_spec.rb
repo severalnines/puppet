@@ -274,7 +274,7 @@ describe 'clustercontrol' do
     end
     it { is_expected.to compile.with_all_deps }
     it { is_expected.to contain_class('clustercontrol::install::debian') }
-    it { is_expected.to contain_package('mariadb-server').with_ensure('present') }
+    it { is_expected.to contain_package('mysql-server').with_ensure('present') }
   end
 
   context 'on Debian 12 [CATALOG ONLY - pending real VM]' do
