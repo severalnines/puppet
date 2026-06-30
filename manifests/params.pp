@@ -115,10 +115,9 @@ class clustercontrol::params {
     }
 
     'Debian': {
-      # Version guard
       if ($os_name == 'Ubuntu') {
-        if ($os_major < 20 or $os_major > 22) {
-          fail("ClusterControl on Ubuntu requires version 20.04 or 22.04 LTS. Got: ${os_major}")
+         if ($os_major < 20 or $os_major > 24) {
+           fail("ClusterControl on Ubuntu requires version 20.04, 22.04, or 24.04 LTS. Got: ${os_major}")
         }
       } elsif ($os_name == 'Debian') {
         if ($os_major < 11 or $os_major > 12) {
