@@ -57,7 +57,7 @@ If you have any questions, feel free to raise issues via <https://github.com/sev
 - ClusterControl controller, MCC, proxy, kuber-proxy, notifications, SSH, cloud and clud packages
 - The `s9s-tools` CLI package
 - SELinux/AppArmor (disabled by default — configurable)
-- MariaDB server and client
+- MySQL Community Server 8.4 server and client
 - `cmon-proxy` web server listening on port 443
 - The `ccsetup` bootstrap user (one-time, removed by the GUI after first registration)
 
@@ -116,12 +116,12 @@ Once deployment is complete, open the ClusterControl web UI at `https://<Cluster
 
 #### `mysql_root_password`
 
-The MariaDB root password. This module will set the root user with this password during installation. **(Required)**
+The MySQL root password. This module will set the root user with this password during installation. **(Required)**
 **Example: (String) `'R00tP@55'`**
 
 #### `cmon_mysql_password`
 
-The MariaDB password for user `cmon`. The module will grant this user with the specified password for `localhost`, `127.0.0.1`, and the controller's IP address (the host running ClusterControl). Required by ClusterControl to access its own `cmon` database. **(Required)**
+The MySQL password for user `cmon`. The module will grant this user with the specified password for `localhost`, `127.0.0.1`, and the controller's IP address (the host running ClusterControl). Required by ClusterControl to access its own `cmon` database. **(Required)**
 **Default: (String) `'cmon'`**
 
 #### `mysql_root_username`
@@ -201,7 +201,7 @@ node 'clustercontrol1.local',
 }
 ```
 
-Each host receives an independent ClusterControl installation. Their own MariaDB, their own `cmon-proxy` on port 443, their own GUI.
+Each host receives an independent ClusterControl installation. Their own MySQL, their own `cmon-proxy` on port 443, their own GUI.
 
 ## Installation & Upgrade Behavior
 
@@ -312,7 +312,7 @@ ClusterControl Module for Puppet supports only Debian/Ubuntu and RHEL/CentOS/Alm
 
 This module only supports bootstrapping the ClusterControl host itself. It does **not** SSH out to manage database nodes — passwordless SSH from the ClusterControl host to your database nodes must be configured separately (typically through the ClusterControl GUI after deployment).
 
-This module configures MariaDB with `skip-name-resolve` enabled, so the `cmon` user is granted only on `localhost`, `127.0.0.1`, and the controller's IP address (not hostnames).
+This module configures MySQL with `skip-name-resolve` enabled, so the `cmon` user is granted only on `localhost`, `127.0.0.1`, and the controller's IP address (not hostnames).
 
 [ClusterControl known issues and limitations](http://www.severalnines.com/docs/troubleshooting.html#known-issues-and-limitations).
 
@@ -325,7 +325,7 @@ This module is structured into focused classes that handle each phase of the ins
 | `clustercontrol::params` | OS detection, package/repo definitions |
 | `clustercontrol::install::redhat` | RHEL-family package + repo setup |
 | `clustercontrol::install::debian` | Debian/Ubuntu package + repo setup |
-| `clustercontrol::configure_mysql` | MariaDB config + `cmon` user grants |
+| `clustercontrol::configure_mysql` | MySQL config + `cmon` user grants |
 | `clustercontrol::configure_mcc` | `cmon --init` + `ccmgradm init` (marker-guarded) |
 | `clustercontrol::mcc` | Service management + `ccsetup` bootstrap user |
 
