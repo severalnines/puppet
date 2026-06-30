@@ -38,10 +38,10 @@ More details at [Severalnines ClusterControl](http://www.severalnines.com/cluste
 The Puppet module for ClusterControl automates the following actions:
 
 - Setup of ClusterControl required repositories (Severalnines repo, with modern signed-by GPG keyrings on Debian/Ubuntu).
-- Download and installs dependencies. For ClusterControl 2.4.x in MCC mode these are minimal — **MariaDB server is required, and Apache + PHP are no longer needed** (the web UI is served directly by `cmon-proxy`).
+- Download and installs dependencies. For ClusterControl 2.4.x in MCC mode these are minimal — **MySQL Community Server 8.4 is required, and Apache + PHP are no longer needed** (the web UI is served directly by `cmon-proxy`).
 - Install ClusterControl components: `clustercontrol-controller`, `clustercontrol-mcc`, `clustercontrol-proxy`, `clustercontrol-kuber-proxy`, `clustercontrol-notifications`, `clustercontrol-ssh`, `clustercontrol-cloud`, `clustercontrol-clud`, and `s9s-tools`.
 - Configures `cmon-proxy` to serve the web UI on port 443 (HTTPS).
-- Automates MariaDB installation:
+- Automates MySQL installation:
   - Creates the `cmon` database, grants the `cmon` user for `localhost`, `127.0.0.1`, and the controller's IP, and configures the DB connection for ClusterControl.
 - Initializes the controller (`cmon --init`) and registers it with `cmon-proxy` (`ccmgradm init`), guarded by state markers so re-runs are safe.
 - Creates the `ccsetup` bootstrap user via the `s9s` CLI so the first-time GUI registration flow works automatically.
