@@ -101,10 +101,10 @@ class clustercontrol::configure_mysql {
   # Step 4: Wait for MySQL to be fully ready
   # ----------------------------------------------------------------------------
   exec { 'wait-for-mysql-ready':
-    command  => 'for i in $(seq 1 60); do mysqladmin ping >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1',
+  command  => "for i in $(seq 1 60); do (mysqladmin ping >/dev/null 2>&1 || mysqladmin -u root -p\"${mysql_root_pass}\" ping >/dev/null 2>&1) && exit 0; sleep 1; done; exit 1",
     path     => ['/bin', '/usr/bin', '/usr/local/bin'],
     provider => shell,
-    unless   => '[ ! -x /usr/bin/mysqladmin ] || mysqladmin ping >/dev/null 2>&1',
+    unless   => "[ ! -x /usr/bin/mysqladmin ] || mysqladmin ping >/dev/null 2>&1 || mysqladmin -u root -p\"${mysql_root_pass}\" ping >/dev/null 2>&1",
     require  => Exec['first-run-restart-mysqld'],
   }
 
@@ -128,12 +128,13 @@ class clustercontrol::configure_mysql {
   # Step 6: Write /root/.my.cnf so subsequent mysql commands authenticate
   # ----------------------------------------------------------------------------
   file { '/root/.my.cnf':
-    ensure  => file,
-    owner   => 'root',
-    group   => 'root',
-    mode    => '0600',
-    content => "[client]\nuser=root\npassword=${mysql_root_pass}\n",
-    require => Exec['set-mysql-root-password'],
+     ensure    => file,
+     owner     => 'root',
+     group     => 'root',
+     mode      => '0600',
+     show_diff => false,
+     content   => "[client]\nuser=root\npassword=${mysql_root_pass}\n",
+     require   => Exec['set-mysql-root-password'],
   }
 
   # ----------------------------------------------------------------------------
