@@ -19,14 +19,27 @@ class clustercontrol::install::redhat {
     ensure => present,
   }
 
-  # Enable CRB repo on RHEL 9 (required by EPEL)
+  # Enable extra repositories required by EPEL on EL9:
+  # - Rocky/Alma: CRB
+  # - RHEL: CodeReady Builder (CRB equivalent))
   if ($os_major == 9) {
-    exec { 'enable-crb-repo':
-      command => 'dnf config-manager --set-enabled crb',
-      path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
-      onlyif  => 'dnf repolist --disabled 2>/dev/null | grep -q "^crb "',
-      unless  => 'dnf repolist --enabled 2>/dev/null | grep -q "^crb "',
-      require => Package['epel-release'],
+     if ($clustercontrol::params::os_name == 'RedHat') {
+       exec { 'enable-codeready-builder-repo':
+         command  => 'subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms 2>/dev/null || true',
+         path     => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+         onlyif   => 'command -v subscription-manager >/dev/null 2>&1',
+         unless   => 'subscription-manager repos --list-enabled 2>/dev/null | grep -qi codeready-builder-for-rhel-9',
+         provider => shell,
+         require  => Package['epel-release'],
+       }
+     } else {
+       exec { 'enable-crb-repo':
+         command => 'dnf config-manager --set-enabled crb',
+         path    => ['/bin', '/usr/bin', '/sbin', '/usr/sbin'],
+         onlyif  => 'dnf repolist --disabled 2>/dev/null | grep -q "^crb "',
+         unless  => 'dnf repolist --enabled 2>/dev/null | grep -q "^crb "',
+         require => Package['epel-release'],
+       }
     }
   }
 
