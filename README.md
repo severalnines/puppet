@@ -56,7 +56,7 @@ If you have any questions, feel free to raise issues via <https://github.com/sev
 - Severalnines yum/apt repository
 - ClusterControl controller, MCC, proxy, kuber-proxy, notifications, SSH, cloud and clud packages
 - The `s9s-tools` CLI package
-- SELinux/AppArmor (disabled by default — configurable)
+- SELinux (disabled by default on RHEL-family systems — configurable)
 - MySQL Community Server 8.4 server and client
 - `cmon-proxy` web server listening on port 443
 - The `ccsetup` bootstrap user (one-time, removed by the GUI after first registration)
