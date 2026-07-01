@@ -45,7 +45,7 @@ The Puppet module for ClusterControl automates the following actions:
   - Creates the `cmon` database, grants the `cmon` user for `localhost`, `127.0.0.1`, and the controller's IP, and configures the DB connection for ClusterControl.
 - Initializes the controller (`cmon --init`) and registers it with `cmon-proxy` (`ccmgradm init`), guarded by state markers so re-runs are safe.
 - Creates the `ccsetup` bootstrap user via the `s9s` CLI so the first-time GUI registration flow works automatically.
-- Disables SELinux/AppArmor by default (configurable). *You can enable once set up correctly.*
+- Disables SELinux by default on RHEL-family systems (configurable). *You can enable once set up correctly.*
 
 If you have any questions, feel free to raise issues via <https://github.com/severalnines/puppet/issues> or via the [Community Forums](https://support.severalnines.com/hc/en-us/community/topics) or [Slack](https://join.slack.com/t/clustercontrol/shared_invite/zt-b15k9477-jLllD6qJOUm3bGnOWynVig).
 
