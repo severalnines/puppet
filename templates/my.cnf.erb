@@ -4,7 +4,7 @@ socket = <%= @mysql_socket %>
 
 [mysqld]
 port = 3306
-bind-address = 0.0.0.0
+bind-address = 127.0.0.1
 datadir = /var/lib/mysql
 socket = <%= @mysql_socket %>
 pid-file = <%= @mysql_pid_file %>
