@@ -1,52 +1,56 @@
-# All files in this package is subject to the GPL v2 license
-# More information is in the COPYING file in the top directory of this package.
-# Copyright (C) 2012 severalnines.com
-#
+[client]
+port = 3306
+socket = <%= @mysql_socket %>
 
-[MYSQLD]
-user=mysql
-basedir=/usr
-datadir=/var/lib/mysql
-port=3306
-log-error=error.log
+[mysqld]
+port = 3306
+bind-address = 127.0.0.1
+datadir = /var/lib/mysql
+socket = <%= @mysql_socket %>
+pid-file = <%= @mysql_pid_file %>
+log-error = error.log
 
-### INNODB 
-innodb-buffer-pool-size = <%= "%.0f" % [@memorysize_mb.to_i/2] %>M
-innodb-flush-log-at-trx_commit = 2
-innodb-file-per-table = 1
-#innodb_log_file_size = 256M
-innodb-log-files-in-group = 2
-#innodb-buffer-pool-instances = 4
-innodb-thread-concurrency = 0
-#innodb-file-format = barracuda
-innodb-flush-method = O_DIRECT
-<% if (scope.lookupvar("clustercontrol::params::lower_operatingsystem") == "ubuntu" and scope.lookupvar("clustercontrol::params::os_majrelease") >= 20) or (scope.lookupvar("clustercontrol::params::$lower_osfamily") == "redhat" and scope.lookupvar("clustercontrol::params::os_majrelease") >= 9) 
-%>
-#innodb_locks_unsafe_for_binlog = 1
-<% else %>
-innodb_locks_unsafe_for_binlog = 1
-<% end %>
-#OTHER THINGS, BUFFERS ETC
-key-buffer-size = 8M
-max-allowed-packet = 16M
-sort-buffer-size = 512K
-read-buffer-size = 256K
-read-rnd-buffer-size = 512K
-#thread_cache_size=1024
-myisam-sort-buffer-size = 8M
+symbolic-links = 0
 skip-name-resolve
-event_scheduler = 1
-memlock = 0
-sysdate-is-now = 1
-max-connections = 200
-thread-cache-size = 64
-#query-cache-type = 1
-#query-cache-size = 32M
-table-open_cache = 512
-lower-case-table-names = 0
 
-[MYSQLD_SAFE]
-basedir=/usr
-datadir=/var/lib/mysql
-log-error=error.log
+# User is ignored when systemd is used (fedora >= 15).
+user = mysql
 
+key_buffer_size = 32M
+max_allowed_packet = 16M
+table_open_cache = 256
+sort_buffer_size = 1M
+read_buffer_size = 1M
+read_rnd_buffer_size = 4M
+thread_cache_size = 16
+max_connections = 151
+wait_timeout = 28800
+
+# MySQL 8.4 LTS: enable legacy mysql_native_password plugin
+# Required by ClusterControl's cmon user authentication
+mysql_native_password = ON
+
+# InnoDB settings.
+innodb_file_per_table = 1
+<%
+  mem_mb = begin
+    scope.lookupvar("facts").dig('memory', 'system', 'total_bytes').to_i / 1024 / 1024
+  rescue
+    512
+  end
+  mem_mb = 512 if mem_mb.nil? || mem_mb == 0
+  innodb_pool = (mem_mb / 2).round
+-%>
+innodb_buffer_pool_size = <%= innodb_pool %>M
+innodb_log_file_size = 64M
+innodb_log_buffer_size = 8M
+innodb_flush_log_at_trx_commit = 1
+innodb_lock_wait_timeout = 50
+
+[mysqldump]
+quick
+max_allowed_packet = 64M
+
+[mysqld_safe]
+pid-file = <%= @mysql_pid_file %>
+log-error = error.log

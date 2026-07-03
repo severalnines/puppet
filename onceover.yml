@@ -1,0 +1,124 @@
+# .onceover.yml
+# Defines which OS combinations to test catalog compilation against.
+# Every entry here is tested automatically - if any break, the test fails.
+# This protects previously-working OS from regressions when adding new ones.
+
+---
+classes:
+  - clustercontrol
+
+nodes:
+  - rocky9
+  - almalinux9
+  - rhel9
+  - ubuntu2204
+  - ubuntu2404
+  - debian12
+
+node_groups:
+  all_nodes:
+    - rocky9
+    - almalinux9
+    - rhel9
+    - ubuntu2204
+    - ubuntu2404
+    - debian12
+
+class_groups:
+  all_classes:
+    - clustercontrol
+
+test_matrix:
+  - all_classes:
+      nodes: all_nodes
+
+facts:
+  rocky9:
+    fqdn: "clustercontrol.local"
+    os:
+      family: "RedHat"
+      name: "Rocky"
+      release:
+        major: "9"
+        full: "9.4"
+    networking:
+      ip: "10.10.16.13"
+    memory:
+      system:
+        total_bytes: 4294967296
+
+  almalinux9:
+    fqdn: "clustercontrol.local"
+    os:
+      family: "RedHat"
+      name: "AlmaLinux"
+      release:
+        major: "9"
+        full: "9.4"
+    networking:
+      ip: "10.10.16.13"
+    memory:
+      system:
+        total_bytes: 4294967296
+
+  rhel9:
+    fqdn: "clustercontrol.local"
+    os:
+      family: "RedHat"
+      name: "RedHat"
+      release:
+        major: "9"
+        full: "9.4"
+    networking:
+      ip: "10.10.16.13"
+    memory:
+      system:
+        total_bytes: 4294967296
+
+  ubuntu2204:
+    fqdn: "clustercontrol.local"
+    os:
+      family: "Debian"
+      name: "Ubuntu"
+      release:
+        major: "22.04"
+        full: "22.04"
+      distro:
+        codename: "jammy"
+    networking:
+      ip: "10.10.16.13"
+    memory:
+      system:
+        total_bytes: 4294967296
+
+  ubuntu2404:
+    fqdn: "clustercontrol.local"
+    os:
+      family: "Debian"
+      name: "Ubuntu"
+      release:
+        major: "24.04"
+        full: "24.04"
+      distro:
+        codename: "noble"
+    networking:
+      ip: "10.10.16.13"
+    memory:
+      system:
+        total_bytes: 4294967296
+
+  debian12:
+    fqdn: "clustercontrol.local"
+    os:
+      family: "Debian"
+      name: "Debian"
+      release:
+        major: "12"
+        full: "12.5"
+      distro:
+        codename: "bookworm"
+    networking:
+      ip: "10.10.16.13"
+    memory:
+      system:
+        total_bytes: 4294967296
