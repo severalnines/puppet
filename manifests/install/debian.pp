@@ -174,7 +174,7 @@ class clustercontrol::install::debian {
   file { $clustercontrol::params::repo_config_path:
     ensure  => file,
     mode    => '0644',
-    content => "deb [arch=amd64 signed-by=${keyrings_dir}/severalnines-repos.asc] http://${clustercontrol::params::repo_host}/deb ubuntu main\n",
+    content => "deb [arch=amd64 signed-by=${keyrings_dir}/severalnines-repos.asc] https://${clustercontrol::params::repo_host}/deb ubuntu main\n",
     require => Exec['import-severalnines-gpg-key'],
   }
 
