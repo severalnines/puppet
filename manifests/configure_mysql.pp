@@ -117,9 +117,9 @@ class clustercontrol::configure_mysql {
   # succeeds, root password is already set.
   # ----------------------------------------------------------------------------
   exec { 'set-mysql-root-password':
-    command  => "mysql --no-defaults -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${mysql_root_pass}';\"",
+    command  => "if [ -f /root/.my.cnf ]; then mysql --defaults-extra-file=/root/.my.cnf -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${mysql_root_pass}';\"; else mysql --no-defaults -u root -NBe \"ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${mysql_root_pass}';\"; fi",
     path     => ['/bin', '/usr/bin', '/usr/local/bin'],
-    unless   => "[ ! -x /usr/bin/mysql ] || mysql -u root -p\"${mysql_root_pass}\" -NBe 'SELECT 1;' >/dev/null 2>&1",
+    unless   => "[ ! -x /usr/bin/mysql ] || ( [ -f /root/.my.cnf ] && mysql --defaults-extra-file=/root/.my.cnf -NBe 'SELECT 1;' >/dev/null 2>&1 ) || mysql -u root -p\"${mysql_root_pass}\" -NBe 'SELECT 1;' >/dev/null 2>&1",
     provider => shell,
     require  => Exec['wait-for-mysql-ready'],
   }
