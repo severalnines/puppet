@@ -140,10 +140,10 @@ class clustercontrol::configure_mcc {
   # to serve the static frontend files.
   # ----------------------------------------------------------------------------
   exec { 'fix-web-root-permissions':
-    command  => 'chmod 755 /var /var/www /var/www/html /var/www/html/clustercontrol-mcc',
+    command  => 'chmod 755 /var/www /var/www/html /var/www/html/clustercontrol-mcc',
     path     => ['/bin', '/usr/bin'],
     onlyif   => 'test -d /var/www/html/clustercontrol-mcc',
-    unless   => "test $(stat -c '%a' /var/www/html/clustercontrol-mcc) = '755' && test $(stat -c '%a' /var/www/html) = '755'",
+    unless   => "test $(stat -c '%a' /var/www/html/clustercontrol-mcc) = '755' && test $(stat -c '%a' /var/www/html) = '755' && test $(stat -c '%a' /var/www) = '755'",
     provider => shell,
     require  => Exec['create-mcc-init-marker'],
     notify   => Exec['restart-cmon-proxy-after-mcc-init'],
