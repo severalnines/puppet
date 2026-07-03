@@ -116,7 +116,7 @@ describe 'clustercontrol' do
     it { is_expected.to contain_file('/usr/local/sbin/sync_cmon_admin.sh') }
 
     # SELinux must be disabled
-    it { is_expected.to contain_exec('disable-selinux-runtime') }
+    it { is_expected.to contain_exec('set-selinux-permissive') }
     it { is_expected.to contain_file('/etc/selinux/config') }
 
     # Severalnines repos must be configured
