@@ -1,7 +1,7 @@
 {
   "name": "severalnines-clustercontrol",
   "version": "3.0.0",
-  "author": "Severalnines AB",
+  "author": "Jessie Baynas",
   "summary": "Installs and configures ClusterControl 2.4.x (MCC mode).",
   "license": "Apache-2.0",
   "source": "https://github.com/severalnines/puppet",
