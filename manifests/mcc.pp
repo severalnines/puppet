@@ -77,13 +77,14 @@ class clustercontrol::mcc {
   }
 
   # ----------------------------------------------------------------------------
-  # Step 3: Wait for cmon RPC to be ready
+  # Step 3: Wait for cmon RPC to be ready. cmon >= 2.5.1 serves TLS RPC v2 on
+  # 9500 (9501 is a deprecated copy that goes away in 2.6); 2.5.0 only on 9501.
   # ----------------------------------------------------------------------------
   exec { 'wait-for-cmon-rpc':
-    command  => 'for i in $(seq 1 30); do curl -k -s -o /dev/null https://127.0.0.1:9501 && exit 0; sleep 2; done; exit 1',
+    command  => 'for i in $(seq 1 30); do for p in 9500 9501; do curl -k -s -o /dev/null -m 2 https://127.0.0.1:$p && exit 0; done; sleep 2; done; exit 1',
     path     => ['/bin', '/usr/bin'],
     provider => shell,
-    unless   => 'curl -k -s -o /dev/null -m 2 https://127.0.0.1:9501',
+    unless   => 'curl -k -s -o /dev/null -m 2 https://127.0.0.1:9500 || curl -k -s -o /dev/null -m 2 https://127.0.0.1:9501',
     require  => Exec['mark-services-restarted'],
   }
 
@@ -146,7 +147,7 @@ class clustercontrol::mcc {
   $ccsetup_marker = "${clustercontrol::params::cmon_state_dir}/.puppet-ccsetup-user-created"
 
   exec { 'create-ccsetup-user':
-    command  => "rm -f /tmp/ccsetup.conf; if s9s user --list 2>/dev/null | grep -qw ccsetup; then touch ${ccsetup_marker}; else S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --controller='https://localhost:9501' ccsetup && touch ${ccsetup_marker}; fi",
+    command  => "rm -f /tmp/ccsetup.conf; if s9s user --list 2>/dev/null | grep -qw ccsetup; then touch ${ccsetup_marker}; else S9S_USER_CONFIG=/tmp/ccsetup.conf s9s user --create --new-password=admin --group=admins --controller=https://localhost:\$(curl -k -s -o /dev/null -m 3 https://127.0.0.1:9500 && echo 9500 || echo 9501) ccsetup && touch ${ccsetup_marker}; fi",
     path     => ['/bin', '/usr/bin', '/usr/sbin'],
     provider => shell,
     creates  => $ccsetup_marker,
